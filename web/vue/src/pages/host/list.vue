@@ -16,7 +16,7 @@
       </el-form>
       <el-row type="flex" justify="end">
         <el-col :span="2">
-          <el-button type="primary" v-if="$store.getters.user.isAdmin"  @click="toEdit(null)">新增</el-button>
+          <el-button type="primary" v-if="isAdmin"  @click="toEdit(null)">新增</el-button>
         </el-col>
         <el-col :span="2">
           <el-button type="info" @click="refresh">刷新</el-button>
@@ -79,9 +79,12 @@
 
 <script>
 import hostService from '../../api/host'
+import { useUserStore } from '../../stores/user'
+
 export default {
   name: 'host-list',
   data () {
+    const userStore = useUserStore()
     return {
       hosts: [],
       hostTotal: 0,
@@ -92,7 +95,7 @@ export default {
         name: '',
         alias: ''
       },
-      isAdmin: this.$store.getters.user.isAdmin
+      isAdmin: userStore.isAdmin
     }
   },
   created () {

@@ -8,13 +8,19 @@
     width="40%">
     <el-form ref="formRef" :model="form" label-width="80px" :rules="formRules">
       <el-form-item label="用户名" prop="username">
-        <el-input v-model.trim="form.username" placeholder="请输入用户名或邮箱" />
+        <el-col :span="16">
+          <el-input v-model.trim="form.username" placeholder="请输入用户名或邮箱" />
+        </el-col>
       </el-form-item>
       <el-form-item label="密码" prop="password">
-        <el-input v-model.trim="form.password" type="password" placeholder="请输入密码" @keyup.enter="submit" />
+        <el-col :span="16">
+          <el-input v-model.trim="form.password" type="password" placeholder="请输入密码" @keyup.enter="submit" />
+        </el-col>
       </el-form-item>
       <el-form-item label="验证码" v-if="require2FA">
-        <el-input v-model.trim="form.twoFactorCode" placeholder="请输入6位验证码" maxlength="6" @keyup.enter="submit" />
+        <el-col :span="16">
+          <el-input v-model.trim="form.twoFactorCode" placeholder="请输入6位验证码" maxlength="6" @keyup.enter="submit" />
+        </el-col>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="submit" :loading="loading">登录</el-button>
@@ -29,7 +35,6 @@ import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '../../stores/user'
 import { useLoading } from '../../composables/useLoading'
 import userService from '../../api/user'
-import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const route = useRoute()
@@ -67,7 +72,6 @@ const submit = async () => {
       userService.login(params.username, params.password, params.two_factor_code, (data) => {
         if (data.require_2fa) {
           require2FA.value = true
-          ElMessage.warning('请输入2FA验证码')
           return
         }
         

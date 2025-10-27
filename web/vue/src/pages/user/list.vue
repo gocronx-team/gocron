@@ -71,9 +71,12 @@
 
 <script>
 import userService from '../../api/user'
+import { useUserStore } from '../../stores/user'
+
 export default {
   name: 'user-list',
   data () {
+    const userStore = useUserStore()
     return {
       users: [],
       userTotal: 0,
@@ -81,7 +84,7 @@ export default {
         page_size: 20,
         page: 1
       },
-      isAdmin: this.$store.getters.user.isAdmin
+      isAdmin: userStore.isAdmin
     }
   },
   created () {

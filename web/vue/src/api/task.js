@@ -1,19 +1,37 @@
-import request from '../utils/request'
+import httpClient from '../utils/httpClient'
 
 export default {
-  list: (query) => Promise.all([
-    request.get('/task', { params: query }),
-    request.get('/host/all')
-  ]),
-  
-  detail: (id) => Promise.all([
-    request.get(`/task/${id}`),
-    request.get('/host/all')
-  ]),
-  
-  update: (data) => request.post('/task/store', data),
-  remove: (id) => request.post(`/task/remove/${id}`),
-  enable: (id) => request.post(`/task/enable/${id}`),
-  disable: (id) => request.post(`/task/disable/${id}`),
-  run: (id) => request.get(`/task/run/${id}`)
+  list (query, callback) {
+    httpClient.batchGet([
+      { uri: '/task', params: query },
+      { uri: '/host/all' }
+    ], callback)
+  },
+
+  detail (id, callback) {
+    httpClient.batchGet([
+      { uri: `/task/${id}` },
+      { uri: '/host/all' }
+    ], callback)
+  },
+
+  update (data, callback) {
+    httpClient.post('/task/store', data, callback)
+  },
+
+  remove (id, callback) {
+    httpClient.post(`/task/remove/${id}`, {}, callback)
+  },
+
+  enable (id, callback) {
+    httpClient.post(`/task/enable/${id}`, {}, callback)
+  },
+
+  disable (id, callback) {
+    httpClient.post(`/task/disable/${id}`, {}, callback)
+  },
+
+  run (id, callback) {
+    httpClient.get(`/task/run/${id}`, {}, callback)
+  }
 }

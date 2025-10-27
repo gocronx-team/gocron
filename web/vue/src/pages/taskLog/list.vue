@@ -34,7 +34,7 @@
       </el-form>
       <el-row type="flex" justify="end">
         <el-col :span="3">
-          <el-button type="danger" v-if="$store.getters.user.isAdmin" @click="clearLog">清空日志</el-button>
+          <el-button type="danger" v-if="isAdmin" @click="clearLog">清空日志</el-button>
         </el-col>
         <el-col :span="2">
           <el-button type="info" @click="refresh">刷新</el-button>
@@ -153,10 +153,12 @@
 <script>
 import taskSidebar from '../task/sidebar.vue'
 import taskLogService from '../../api/taskLog'
+import { useUserStore } from '../../stores/user'
 
 export default {
   name: 'task-log',
   data () {
+    const userStore = useUserStore()
     return {
       logs: [],
       logTotal: 0,
@@ -167,7 +169,7 @@ export default {
         protocol: '',
         status: ''
       },
-      isAdmin: this.$store.getters.user.isAdmin,
+      isAdmin: userStore.isAdmin,
       dialogVisible: false,
       currentTaskResult: {
         command: '',

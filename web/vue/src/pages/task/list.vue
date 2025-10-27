@@ -2,60 +2,57 @@
 <el-container>
   <task-sidebar></task-sidebar>
   <el-main>
-    <el-form :inline="true" >
-      <el-row>
-        <el-form-item label="任务ID">
-          <el-input v-model.trim="searchParams.id"></el-input>
-        </el-form-item>
-        <el-form-item label="任务名称">
-          <el-input v-model.trim="searchParams.name"></el-input>
-        </el-form-item>
-        <el-form-item label="标签">
-          <el-input v-model.trim="searchParams.tag"></el-input>
-        </el-form-item>
-      </el-row>
-      <el-row>
-        <el-form-item label="执行方式">
-          <el-select v-model.trim="searchParams.protocol">
-            <el-option label="全部" value=""></el-option>
-            <el-option
-              v-for="item in protocolList"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value">
-            </el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="任务节点">
-          <el-select v-model.trim="searchParams.host_id">
-            <el-option label="全部" value=""></el-option>
-            <el-option
-              v-for="item in hosts"
-              :key="item.id"
-              :label="item.alias + ' - ' + item.name + ':' + item.port "
-              :value="item.id">
-            </el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model.trim="searchParams.status">
-            <el-option label="全部" value=""></el-option>
-            <el-option
-              v-for="item in statusList"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value">
-            </el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="search()">搜索</el-button>
-        </el-form-item>
-      </el-row>
+    <el-form :inline="true">
+      <el-form-item label="任务ID">
+        <el-input v-model.trim="searchParams.id" style="width: 180px;"></el-input>
+      </el-form-item>
+      <el-form-item label="任务名称">
+        <el-input v-model.trim="searchParams.name" style="width: 180px;"></el-input>
+      </el-form-item>
+      <el-form-item label="标签">
+        <el-input v-model.trim="searchParams.tag" style="width: 180px;"></el-input>
+      </el-form-item>
+      <br>
+      <el-form-item label="执行方式">
+        <el-select v-model.trim="searchParams.protocol" style="width: 180px;">
+          <el-option label="全部" value=""></el-option>
+          <el-option
+            v-for="item in protocolList"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value">
+          </el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="任务节点">
+        <el-select v-model.trim="searchParams.host_id" style="width: 180px;">
+          <el-option label="全部" value=""></el-option>
+          <el-option
+            v-for="item in hosts"
+            :key="item.id"
+            :label="item.alias + ' - ' + item.name + ':' + item.port "
+            :value="item.id">
+          </el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="状态">
+        <el-select v-model.trim="searchParams.status" style="width: 180px;">
+          <el-option label="全部" value=""></el-option>
+          <el-option
+            v-for="item in statusList"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value">
+          </el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" @click="search()">搜索</el-button>
+      </el-form-item>
     </el-form>
     <el-row type="flex" justify="end">
       <el-col :span="2">
-        <el-button type="primary" @click="toEdit(null)" v-if="$store.getters.user.isAdmin">新增</el-button>
+        <el-button type="primary" @click="toEdit(null)" v-if="isAdmin">新增</el-button>
       </el-col>
       <el-col :span="2">
         <el-button type="info" @click="refresh">刷新</el-button>
@@ -187,10 +184,12 @@
 <script>
 import taskSidebar from './sidebar.vue'
 import taskService from '../../api/task'
+import { useUserStore } from '../../stores/user'
 
 export default {
   name: 'task-list',
   data () {
+    const userStore = useUserStore()
     return {
       tasks: [],
       hosts: [],
@@ -205,7 +204,7 @@ export default {
         host_id: '',
         status: ''
       },
-      isAdmin: this.$store.getters.user.isAdmin,
+      isAdmin: userStore.isAdmin,
       protocolList: [
         {
           value: '1',
