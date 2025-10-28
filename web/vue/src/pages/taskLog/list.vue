@@ -213,6 +213,9 @@ export default {
     }
     this.search()
   },
+  activated () {
+    this.search()
+  },
   methods: {
     formatProtocol (row, col) {
       if (row[col.property] === 1) {
