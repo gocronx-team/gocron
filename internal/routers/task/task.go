@@ -6,12 +6,12 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jakecoffman/cron"
 	"github.com/gocronx-team/gocron/internal/models"
 	"github.com/gocronx-team/gocron/internal/modules/logger"
 	"github.com/gocronx-team/gocron/internal/modules/utils"
 	"github.com/gocronx-team/gocron/internal/routers/base"
 	"github.com/gocronx-team/gocron/internal/service"
+	"github.com/jakecoffman/cron"
 	"github.com/ouqiang/goutil"
 )
 
@@ -37,8 +37,6 @@ type TaskForm struct {
 	NotifyReceiverId string                      `form:"notify_receiver_id" json:"notify_receiver_id"`
 	NotifyKeyword    string                      `form:"notify_keyword" json:"notify_keyword"`
 }
-
-
 
 // 首页
 func Index(c *gin.Context) {
@@ -88,7 +86,7 @@ func Store(c *gin.Context) {
 		c.String(http.StatusOK, result)
 		return
 	}
-	
+
 	json := utils.JsonResponse{}
 	taskModel := models.Task{}
 	var id = form.Id

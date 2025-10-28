@@ -299,7 +299,9 @@ export default {
           {required: true, message: '请输入任务名称', trigger: 'blur'}
         ],
         spec: [
-          {required: true, message: '请输入crontab表达式', trigger: 'blur'}
+          {required: true, message: '请输入crontab表达式', trigger: 'blur'},
+          {validator: () => true, trigger: 'blur'},
+          {validator: () => true, trigger: 'change'}
         ],
         command: [
           {required: true, message: '请输入命令', trigger: 'blur'}
@@ -421,14 +423,55 @@ export default {
   watch: {
     $route () {
       this.initializeForm()
+    },
+    'form.notify_status' () {
+      this.updateNotifyKeywordRule()
+    },
+    'form.level' () {
+      this.updateSpecRule()
     }
   },
   created () {
-    this.formRules.host_ids[0].validator = this.validateHostIds
+    this.formRules.host_ids[0].validator = (rule, value, callback) => this.validateHostIds(rule, value, callback)
+    this.formRules.spec[1].validator = (rule, value, callback) => this.validateCronSpecField(rule, value, callback)
+    this.formRules.spec[2].validator = (rule, value, callback) => this.validateCronSpecField(rule, value, callback)
     this.loadNotificationOptions()
     this.initializeForm()
   },
   methods: {
+    updateNotifyKeywordRule () {
+      const keywordRules = this.formRules.notify_keyword
+      const needKeyword = this.form.notify_status === 4
+      if (!keywordRules || !keywordRules.length) {
+        return
+      }
+      keywordRules[0].required = needKeyword
+      if (!needKeyword) {
+        this.form.notify_keyword = ''
+        if (this.$refs.form) {
+          this.$refs.form.clearValidate('notify_keyword')
+        }
+      } else if (this.$refs.form) {
+        this.$nextTick(() => {
+          this.$refs.form && this.$refs.form.validateField('notify_keyword')
+        })
+      }
+    },
+    updateSpecRule () {
+      const specRules = this.formRules.spec
+      if (!specRules || !specRules.length) {
+        return
+      }
+      const needSpec = this.form.level === 1
+      specRules[0].required = needSpec
+      if (!needSpec && this.$refs.form) {
+        this.$refs.form.clearValidate('spec')
+      } else if (needSpec && this.$refs.form) {
+        this.$nextTick(() => {
+          this.$refs.form && this.$refs.form.validateField('spec')
+        })
+      }
+    },
     validateHostIds (rule, value, callback) {
       if (Number(this.form.protocol) === 2 && (!value || value.length === 0)) {
         callback(new Error('请选择任务节点'))
@@ -456,6 +499,47 @@ export default {
         this.$refs.form.clearValidate('host_ids')
       }
     },
+    validateCronSpecField (rule, value, callback) {
+      if (this.form.level !== 1) {
+        callback()
+        return
+      }
+      const specValue = value ? value.trim() : ''
+      if (!specValue) {
+        callback(new Error('请输入crontab表达式'))
+        return
+      }
+      const segments = specValue.split(/\s+/)
+      if (segments.length !== 6) {
+        callback(new Error('crontab表达式需包含6段（秒 分 时 日 月 周）'))
+        return
+      }
+      const allowedPattern = /^[0-9A-Za-z*\/,\-?#]+$/
+      const numericRanges = [
+        { min: 0, max: 59 },
+        { min: 0, max: 59 },
+        { min: 0, max: 23 },
+        { min: 1, max: 31 },
+        { min: 1, max: 12 },
+        { min: 0, max: 7 }
+      ]
+      const invalid = segments.some((part, index) => {
+        if (!allowedPattern.test(part)) {
+          return true
+        }
+        if (/^\d+$/.test(part)) {
+          const num = Number(part)
+          const { min, max } = numericRanges[index]
+          return Number.isNaN(num) || num < min || num > max
+        }
+        return false
+      })
+      if (invalid) {
+        callback(new Error('crontab表达式格式不正确，请检查输入'))
+        return
+      }
+      callback()
+    },
     resetForm () {
       if (this.$refs.form) {
         this.$refs.form.clearValidate()
@@ -465,6 +549,8 @@ export default {
       this.selectedMailNotifyIds = []
       this.selectedSlackNotifyIds = []
       this.handleProtocolChange(this.form.protocol, true)
+      this.updateNotifyKeywordRule()
+      this.updateSpecRule()
     },
     initializeForm () {
       this.resetForm()
@@ -485,6 +571,7 @@ export default {
         const hosts = args.length > 1 ? args[1] : args[0]
         this.hosts = hosts || []
         this.handleProtocolChange(this.form.protocol, true)
+        this.updateSpecRule()
       })
     },
     populateForm (taskData) {
@@ -512,6 +599,8 @@ export default {
       const taskHosts = taskData.hosts || []
       this.form.host_ids = Number(this.form.protocol) === 2 ? taskHosts.map(v => v.host_id) : []
       this.handleProtocolChange(this.form.protocol, true)
+      this.updateNotifyKeywordRule()
+      this.updateSpecRule()
 
       this.selectedMailNotifyIds = []
       this.selectedSlackNotifyIds = []

@@ -38,6 +38,6 @@ export default {
   },
 
   run (id, callback) {
-    httpClient.get(`/task/run/${id}`, {_t: Date.now()}, callback)
+    httpClient.get(`/task/run/${id}`, { _t: Date.now() }, callback)
   }
 }

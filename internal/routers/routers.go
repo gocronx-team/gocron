@@ -144,19 +144,19 @@ func Register(r *gin.Engine) {
 		c.Header("Content-Type", "text/html")
 		io.Copy(c.Writer, file)
 	})
-	
+
 	// 静态文件路由 - 必须放在最后
 	r.NoRoute(func(c *gin.Context) {
 		filepath := c.Request.URL.Path
-		
+
 		// 移除 /public 前缀（如果存在）
 		filepath = strings.TrimPrefix(filepath, "/public")
-		
+
 		// 尝试从 statikFS 读取文件
 		file, err := statikFS.Open(filepath)
 		if err == nil {
 			defer file.Close()
-			
+
 			// 设置正确的Content-Type - 必须在写入数据之前设置
 			if strings.HasSuffix(filepath, ".js") {
 				c.Writer.Header().Set("Content-Type", "application/javascript; charset=utf-8")
@@ -171,12 +171,12 @@ func Register(r *gin.Engine) {
 			} else if strings.HasSuffix(filepath, ".svg") {
 				c.Writer.Header().Set("Content-Type", "image/svg+xml")
 			}
-			
+
 			c.Status(http.StatusOK)
 			io.Copy(c.Writer, file)
 			return
 		}
-		
+
 		// 文件不存在，返回404
 		jsonResp := utils.JsonResponse{}
 		c.String(http.StatusNotFound, jsonResp.Failure(utils.NotFound, "您访问的页面不存在"))
@@ -241,14 +241,14 @@ func userAuth(c *gin.Context) {
 		c.Next()
 		return
 	}
-	
+
 	path := c.Request.URL.Path
 	// 静态文件直接放行
 	if strings.HasSuffix(path, ".js") || strings.HasSuffix(path, ".css") || strings.HasSuffix(path, ".png") || strings.HasSuffix(path, ".jpg") || strings.HasSuffix(path, ".svg") {
 		c.Next()
 		return
 	}
-	
+
 	user.RestoreToken(c)
 	if user.IsLogin(c) {
 		c.Next()
@@ -278,14 +278,14 @@ func urlAuth(c *gin.Context) {
 		c.Next()
 		return
 	}
-	
+
 	path := c.Request.URL.Path
 	// 静态文件直接放行
 	if strings.HasSuffix(path, ".js") || strings.HasSuffix(path, ".css") || strings.HasSuffix(path, ".png") || strings.HasSuffix(path, ".jpg") || strings.HasSuffix(path, ".svg") {
 		c.Next()
 		return
 	}
-	
+
 	if user.IsAdmin(c) {
 		c.Next()
 		return
