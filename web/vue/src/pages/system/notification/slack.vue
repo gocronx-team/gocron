@@ -12,7 +12,6 @@
             type="textarea"
             :rows="8"
             placeholder=""
-            size="medium"
             v-model="form.template">
           </el-input>
         </el-form-item>

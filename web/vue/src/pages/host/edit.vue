@@ -18,8 +18,6 @@
           <el-input
             type="textarea"
             :rows="5"
-            size="medium"
-            width="100"
             v-model="form.remark">
           </el-input>
         </el-form-item>

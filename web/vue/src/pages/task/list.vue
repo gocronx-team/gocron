@@ -145,7 +145,7 @@
               v-if="scope.row.level === 1"
               v-model="scope.row.status"
               :active-value="1"
-              :inactive-vlaue="0"
+              :inactive-value="0"
               active-color="#13ce66"
               @change="changeStatus(scope.row)"
               inactive-color="#ff4949">
@@ -158,7 +158,7 @@
             v-if="scope.row.level === 1"
             v-model="scope.row.status"
             :active-value="1"
-            :inactive-vlaue="0"
+            :inactive-value="0"
             active-color="#13ce66"
             :disabled="true"
             inactive-color="#ff4949">
