@@ -288,7 +288,7 @@ export default {
         taskService.run(item.id, () => {
           this.$message.success('任务已开始执行')
         })
-      }, true)
+      })
     },
     remove (item) {
       this.$appConfirm(() => {

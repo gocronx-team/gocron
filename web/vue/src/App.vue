@@ -65,4 +65,10 @@ body {
 .el-aside .el-menu {
   height: 100%;
 }
+.custom-message-box {
+  min-width: 400px;
+}
+.custom-message-box .el-message-box__message {
+  font-size: 16px;
+}
 </style>

@@ -1,6 +1,7 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
+import { ElMessageBox, ElMessage } from 'element-plus'
 import App from './App.vue'
 import router from './router'
 
@@ -18,14 +19,18 @@ app.directive('focus', {
 })
 
 app.config.globalProperties.$appConfirm = function (callback) {
-  this.$confirm('确定执行此操作?', '提示', {
+  ElMessageBox.confirm('确定执行此操作?', '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
-    type: 'warning'
+    type: 'warning',
+    center: true,
+    customClass: 'custom-message-box'
   }).then(() => {
     callback()
-  })
+  }).catch(() => {})
 }
+
+app.config.globalProperties.$message = ElMessage
 
 app.config.globalProperties.$filters = {
   formatTime(time) {
