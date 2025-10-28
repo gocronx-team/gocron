@@ -284,6 +284,6 @@ func (task *Task) parseWhere(query *gorm.DB, params CommonMap) {
 
 	tag, ok := params["Tag"]
 	if ok && tag.(string) != "" {
-		query.Where("tag = ?", tag)
+		query.Where("t.tag LIKE ?", "%"+tag.(string)+"%")
 	}
 }
