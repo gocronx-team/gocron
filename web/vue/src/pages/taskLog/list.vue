@@ -44,11 +44,10 @@
         background
         layout="prev, pager, next, sizes, total"
         :total="logTotal"
-        :page-size="20"
+        v-model:current-page="searchParams.page"
+        v-model:page-size="searchParams.page_size"
         @size-change="changePageSize"
-        @current-change="changePage"
-        @prev-click="changePage"
-        @next-click="changePage">
+        @current-change="changePage">
       </el-pagination>
       <el-table
         :data="logs"

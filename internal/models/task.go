@@ -58,8 +58,8 @@ type Task struct {
 	Tag              string               `json:"tag" gorm:"type:varchar(32);not null;default:''"`
 	Remark           string               `json:"remark" gorm:"type:varchar(100);not null;default:''"`
 	Status           Status               `json:"status" gorm:"type:tinyint;not null;index;default:0"`
-	CreatedAt        time.Time            `json:"created" gorm:"autoCreateTime"`
-	DeletedAt        *time.Time           `json:"deleted" gorm:"index"`
+	CreatedAt        time.Time            `json:"created" gorm:"column:created;autoCreateTime"`
+	DeletedAt        *time.Time           `json:"deleted" gorm:"column:deleted;index"`
 	BaseModel        `json:"-" gorm:"-"`
 	Hosts            []TaskHostDetail `json:"hosts" gorm:"-"`
 	NextRunTime      time.Time        `json:"next_run_time" gorm:"-"`

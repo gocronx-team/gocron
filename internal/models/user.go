@@ -17,8 +17,8 @@ type User struct {
 	Email        string    `json:"email" gorm:"type:varchar(50);not null;uniqueIndex;default:''"`
 	TwoFactorKey string    `json:"-" gorm:"column:two_factor_key;type:varchar(100);default:''"`
 	TwoFactorOn  int8      `json:"two_factor_on" gorm:"column:two_factor_on;type:tinyint;not null;default:0"`
-	CreatedAt    time.Time `json:"created" gorm:"autoCreateTime"`
-	UpdatedAt    time.Time `json:"updated" gorm:"autoUpdateTime"`
+	CreatedAt    time.Time `json:"created" gorm:"column:created;autoCreateTime"`
+	UpdatedAt    time.Time `json:"updated" gorm:"column:updated;autoUpdateTime"`
 	IsAdmin      int8      `json:"is_admin" gorm:"type:tinyint;not null;default:0"`
 	Status       Status    `json:"status" gorm:"type:tinyint;not null;default:1"`
 	BaseModel    `json:"-" gorm:"-"`

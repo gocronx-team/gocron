@@ -19,8 +19,8 @@ type TaskLog struct {
 	Timeout    int          `json:"timeout" gorm:"type:mediumint;not null;default:0"`
 	RetryTimes int8         `json:"retry_times" gorm:"type:tinyint;not null;default:0"`
 	Hostname   string       `json:"hostname" gorm:"type:varchar(128);not null;default:''"`
-	StartTime  time.Time    `json:"start_time" gorm:"autoCreateTime"`
-	EndTime    time.Time    `json:"end_time" gorm:"autoUpdateTime"`
+	StartTime  time.Time    `json:"start_time" gorm:"column:start_time;autoCreateTime"`
+	EndTime    time.Time    `json:"end_time" gorm:"column:end_time;autoUpdateTime"`
 	Status     Status       `json:"status" gorm:"type:tinyint;not null;index;default:1"`
 	Result     string       `json:"result" gorm:"type:mediumtext;not null"`
 	TotalTime  int          `json:"total_time" gorm:"-"`
