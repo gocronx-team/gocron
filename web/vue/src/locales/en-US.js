@@ -34,14 +34,14 @@ export default {
     title: 'User Login',
     username: 'Username',
     password: 'Password',
-    verifyCode: 'Verification Code',
+    verifyCode: '2FA Code',
     login: 'Login',
     usernamePlaceholder: 'Please enter username or email',
     passwordPlaceholder: 'Please enter password',
     verifyCodePlaceholder: 'Please enter 6-digit code',
     usernameRequired: 'Please enter username',
     passwordRequired: 'Please enter password',
-    verifyCodeRequired: 'Please enter verification code'
+    verifyCodeRequired: 'Please enter 2FA code'
   },
   task: {
     list: 'Scheduled Tasks',
@@ -222,14 +222,14 @@ export default {
     secret: 'Secret Key',
     scanQR: 'Scan QR code with your authenticator app',
     manualEntry: 'Or enter the secret key manually',
-    verifyCode: 'Verification Code',
+    verifyCode: '2FA Code',
     verifyCodePlaceholder: 'Please enter 6-digit code',
     confirm: 'Confirm Enable',
     confirmDisable: 'Confirm Disable',
     confirmDisableMsg: 'Are you sure you want to disable two-factor authentication?',
     enableSuccess: 'Two-factor authentication enabled',
     disableSuccess: 'Two-factor authentication disabled',
-    verifyFailed: 'Verification code is incorrect'
+    verifyFailed: '2FA code is incorrect'
   },
   install: {
     title: 'System Installation',

@@ -1,6 +1,6 @@
 <template>
-  <el-container>
-    <el-header>
+   <el-container>
+    <el-header v-if="userStore.isLogin">
       <app-header></app-header>
       <app-nav-menu></app-nav-menu>
     </el-header>
@@ -22,12 +22,14 @@
 <script setup>
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useUserStore } from './stores/user'
 import installService from './api/install'
 import appHeader from './components/common/header.vue'
 import appNavMenu from './components/common/navMenu.vue'
 import appFooter from './components/common/footer.vue'
 
 const router = useRouter()
+const userStore = useUserStore()
 
 onMounted(() => {
   installService.status((data) => {
@@ -61,6 +63,13 @@ body {
 #main-container .el-main {
   height: calc(100vh - 116px);
   margin: 20px 20px 0 20px;
+}
+.el-header + .el-main #main-container .el-main {
+  height: calc(100vh - 116px);
+}
+.el-main:first-child #main-container .el-main {
+  height: 100vh;
+  margin: 0;
 }
 .el-aside .el-menu {
   height: 100%;

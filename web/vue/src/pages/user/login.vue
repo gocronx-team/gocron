@@ -1,36 +1,33 @@
 <template>
-  <el-dialog
-    :title="t('login.title')"
-    v-model="dialogVisible"
-    :close-on-click-modal="false"
-    :show-close="false"
-    :close-on-press-escape="false"
-    width="450px">
-    <el-alert
-      v-if="errorMessage"
-      :title="errorMessage"
-      type="error"
-      :closable="false"
-      style="margin-bottom: 20px;"
-    />
-    <el-form ref="formRef" :model="form" :label-width="locale === 'zh-CN' ? '80px' : '150px'" :rules="formRules">
-      <el-form-item :label="t('login.username')" prop="username">
-        <el-input v-model.trim="form.username" :placeholder="t('login.usernamePlaceholder')" />
-      </el-form-item>
-      <el-form-item :label="t('login.password')" prop="password">
-        <el-input v-model.trim="form.password" type="password" :placeholder="t('login.passwordPlaceholder')" @keyup.enter="submit" />
-      </el-form-item>
-      <el-form-item :label="t('login.verifyCode')" prop="twoFactorCode" v-if="require2FA">
-        <el-input v-model.trim="form.twoFactorCode" :placeholder="t('login.verifyCodePlaceholder')" maxlength="6" @keyup.enter="submit" />
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" @click="submit" :loading="loading" style="width: 100%;">{{ t('login.login') }}</el-button>
-      </el-form-item>
-    </el-form>
-    <div style="text-align: center; margin-top: 10px;">
-      <LanguageSwitcher />
+  <div class="login-container">
+    <div class="login-box">
+      <div class="language-switcher">
+        <LanguageSwitcher />
+      </div>
+      <h2 class="login-title">{{ t('login.title') }}</h2>
+      <el-alert
+        v-if="errorMessage"
+        :title="errorMessage"
+        type="error"
+        :closable="false"
+        style="margin-bottom: 20px;"
+      />
+      <el-form ref="formRef" :model="form" :label-width="locale === 'zh-CN' ? '80px' : '120px'" :rules="formRules">
+        <el-form-item :label="t('login.username')" prop="username">
+          <el-input v-model.trim="form.username" :placeholder="t('login.usernamePlaceholder')" size="large" />
+        </el-form-item>
+        <el-form-item :label="t('login.password')" prop="password">
+          <el-input v-model.trim="form.password" type="password" :placeholder="t('login.passwordPlaceholder')" @keyup.enter="submit" size="large" />
+        </el-form-item>
+        <el-form-item :label="t('login.verifyCode')" prop="twoFactorCode" v-if="require2FA">
+          <el-input v-model.trim="form.twoFactorCode" :placeholder="t('login.verifyCodePlaceholder')" maxlength="6" @keyup.enter="submit" size="large" />
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="submit" :loading="loading" style="width: 100%;" size="large">{{ t('login.login') }}</el-button>
+        </el-form-item>
+      </el-form>
     </div>
-  </el-dialog>
+  </div>
 </template>
 
 <script setup>
@@ -49,7 +46,6 @@ const route = useRoute()
 const userStore = useUserStore()
 const { loading, withLoading } = useLoading()
 
-const dialogVisible = ref(true)
 const require2FA = ref(false)
 const formRef = ref()
 const errorMessage = ref('')
@@ -114,3 +110,75 @@ const submit = async () => {
   })
 }
 </script>
+
+
+<style scoped>
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.login-container::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 600px;
+  height: 600px;
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: 50%;
+  filter: blur(80px);
+}
+
+.login-container::after {
+  content: '';
+  position: absolute;
+  bottom: -30%;
+  left: -10%;
+  width: 500px;
+  height: 500px;
+  background: rgba(168, 85, 247, 0.08);
+  border-radius: 50%;
+  filter: blur(80px);
+}
+
+.login-box {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 48px 40px;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  max-width: 420px;
+  position: relative;
+  z-index: 1;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+.language-switcher {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+}
+
+.login-title {
+  text-align: center;
+  margin: 0 0 32px 0;
+  padding-left: 80px;
+  font-size: 26px;
+  color: #1f2937;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+}
+
+@media (max-width: 768px) {
+  .login-title {
+    padding-left: 0;
+  }
+}
+</style>
