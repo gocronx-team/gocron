@@ -54,8 +54,6 @@ func Register(r *gin.Engine) {
 		})
 	}
 
-	// 国际化中间件
-	api.Use(localeMiddleware)
 
 	// 用户
 	userGroup := api.Group("/user")
@@ -188,8 +186,7 @@ func Register(r *gin.Engine) {
 
 		// 文件不存在，返回404
 		jsonResp := utils.JsonResponse{}
-		locale := getLocale(c)
-		c.String(http.StatusNotFound, jsonResp.Failure(utils.NotFound, i18n.T(locale, "page_not_found")))
+		c.String(http.StatusNotFound, jsonResp.Failure(utils.NotFound, i18n.T(c, "page_not_found")))
 	})
 }
 
@@ -204,23 +201,7 @@ func RegisterMiddleware(r *gin.Engine) {
 
 // region 自定义中间件
 
-// 国际化中间件
-func localeMiddleware(c *gin.Context) {
-	acceptLanguage := c.GetHeader("Accept-Language")
-	locale := i18n.GetLocaleFromHeader(acceptLanguage)
-	c.Set("locale", locale)
-	c.Next()
-}
 
-// 获取当前请求的语言环境
-func getLocale(c *gin.Context) i18n.Locale {
-	if locale, exists := c.Get("locale"); exists {
-		if l, ok := locale.(i18n.Locale); ok {
-			return l
-		}
-	}
-	return i18n.ZhCN
-}
 
 /** 检测应用是否已安装 **/
 func checkAppInstall(c *gin.Context) {
@@ -234,8 +215,7 @@ func checkAppInstall(c *gin.Context) {
 		return
 	}
 	jsonResp := utils.JsonResponse{}
-	locale := getLocale(c)
-	data := jsonResp.Failure(utils.AppNotInstall, i18n.T(locale, "app_not_installed"))
+	data := jsonResp.Failure(utils.AppNotInstall, i18n.T(c, "app_not_installed"))
 	c.String(http.StatusOK, data)
 	c.Abort()
 }
@@ -259,8 +239,7 @@ func ipAuth(c *gin.Context) {
 	}
 	logger.Warnf("非法IP访问-%s", clientIp)
 	jsonResp := utils.JsonResponse{}
-	locale := getLocale(c)
-	data := jsonResp.Failure(utils.UnauthorizedError, i18n.T(locale, "unauthorized"))
+	data := jsonResp.Failure(utils.UnauthorizedError, i18n.T(c, "unauthorized"))
 	c.String(http.StatusOK, data)
 	c.Abort()
 }
@@ -297,8 +276,7 @@ func userAuth(c *gin.Context) {
 		}
 	}
 	jsonResp := utils.JsonResponse{}
-	locale := getLocale(c)
-	data := jsonResp.Failure(utils.AuthError, i18n.T(locale, "auth_failed"))
+	data := jsonResp.Failure(utils.AuthError, i18n.T(c, "auth_failed"))
 	c.String(http.StatusOK, data)
 	c.Abort()
 }
@@ -349,8 +327,7 @@ func urlAuth(c *gin.Context) {
 	}
 
 	jsonResp := utils.JsonResponse{}
-	locale := getLocale(c)
-	data := jsonResp.Failure(utils.UnauthorizedError, i18n.T(locale, "unauthorized"))
+	data := jsonResp.Failure(utils.UnauthorizedError, i18n.T(c, "unauthorized"))
 	c.String(http.StatusOK, data)
 	c.Abort()
 }
@@ -368,9 +345,8 @@ func apiAuth(c *gin.Context) {
 	apiKey := strings.TrimSpace(app.Setting.ApiKey)
 	apiSecret := strings.TrimSpace(app.Setting.ApiSecret)
 	json := utils.JsonResponse{}
-	locale := getLocale(c)
 	if apiKey == "" || apiSecret == "" {
-		msg := json.CommonFailure(i18n.T(locale, "api_key_required"))
+		msg := json.CommonFailure(i18n.T(c, "api_key_required"))
 		c.String(http.StatusOK, msg)
 		c.Abort()
 		return
@@ -378,20 +354,20 @@ func apiAuth(c *gin.Context) {
 	currentTimestamp := time.Now().Unix()
 	timeParam, err := strconv.ParseInt(c.Query("time"), 10, 64)
 	if err != nil || timeParam <= 0 {
-		msg := json.CommonFailure(i18n.T(locale, "param_time_required"))
+		msg := json.CommonFailure(i18n.T(c, "param_time_required"))
 		c.String(http.StatusOK, msg)
 		c.Abort()
 		return
 	}
 	if timeParam < (currentTimestamp - 1800) {
-		msg := json.CommonFailure(i18n.T(locale, "param_time_invalid"))
+		msg := json.CommonFailure(i18n.T(c, "param_time_invalid"))
 		c.String(http.StatusOK, msg)
 		c.Abort()
 		return
 	}
 	sign := strings.TrimSpace(c.Query("sign"))
 	if sign == "" {
-		msg := json.CommonFailure(i18n.T(locale, "param_sign_required"))
+		msg := json.CommonFailure(i18n.T(c, "param_sign_required"))
 		c.String(http.StatusOK, msg)
 		c.Abort()
 		return
@@ -399,7 +375,7 @@ func apiAuth(c *gin.Context) {
 	raw := apiKey + strconv.FormatInt(timeParam, 10) + strings.TrimSpace(c.Request.URL.Path) + apiSecret
 	realSign := utils.Md5(raw)
 	if sign != realSign {
-		msg := json.CommonFailure(i18n.T(locale, "sign_verify_failed"))
+		msg := json.CommonFailure(i18n.T(c, "sign_verify_failed"))
 		c.String(http.StatusOK, msg)
 		c.Abort()
 		return

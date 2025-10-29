@@ -93,11 +93,10 @@ func Detail(c *gin.Context) {
 
 // 保存任务
 func Store(c *gin.Context) {
-	locale := getLocale(c)
 	var form UserForm
 	if err := c.ShouldBind(&form); err != nil {
 		json := utils.JsonResponse{}
-		result := json.CommonFailure(i18n.T(locale, "form_validation_failed"))
+		result := json.CommonFailure(i18n.T(c, "form_validation_failed"))
 		c.String(http.StatusOK, result)
 		return
 	}
@@ -115,7 +114,7 @@ func Store(c *gin.Context) {
 		return
 	}
 	if nameExists > 0 {
-		result := json.CommonFailure(i18n.T(locale, "username_exists"))
+		result := json.CommonFailure(i18n.T(c, "username_exists"))
 		c.String(http.StatusOK, result)
 		return
 	}
@@ -127,24 +126,24 @@ func Store(c *gin.Context) {
 		return
 	}
 	if emailExists > 0 {
-		result := json.CommonFailure(i18n.T(locale, "email_exists"))
+		result := json.CommonFailure(i18n.T(c, "email_exists"))
 		c.String(http.StatusOK, result)
 		return
 	}
 
 	if form.Id == 0 {
 		if form.Password == "" {
-			result := json.CommonFailure(i18n.T(locale, "password_required"))
+			result := json.CommonFailure(i18n.T(c, "password_required"))
 			c.String(http.StatusOK, result)
 			return
 		}
 		if form.ConfirmPassword == "" {
-			result := json.CommonFailure(i18n.T(locale, "password_confirm_required"))
+			result := json.CommonFailure(i18n.T(c, "password_confirm_required"))
 			c.String(http.StatusOK, result)
 			return
 		}
 		if form.Password != form.ConfirmPassword {
-			result := json.CommonFailure(i18n.T(locale, "password_mismatch"))
+			result := json.CommonFailure(i18n.T(c, "password_mismatch"))
 			c.String(http.StatusOK, result)
 			return
 		}
@@ -158,7 +157,7 @@ func Store(c *gin.Context) {
 	if form.Id == 0 {
 		_, err = userModel.Create()
 		if err != nil {
-			result := json.CommonFailure(i18n.T(locale, "save_failed"), err)
+			result := json.CommonFailure(i18n.T(c, "save_failed"), err)
 			c.String(http.StatusOK, result)
 			return
 		}
@@ -170,13 +169,13 @@ func Store(c *gin.Context) {
 			"is_admin": form.IsAdmin,
 		})
 		if err != nil {
-			result := json.CommonFailure(i18n.T(locale, "update_failed"), err)
+			result := json.CommonFailure(i18n.T(c, "update_failed"), err)
 			c.String(http.StatusOK, result)
 			return
 		}
 	}
 
-	result := json.Success(i18n.T(locale, "save_success"), nil)
+	result := json.Success(i18n.T(c, "save_success"), nil)
 	c.String(http.StatusOK, result)
 }
 
@@ -225,12 +224,11 @@ func changeStatus(c *gin.Context, status models.Status) {
 
 // UpdatePassword 更新密码
 func UpdatePassword(c *gin.Context) {
-	locale := getLocale(c)
 	id, _ := strconv.Atoi(c.Param("id"))
 	var form UpdatePasswordForm
 	if err := c.ShouldBind(&form); err != nil {
 		json := utils.JsonResponse{}
-		result := json.CommonFailure(i18n.T(locale, "form_validation_failed"))
+		result := json.CommonFailure(i18n.T(c, "form_validation_failed"))
 		c.String(http.StatusOK, result)
 		return
 	}
@@ -238,27 +236,26 @@ func UpdatePassword(c *gin.Context) {
 	json := utils.JsonResponse{}
 	var result string
 	if form.NewPassword != form.ConfirmNewPassword {
-		result = json.CommonFailure(i18n.T(locale, "password_mismatch"))
+		result = json.CommonFailure(i18n.T(c, "password_mismatch"))
 		c.String(http.StatusOK, result)
 		return
 	}
 	userModel := new(models.User)
 	_, err := userModel.UpdatePassword(id, form.NewPassword)
 	if err != nil {
-		result = json.CommonFailure(i18n.T(locale, "update_failed"))
+		result = json.CommonFailure(i18n.T(c, "update_failed"))
 	} else {
-		result = json.Success(i18n.T(locale, "update_success"), nil)
+		result = json.Success(i18n.T(c, "update_success"), nil)
 	}
 	c.String(http.StatusOK, result)
 }
 
 // UpdateMyPassword 更新我的密码
 func UpdateMyPassword(c *gin.Context) {
-	locale := getLocale(c)
 	var form UpdateMyPasswordForm
 	if err := c.ShouldBind(&form); err != nil {
 		json := utils.JsonResponse{}
-		result := json.CommonFailure(i18n.T(locale, "form_validation_failed"))
+		result := json.CommonFailure(i18n.T(c, "form_validation_failed"))
 		c.String(http.StatusOK, result)
 		return
 	}
@@ -266,46 +263,45 @@ func UpdateMyPassword(c *gin.Context) {
 	json := utils.JsonResponse{}
 	var result string
 	if form.NewPassword != form.ConfirmNewPassword {
-		result = json.CommonFailure(i18n.T(locale, "password_mismatch"))
+		result = json.CommonFailure(i18n.T(c, "password_mismatch"))
 		c.String(http.StatusOK, result)
 		return
 	}
 	if form.OldPassword == form.NewPassword {
-		result = json.CommonFailure(i18n.T(locale, "password_same_as_old"))
+		result = json.CommonFailure(i18n.T(c, "password_same_as_old"))
 		c.String(http.StatusOK, result)
 		return
 	}
 	userModel := new(models.User)
 	if !userModel.Match(Username(c), form.OldPassword) {
-		result = json.CommonFailure(i18n.T(locale, "old_password_error"))
+		result = json.CommonFailure(i18n.T(c, "old_password_error"))
 		c.String(http.StatusOK, result)
 		return
 	}
 	_, err := userModel.UpdatePassword(Uid(c), form.NewPassword)
 	if err != nil {
-		result = json.CommonFailure(i18n.T(locale, "update_failed"))
+		result = json.CommonFailure(i18n.T(c, "update_failed"))
 	} else {
-		result = json.Success(i18n.T(locale, "update_success"), nil)
+		result = json.Success(i18n.T(c, "update_success"), nil)
 	}
 	c.String(http.StatusOK, result)
 }
 
 // ValidateLogin 验证用户登录
 func ValidateLogin(c *gin.Context) {
-	locale := getLocale(c)
 	username := strings.TrimSpace(c.PostForm("username"))
 	password := strings.TrimSpace(c.PostForm("password"))
 	twoFactorCode := strings.TrimSpace(c.PostForm("two_factor_code"))
 	json := utils.JsonResponse{}
 	var result string
 	if username == "" || password == "" {
-		result = json.CommonFailure(i18n.T(locale, "username_password_empty"))
+		result = json.CommonFailure(i18n.T(c, "username_password_empty"))
 		c.String(http.StatusOK, result)
 		return
 	}
 	userModel := new(models.User)
 	if !userModel.Match(username, password) {
-		result = json.CommonFailure(i18n.T(locale, "username_password_error"))
+		result = json.CommonFailure(i18n.T(c, "username_password_error"))
 		c.String(http.StatusOK, result)
 		return
 	}
@@ -313,7 +309,7 @@ func ValidateLogin(c *gin.Context) {
 	// 检查是否启用2FA
 	if userModel.TwoFactorOn == 1 {
 		if twoFactorCode == "" {
-			result = json.Success(i18n.T(locale, "2fa_code_required"), map[string]interface{}{
+			result = json.Success(i18n.T(c, "2fa_code_required"), map[string]interface{}{
 				"require_2fa": true,
 			})
 			c.String(http.StatusOK, result)
@@ -322,7 +318,7 @@ func ValidateLogin(c *gin.Context) {
 		// 验证TOTP码
 		valid := totp.Validate(twoFactorCode, userModel.TwoFactorKey)
 		if !valid {
-			result = json.CommonFailure(i18n.T(locale, "2fa_code_error"))
+			result = json.CommonFailure(i18n.T(c, "2fa_code_error"))
 			c.String(http.StatusOK, result)
 			return
 		}
@@ -343,7 +339,7 @@ func ValidateLogin(c *gin.Context) {
 	token, err := generateToken(userModel)
 	if err != nil {
 		logger.Errorf("生成jwt失败: %s", err)
-		result = json.Failure(utils.AuthError, i18n.T(locale, "auth_failed"))
+		result = json.Failure(utils.AuthError, i18n.T(c, "auth_failed"))
 		c.String(http.StatusOK, result)
 		return
 	}
@@ -416,14 +412,6 @@ func generateToken(user *models.User) (string, error) {
 	return token.SignedString([]byte(app.Setting.AuthSecret))
 }
 
-func getLocale(c *gin.Context) i18n.Locale {
-	if locale, exists := c.Get("locale"); exists {
-		if l, ok := locale.(i18n.Locale); ok {
-			return l
-		}
-	}
-	return i18n.ZhCN
-}
 
 // 还原jwt
 func RestoreToken(c *gin.Context) error {

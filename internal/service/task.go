@@ -297,7 +297,11 @@ func (h *RPCHandler) Run(taskModel models.Task, taskUniqueId int64) (result stri
 			if err != nil {
 				errorMessage = err.Error()
 			}
-			outputMessage := fmt.Sprintf("主机: [%s-%s:%d]\n%s\n%s\n\n",
+			output = strings.TrimSpace(output)
+			if errorMessage != "" {
+				errorMessage = strings.TrimSpace(errorMessage) + "\n"
+			}
+			outputMessage := fmt.Sprintf("主机: [%s-%s:%d]\n%s%s",
 				th.Alias, th.Name, th.Port, errorMessage, output,
 			)
 			resultChan <- TaskResult{Err: err, Result: outputMessage}
