@@ -61,14 +61,11 @@
           prop="remark"
           :label="t('host.remark')">
         </el-table-column>
-        <el-table-column :label="t('common.operation')" width="300" v-if="this.isAdmin">
+        <el-table-column :label="t('common.operation')" :width="locale === 'zh-CN' ? 260 : 300" v-if="this.isAdmin">
           <template #default="scope">
-            <el-row>
-              <el-button type="primary" @click="toEdit(scope.row)">{{ t('common.edit') }}</el-button>
-              <el-button type="info" @click="ping(scope.row)">{{ t('system.testSend') }}</el-button>
-              <el-button type="danger" @click="remove(scope.row)">{{ t('common.delete') }}</el-button>
-            </el-row>
-            <br>
+            <el-button type="primary" size="small" @click="toEdit(scope.row)">{{ t('common.edit') }}</el-button>
+            <el-button type="info" size="small" @click="ping(scope.row)">{{ t('system.testSend') }}</el-button>
+            <el-button type="danger" size="small" @click="remove(scope.row)">{{ t('common.delete') }}</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -85,8 +82,8 @@ import { useUserStore } from '../../stores/user'
 export default {
   name: 'host-list',
   setup() {
-    const { t } = useI18n()
-    return { t }
+    const { t, locale } = useI18n()
+    return { t, locale }
   },
   data () {
     const userStore = useUserStore()
@@ -125,9 +122,9 @@ export default {
       })
     },
     remove (item) {
-      ElMessageBox.confirm('确定删除此节点?', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
+      ElMessageBox.confirm(this.t('message.confirmDeleteNode'), this.t('common.tip'), {
+        confirmButtonText: this.t('common.confirm'),
+        cancelButtonText: this.t('common.cancel'),
         type: 'warning',
         center: true
       }).then(() => {
@@ -136,7 +133,7 @@ export default {
     },
     ping (item) {
       hostService.ping(item.id, () => {
-        this.$message.success('连接成功')
+        this.$message.success(this.t('message.connectionSuccess'))
       })
     },
     toEdit (item) {
@@ -150,7 +147,7 @@ export default {
     },
     refresh () {
       this.search(() => {
-        this.$message.success('刷新成功')
+        this.$message.success(this.t('message.refreshSuccess'))
       })
     },
     toTasks (item) {

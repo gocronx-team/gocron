@@ -53,14 +53,11 @@
             </el-switch>
           </template>
         </el-table-column>
-        <el-table-column :label="t('common.operation')" width="300" v-if="this.isAdmin">
+        <el-table-column :label="t('common.operation')" :width="locale === 'zh-CN' ? 280 : 340" v-if="this.isAdmin">
           <template #default="scope">
-            <el-row>
-              <el-button type="primary" @click="toEdit(scope.row)">{{ t('common.edit') }}</el-button>
-              <el-button type="success" @click="editPassword(scope.row)">{{ t('user.changePassword') }}</el-button>
-              <el-button type="danger" @click="remove(scope.row)">{{ t('common.delete') }}</el-button>
-            </el-row>
-            <br>
+            <el-button type="primary" size="small" @click="toEdit(scope.row)">{{ t('common.edit') }}</el-button>
+            <el-button type="success" size="small" @click="editPassword(scope.row)">{{ t('user.changePassword') }}</el-button>
+            <el-button type="danger" size="small" @click="remove(scope.row)">{{ t('common.delete') }}</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -77,8 +74,8 @@ import { useUserStore } from '../../stores/user'
 export default {
   name: 'user-list',
   setup() {
-    const { t } = useI18n()
-    return { t }
+    const { t, locale } = useI18n()
+    return { t, locale }
   },
   data () {
     const userStore = useUserStore()
@@ -105,9 +102,9 @@ export default {
     },
     formatRole (row, col) {
       if (row[col.property] === 1) {
-        return '管理员'
+        return this.t('user.admin')
       }
-      return '普通用户'
+      return this.t('user.normalUser')
     },
     changePage (page) {
       this.searchParams.page = page
@@ -127,9 +124,9 @@ export default {
       })
     },
     remove (item) {
-      ElMessageBox.confirm('确定删除此用户?', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
+      ElMessageBox.confirm(this.t('message.confirmDeleteUser'), this.t('common.tip'), {
+        confirmButtonText: this.t('common.confirm'),
+        cancelButtonText: this.t('common.cancel'),
         type: 'warning',
         center: true
       }).then(() => {
@@ -149,7 +146,7 @@ export default {
     },
     refresh () {
       this.search(() => {
-        this.$message.success('刷新成功')
+        this.$message.success(this.t('message.refreshSuccess'))
       })
     },
     editPassword (item) {

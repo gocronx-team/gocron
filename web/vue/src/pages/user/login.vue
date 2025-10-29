@@ -75,7 +75,7 @@ const submit = async () => {
     if (!valid) return
     
     if (require2FA.value && !form.twoFactorCode) {
-      errorMessage.value = '请输入验证码'
+      errorMessage.value = t('login.verifyCodeRequired')
       return
     }
     

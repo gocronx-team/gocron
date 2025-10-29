@@ -48,18 +48,31 @@ export default {
         alias: '',
         remark: ''
       },
-      formRules: {
+      formRules: {}
+    }
+  },
+  computed: {
+    computedFormRules() {
+      return {
         name: [
-          {required: true, message: '请输入主机名', trigger: 'blur'}
+          {required: true, message: this.t('host.nameRequired'), trigger: 'blur'}
         ],
         port: [
-          {required: true, message: '请输入端口', trigger: 'blur'},
-          {type: 'number', message: '端口无效'}
+          {required: true, message: this.t('host.portRequired'), trigger: 'blur'},
+          {type: 'number', message: this.t('host.portInvalid')}
         ],
         alias: [
-          {required: true, message: '请输入节点名称', trigger: 'blur'}
+          {required: true, message: this.t('host.aliasRequired'), trigger: 'blur'}
         ]
       }
+    }
+  },
+  watch: {
+    computedFormRules: {
+      handler(newVal) {
+        this.formRules = newVal
+      },
+      immediate: true
     }
   },
   created () {
@@ -69,7 +82,7 @@ export default {
     }
     hostService.detail(id, (data) => {
       if (!data) {
-        this.$message.error('数据不存在')
+        this.$message.error(this.t('message.dataNotFound'))
         this.cancel()
         return
       }

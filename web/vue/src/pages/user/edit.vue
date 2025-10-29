@@ -60,20 +60,33 @@ export default {
         confirm_password: '',
         status: 1
       },
-      formRules: {
+      formRules: {}
+    }
+  },
+  computed: {
+    computedFormRules() {
+      return {
         name: [
-          {required: true, message: '请输入用户名', trigger: 'blur'}
+          {required: true, message: this.t('user.usernameRequired'), trigger: 'blur'}
         ],
         email: [
-          {type: 'email', required: true, message: '请输入有效邮箱地址', trigger: 'blur'}
+          {type: 'email', required: true, message: this.t('user.emailRequired'), trigger: 'blur'}
         ],
         password: [
-          {required: true, message: '请输入密码', trigger: 'blur'}
+          {required: true, message: this.t('user.passwordRequired'), trigger: 'blur'}
         ],
         confirm_password: [
-          {required: true, message: '请再次输入密码', trigger: 'blur'}
+          {required: true, message: this.t('user.confirmPasswordRequired'), trigger: 'blur'}
         ]
       }
+    }
+  },
+  watch: {
+    computedFormRules: {
+      handler(newVal) {
+        this.formRules = newVal
+      },
+      immediate: true
     }
   },
   created () {
@@ -83,7 +96,7 @@ export default {
     }
     userService.detail(id, (data) => {
       if (!data) {
-        this.$message.error('数据不存在')
+        this.$message.error(this.t('message.dataNotFound'))
         return
       }
       this.form.id = data.id

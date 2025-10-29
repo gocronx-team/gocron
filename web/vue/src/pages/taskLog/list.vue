@@ -3,12 +3,12 @@
     <task-sidebar></task-sidebar>
     <el-main>
       <el-form :inline="true" >
-        <el-form-item label="任务ID">
+        <el-form-item :label="t('task.id')">
           <el-input v-model.trim="searchParams.task_id"></el-input>
         </el-form-item>
-        <el-form-item label="执行方式">
-          <el-select v-model.trim="searchParams.protocol" placeholder="执行方式" style="width: 180px;">
-            <el-option label="全部" value=""></el-option>
+        <el-form-item :label="t('task.protocol')">
+          <el-select v-model.trim="searchParams.protocol" :placeholder="t('task.protocol')" style="width: 180px;">
+            <el-option :label="t('message.all')" value=""></el-option>
             <el-option
             v-for="item in protocolList"
             :key="item.value"
@@ -17,9 +17,9 @@
             </el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="状态">
+        <el-form-item :label="t('common.status')">
           <el-select v-model.trim="searchParams.status" style="width: 180px;">
-            <el-option label="全部" value=""></el-option>
+            <el-option :label="t('message.all')" value=""></el-option>
             <el-option
               v-for="item in statusList"
               :key="item.value"
@@ -29,15 +29,15 @@
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="search()">搜索</el-button>
+          <el-button type="primary" @click="search()">{{ t('common.search') }}</el-button>
         </el-form-item>
       </el-form>
       <el-row type="flex" justify="end">
         <el-col :span="3">
-          <el-button type="danger" v-if="isAdmin" @click="clearLog">清空日志</el-button>
+          <el-button type="danger" v-if="isAdmin" @click="clearLog">{{ t('message.clearLog') }}</el-button>
         </el-col>
         <el-col :span="2">
-          <el-button type="info" @click="refresh">刷新</el-button>
+          <el-button type="info" @click="refresh">{{ t('common.refresh') }}</el-button>
         </el-col>
       </el-row>
       <el-pagination
@@ -58,9 +58,9 @@
           <template #default="scope">
             <el-form label-position="left">
               <el-form-item>
-                  重试次数: {{scope.row.retry_times}} <br>
-                  cron表达式: {{scope.row.spec}} <br>
-                  命令: {{scope.row.command}}
+                  {{ t('message.retryCount') }}: {{scope.row.retry_times}} <br>
+                  {{ t('task.cronExpression') }}: {{scope.row.spec}} <br>
+                  {{ t('task.command') }}: {{scope.row.command}}
               </el-form-item>
             </el-form>
           </template>
@@ -71,73 +71,78 @@
         </el-table-column>
         <el-table-column
           prop="task_id"
-          label="任务ID">
+          :label="t('task.id')">
         </el-table-column>
         <el-table-column
           prop="name"
-          label="任务名称"
+          :label="t('task.name')"
         width="180">
         </el-table-column>
         <el-table-column
           prop="protocol"
-          label="执行方式"
+          :label="t('task.protocol')"
           :formatter="formatProtocol">
         </el-table-column>
         <el-table-column
-          label="任务节点"
+          :label="t('task.taskNode')"
           width="150">
           <template #default="scope">
             <div v-html="scope.row.hostname"></div>
           </template>
         </el-table-column>
         <el-table-column
-          label="执行时长"
+          :label="t('taskLog.duration')"
           width="250">
           <template #default="scope">
-            执行时长: {{scope.row.total_time > 0 ? scope.row.total_time : 1}}秒<br>
-            开始时间: {{$filters.formatTime(scope.row.start_time)}}<br>
-            <span v-if="scope.row.status !== 1">结束时间: {{$filters.formatTime(scope.row.end_time)}}</span>
+            {{ t('taskLog.duration') }}: {{scope.row.total_time > 0 ? scope.row.total_time : 1}}{{ t('message.seconds') }}<br>
+            {{ t('taskLog.startTime') }}: {{$filters.formatTime(scope.row.start_time)}}<br>
+            <span v-if="scope.row.status !== 1">{{ t('taskLog.endTime') }}: {{$filters.formatTime(scope.row.end_time)}}</span>
           </template>
         </el-table-column>
         <el-table-column
-          label="状态">
+          :label="t('common.status')">
           <template #default="scope">
-            <span style="color:red" v-if="scope.row.status === 0">失败</span>
-            <span style="color:green" v-else-if="scope.row.status === 1">执行中</span>
-            <span v-else-if="scope.row.status === 2">成功</span>
-            <span style="color:#4499EE" v-else-if="scope.row.status === 3">取消</span>
+            <span style="color:red" v-if="scope.row.status === 0">{{ t('taskLog.failed') }}</span>
+            <span style="color:green" v-else-if="scope.row.status === 1">{{ t('message.running') }}</span>
+            <span v-else-if="scope.row.status === 2">{{ t('taskLog.success') }}</span>
+            <span style="color:#4499EE" v-else-if="scope.row.status === 3">{{ t('message.cancelled') }}</span>
           </template>
         </el-table-column>
         <el-table-column
-          label="执行结果"
-          width="120" v-if="isAdmin">
+          :label="t('taskLog.result')"
+          :width="locale === 'zh-CN' ? 120 : 140" v-if="isAdmin">
           <template #default="scope">
             <el-button type="success"
+                       size="small"
                        v-if="scope.row.status === 2"
-                       @click="showTaskResult(scope.row)">查看结果</el-button>
+                       @click="showTaskResult(scope.row)">{{ t('taskLog.viewOutput') }}</el-button>
             <el-button type="warning"
+                       size="small"
                        v-if="scope.row.status === 0"
-                       @click="showTaskResult(scope.row)" >查看结果</el-button>
+                       @click="showTaskResult(scope.row)" >{{ t('taskLog.viewOutput') }}</el-button>
             <el-button type="danger"
+                       size="small"
                        v-if="scope.row.status === 1 && scope.row.protocol === 2"
-                       @click="stopTask(scope.row)">停止任务
+                       @click="stopTask(scope.row)">{{ t('message.stopTask') }}
             </el-button>
           </template>
         </el-table-column>
         <el-table-column
-          label="执行结果"
-          width="120" v-else>
+          :label="t('taskLog.result')"
+          :width="locale === 'zh-CN' ? 120 : 140" v-else>
           <template #default="scope">
             <el-button type="success"
+                       size="small"
                        v-if="scope.row.status === 2"
-                       @click="showTaskResult(scope.row)">查看结果</el-button>
+                       @click="showTaskResult(scope.row)">{{ t('taskLog.viewOutput') }}</el-button>
             <el-button type="warning"
+                       size="small"
                        v-if="scope.row.status === 0"
-                       @click="showTaskResult(scope.row)" >查看结果</el-button>
+                       @click="showTaskResult(scope.row)" >{{ t('taskLog.viewOutput') }}</el-button>
           </template>
         </el-table-column>
       </el-table>
-      <el-dialog title="任务执行结果" v-model="dialogVisible" width="60%">
+      <el-dialog :title="t('message.taskExecutionResult')" v-model="dialogVisible" width="60%">
         <div>
           <pre>{{currentTaskResult.command}}</pre>
         </div>
@@ -150,6 +155,7 @@
 </template>
 
 <script>
+import { useI18n } from 'vue-i18n'
 import { ElMessageBox } from 'element-plus'
 import taskSidebar from '../task/sidebar.vue'
 import taskLogService from '../../api/taskLog'
@@ -157,6 +163,10 @@ import { useUserStore } from '../../stores/user'
 
 export default {
   name: 'task-log',
+  setup() {
+    const { t, locale } = useI18n()
+    return { t, locale }
+  },
   data () {
     const userStore = useUserStore()
     return {
@@ -185,24 +195,25 @@ export default {
           label: 'shell'
         }
       ],
-      statusList: [
-        {
-          value: '1',
-          label: '失败'
-        },
-        {
-          value: '2',
-          label: '执行中'
-        },
-        {
-          value: '3',
-          label: '成功'
-        },
-        {
-          value: '4',
-          label: '取消'
-        }
+      statusList: []
+    }
+  },
+  computed: {
+    computedStatusList() {
+      return [
+        { value: '1', label: this.t('taskLog.failed') },
+        { value: '2', label: this.t('message.running') },
+        { value: '3', label: this.t('taskLog.success') },
+        { value: '4', label: this.t('message.cancelled') }
       ]
+    }
+  },
+  watch: {
+    computedStatusList: {
+      handler(newVal) {
+        this.statusList = newVal
+      },
+      immediate: true
     }
   },
   components: {taskSidebar},
@@ -241,9 +252,9 @@ export default {
       })
     },
     clearLog () {
-      ElMessageBox.confirm('确定清空所有日志?', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
+      ElMessageBox.confirm(this.t('message.confirmClearLog'), this.t('common.tip'), {
+        confirmButtonText: this.t('common.confirm'),
+        cancelButtonText: this.t('common.cancel'),
         type: 'warning',
         center: true
       }).then(() => {
@@ -265,7 +276,7 @@ export default {
     },
     refresh () {
       this.search(() => {
-        this.$message.success('刷新成功')
+        this.$message.success(this.t('message.refreshSuccess'))
       })
     }
   }

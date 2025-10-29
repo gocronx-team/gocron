@@ -3,25 +3,26 @@
     <system-sidebar></system-sidebar>
     <el-main>
       <notification-tab></notification-tab>
-      <el-form ref="form" :model="form" :rules="formRules" label-width="100px" style="width: 700px;">
-        <el-alert
-          title="通知内容推送到指定URL, POST请求, 设置Header[ Content-Type: application/json]"
-          type="info"
-          :closable="false">
-        </el-alert><br>
+      <el-form ref="form" :model="form" :rules="formRules" :label-width="locale === 'zh-CN' ? '100px' : '120px'" style="width: 700px;">
         <el-form-item label="URL" prop="url">
           <el-input v-model.trim="form.url"></el-input>
         </el-form-item>
-        <el-form-item label="模板" prop="template">
+        <el-alert
+          :title="t('system.webhookTip')"
+          type="info"
+          :closable="false"
+          style="margin-bottom: 15px;">
+        </el-alert>
+        <el-form-item :label="t('system.template')" prop="template">
           <el-input
             type="textarea"
             :rows="8"
-            placeholder=""
+            :placeholder="webhookPlaceholder"
             v-model.trim="form.template">
           </el-input>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="submit()">保存</el-button>
+          <el-button type="primary" @click="submit()">{{ t('common.save') }}</el-button>
         </el-form-item>
       </el-form>
     </el-main>
@@ -29,25 +30,46 @@
 </template>
 
 <script>
+import { useI18n } from 'vue-i18n'
 import systemSidebar from '../sidebar.vue'
 import notificationTab from './tab.vue'
 import notificationService from '../../../api/notification'
 export default {
   name: 'notification-webhook',
+  setup() {
+    const { t, locale } = useI18n()
+    return { t, locale }
+  },
   data () {
     return {
       form: {
         url: '',
         template: ''
       },
-      formRules: {
+      formRules: {}
+    }
+  },
+  computed: {
+    webhookPlaceholder() {
+      return `{"task_id": "{{.TaskId}}", "task_name": "{{.TaskName}}", "status": "{{.Status}}", "result": "{{.Result}}", "remark": "{{.Remark}}"}`
+    },
+    computedFormRules() {
+      return {
         url: [
-          {type: 'url', required: true, message: '请输入有效的通知URL', trigger: 'blur'}
+          {type: 'url', required: true, message: this.t('system.pleaseEnterValidUrl'), trigger: 'blur'}
         ],
         template: [
-          {required: true, message: '请输入通知模板', trigger: 'blur'}
+          {required: true, message: this.t('system.pleaseEnterTemplate'), trigger: 'blur'}
         ]
       }
+    }
+  },
+  watch: {
+    computedFormRules: {
+      handler(newVal) {
+        this.formRules = newVal
+      },
+      immediate: true
     }
   },
   components: {notificationTab, systemSidebar},
@@ -65,7 +87,7 @@ export default {
     },
     save () {
       notificationService.updateWebHook(this.form, () => {
-        this.$message.success('更新成功')
+        this.$message.success(this.t('message.updateSuccess'))
         this.init()
       })
     },

@@ -3,50 +3,45 @@
     <system-sidebar></system-sidebar>
     <el-main>
       <notification-tab></notification-tab>
-      <el-form ref="form" :model="form" :rules="formRules" label-width="150px" style="width: 800px;">
-        <h3>邮件服务器配置</h3>
+      <el-form ref="form" :model="form" :rules="formRules" :label-width="locale === 'zh-CN' ? '150px' : '180px'" style="width: 800px;">
+        <h3>{{ t('system.emailServerConfig') }}</h3>
         <el-row>
           <el-col :span="12">
-            <el-form-item label="SMTP服务器" prop="host">
+            <el-form-item :label="t('system.smtpHost')" prop="host">
               <el-input v-model="form.host"></el-input>
             </el-form-item>
           </el-col>
           <el-col :span="10">
-            <el-form-item label="端口" prop="port">
+            <el-form-item :label="t('host.port')" prop="port">
               <el-input v-model.number="form.port"></el-input>
             </el-form-item>
           </el-col>
         </el-row>
         <el-row>
           <el-col :span="12">
-            <el-form-item label="用户名" prop="user">
+            <el-form-item :label="t('user.username')" prop="user">
               <el-input v-model="form.user"></el-input>
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="密码" prop="password">
+            <el-form-item :label="t('user.password')" prop="password">
               <el-input v-model="form.password" type="password"></el-input>
             </el-form-item>
           </el-col>
         </el-row>
-        <el-alert
-          title="通知模板支持html"
-          type="info"
-          :closable="false">
-        </el-alert><br>
-        <el-form-item label="模板" prop="template">
+        <el-form-item :label="t('system.template')" prop="template">
           <el-input
             type="textarea"
             :rows="6"
-            placeholder=""
+            :placeholder="emailPlaceholder"
             v-model="form.template">
           </el-input>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="submit()">保存</el-button>
+          <el-button type="primary" @click="submit()">{{ t('common.save') }}</el-button>
         </el-form-item>
-        <el-button type="primary" @click="createUser">新增用户</el-button> <br><br>
-        <h3>通知用户</h3>
+        <el-button type="primary" @click="createUser">{{ t('system.addUser') }}</el-button> <br><br>
+        <h3>{{ t('system.notificationUsers') }}</h3>
         <el-tag
           v-for="item in receivers"
           :key="item.email"
@@ -56,18 +51,18 @@
         </el-tag>
       </el-form>
       <el-dialog
-        title=""
+        :title="t('system.addUser')"
         v-model="dialogVisible"
         width="30%">
         <el-form :model="form">
-          <el-form-item label="用户名" >
+          <el-form-item :label="t('user.username')" >
             <el-input v-model.trim="username"></el-input>
           </el-form-item>
-          <el-form-item label="邮箱地址" >
+          <el-form-item :label="t('system.emailAddress')" >
             <el-input v-model.trim="email"></el-input>
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" @click="saveUser">确 定</el-button>
+            <el-button type="primary" @click="saveUser">{{ t('common.confirm') }}</el-button>
           </el-form-item>
         </el-form>
       </el-dialog>
@@ -76,11 +71,16 @@
 </template>
 
 <script>
+import { useI18n } from 'vue-i18n'
 import systemSidebar from '../sidebar.vue'
 import notificationTab from './tab.vue'
 import notificationService from '../../../api/notification'
 export default {
   name: 'notification-email',
+  setup() {
+    const { t, locale } = useI18n()
+    return { t, locale }
+  },
   data () {
     return {
       form: {
@@ -90,27 +90,47 @@ export default {
         password: '',
         template: ''
       },
-      formRules: {
-        host: [
-          {required: true, message: '请输入邮件服务器地址', trigger: 'blur'}
-        ],
-        port: [
-          {type: 'number', required: true, message: '请输入有效的端口', trigger: 'blur'}
-        ],
-        user: [
-          {required: true, message: '请输入用户email', trigger: 'blur'}
-        ],
-        password: [
-          {required: true, message: '请输入密码', trigger: 'blur'}
-        ],
-        template: [
-          {required: true, message: '请输入通知模板内容', trigger: 'blur'}
-        ]
-      },
+      formRules: {},
       receivers: [],
       username: '',
       email: '',
       dialogVisible: false
+    }
+  },
+  computed: {
+    emailPlaceholder() {
+      return `${this.t('system.taskIdVar')}: {{.TaskId}}
+${this.t('system.taskNameVar')}: {{.TaskName}}
+${this.t('system.statusVar')}: {{.Status}}
+${this.t('system.resultVar')}: {{.Result}}
+${this.t('task.remark')}: {{.Remark}}`
+    },
+    computedFormRules() {
+      return {
+        host: [
+          {required: true, message: this.t('system.pleaseEnterEmailServer'), trigger: 'blur'}
+        ],
+        port: [
+          {type: 'number', required: true, message: this.t('system.pleaseEnterValidPort'), trigger: 'blur'}
+        ],
+        user: [
+          {required: true, message: this.t('system.pleaseEnterUserEmail'), trigger: 'blur'}
+        ],
+        password: [
+          {required: true, message: this.t('user.passwordRequired'), trigger: 'blur'}
+        ],
+        template: [
+          {required: true, message: this.t('system.pleaseEnterTemplate'), trigger: 'blur'}
+        ]
+      }
+    }
+  },
+  watch: {
+    computedFormRules: {
+      handler(newVal) {
+        this.formRules = newVal
+      },
+      immediate: true
     }
   },
   components: {notificationTab, systemSidebar},
@@ -123,7 +143,7 @@ export default {
     },
     saveUser () {
       if (this.username === '' || this.email === '') {
-        this.$message.error('参数不完整')
+        this.$message.error(this.t('system.incompleteParameters'))
         return
       }
       notificationService.createMailUser({
@@ -149,7 +169,7 @@ export default {
     },
     save () {
       notificationService.updateMail(this.form, () => {
-        this.$message.success('更新成功')
+        this.$message.success(this.t('message.updateSuccess'))
         this.init()
       })
     },
