@@ -18,6 +18,7 @@ axios.defaults.responseType = 'json'
 axios.interceptors.request.use(config => {
   const userStore = useUserStore()
   config.headers['Auth-Token'] = userStore.token
+  config.headers['Accept-Language'] = localStorage.getItem('locale') || 'zh-CN'
   return config
 }, error => {
   ElMessage.error({

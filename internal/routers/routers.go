@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gocronx-team/gocron/internal/modules/app"
+	"github.com/gocronx-team/gocron/internal/modules/i18n"
 	"github.com/gocronx-team/gocron/internal/modules/logger"
 	"github.com/gocronx-team/gocron/internal/modules/utils"
 	"github.com/gocronx-team/gocron/internal/routers/host"
@@ -52,6 +53,7 @@ func Register(r *gin.Engine) {
 			c.String(http.StatusOK, jsonResp.Success("", app.Installed))
 		})
 	}
+
 
 	// 用户
 	userGroup := api.Group("/user")
@@ -184,7 +186,7 @@ func Register(r *gin.Engine) {
 
 		// 文件不存在，返回404
 		jsonResp := utils.JsonResponse{}
-		c.String(http.StatusNotFound, jsonResp.Failure(utils.NotFound, "您访问的页面不存在"))
+		c.String(http.StatusNotFound, jsonResp.Failure(utils.NotFound, i18n.T(c, "page_not_found")))
 	})
 }
 
@@ -199,6 +201,8 @@ func RegisterMiddleware(r *gin.Engine) {
 
 // region 自定义中间件
 
+
+
 /** 检测应用是否已安装 **/
 func checkAppInstall(c *gin.Context) {
 	if app.Installed {
@@ -211,7 +215,7 @@ func checkAppInstall(c *gin.Context) {
 		return
 	}
 	jsonResp := utils.JsonResponse{}
-	data := jsonResp.Failure(utils.AppNotInstall, "应用未安装")
+	data := jsonResp.Failure(utils.AppNotInstall, i18n.T(c, "app_not_installed"))
 	c.String(http.StatusOK, data)
 	c.Abort()
 }
@@ -235,7 +239,7 @@ func ipAuth(c *gin.Context) {
 	}
 	logger.Warnf("非法IP访问-%s", clientIp)
 	jsonResp := utils.JsonResponse{}
-	data := jsonResp.Failure(utils.UnauthorizedError, "您无权限访问")
+	data := jsonResp.Failure(utils.UnauthorizedError, i18n.T(c, "unauthorized"))
 	c.String(http.StatusOK, data)
 	c.Abort()
 }
@@ -272,7 +276,7 @@ func userAuth(c *gin.Context) {
 		}
 	}
 	jsonResp := utils.JsonResponse{}
-	data := jsonResp.Failure(utils.AuthError, "认证失败")
+	data := jsonResp.Failure(utils.AuthError, i18n.T(c, "auth_failed"))
 	c.String(http.StatusOK, data)
 	c.Abort()
 }
@@ -323,7 +327,7 @@ func urlAuth(c *gin.Context) {
 	}
 
 	jsonResp := utils.JsonResponse{}
-	data := jsonResp.Failure(utils.UnauthorizedError, "您无权限访问")
+	data := jsonResp.Failure(utils.UnauthorizedError, i18n.T(c, "unauthorized"))
 	c.String(http.StatusOK, data)
 	c.Abort()
 }
@@ -342,7 +346,7 @@ func apiAuth(c *gin.Context) {
 	apiSecret := strings.TrimSpace(app.Setting.ApiSecret)
 	json := utils.JsonResponse{}
 	if apiKey == "" || apiSecret == "" {
-		msg := json.CommonFailure("使用API前, 请先配置密钥")
+		msg := json.CommonFailure(i18n.T(c, "api_key_required"))
 		c.String(http.StatusOK, msg)
 		c.Abort()
 		return
@@ -350,20 +354,20 @@ func apiAuth(c *gin.Context) {
 	currentTimestamp := time.Now().Unix()
 	timeParam, err := strconv.ParseInt(c.Query("time"), 10, 64)
 	if err != nil || timeParam <= 0 {
-		msg := json.CommonFailure("参数time不能为空")
+		msg := json.CommonFailure(i18n.T(c, "param_time_required"))
 		c.String(http.StatusOK, msg)
 		c.Abort()
 		return
 	}
 	if timeParam < (currentTimestamp - 1800) {
-		msg := json.CommonFailure("time无效")
+		msg := json.CommonFailure(i18n.T(c, "param_time_invalid"))
 		c.String(http.StatusOK, msg)
 		c.Abort()
 		return
 	}
 	sign := strings.TrimSpace(c.Query("sign"))
 	if sign == "" {
-		msg := json.CommonFailure("参数sign不能为空")
+		msg := json.CommonFailure(i18n.T(c, "param_sign_required"))
 		c.String(http.StatusOK, msg)
 		c.Abort()
 		return
@@ -371,7 +375,7 @@ func apiAuth(c *gin.Context) {
 	raw := apiKey + strconv.FormatInt(timeParam, 10) + strings.TrimSpace(c.Request.URL.Path) + apiSecret
 	realSign := utils.Md5(raw)
 	if sign != realSign {
-		msg := json.CommonFailure("签名验证失败")
+		msg := json.CommonFailure(i18n.T(c, "sign_verify_failed"))
 		c.String(http.StatusOK, msg)
 		c.Abort()
 		return

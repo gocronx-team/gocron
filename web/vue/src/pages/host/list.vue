@@ -3,23 +3,23 @@
     <el-main>
       <el-form :inline="true" >
         <el-row>
-          <el-form-item label="节点ID">
+          <el-form-item label="ID">
             <el-input v-model.trim="searchParams.id"></el-input>
           </el-form-item>
-          <el-form-item label="主机名">
+          <el-form-item :label="t('host.name')">
             <el-input v-model.trim="searchParams.name"></el-input>
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" @click="search()">搜索</el-button>
+            <el-button type="primary" @click="search()">{{ t('common.search') }}</el-button>
           </el-form-item>
         </el-row>
       </el-form>
       <el-row type="flex" justify="end">
         <el-col :span="2">
-          <el-button type="primary" v-if="isAdmin"  @click="toEdit(null)">新增</el-button>
+          <el-button type="primary" v-if="isAdmin"  @click="toEdit(null)">{{ t('common.add') }}</el-button>
         </el-col>
         <el-col :span="2">
-          <el-button type="info" @click="refresh">刷新</el-button>
+          <el-button type="info" @click="refresh">{{ t('common.refresh') }}</el-button>
         </el-col>
       </el-row>
       <el-pagination
@@ -38,37 +38,34 @@
         style="width: 100%">
         <el-table-column
           prop="id"
-          label="节点ID">
+          label="ID">
         </el-table-column>
         <el-table-column
           prop="alias"
-          label="节点名称">
+          :label="t('host.alias')">
         </el-table-column>
         <el-table-column
           prop="name"
-          label="主机名">
+          :label="t('host.name')">
         </el-table-column>
         <el-table-column
           prop="port"
-          label="端口">
+          :label="t('host.port')">
         </el-table-column>
-        <el-table-column label="查看任务">
+        <el-table-column :label="t('task.viewLog')">
           <template #default="scope">
-            <el-button type="success" @click="toTasks(scope.row)">查看任务</el-button>
+            <el-button type="success" @click="toTasks(scope.row)">{{ t('task.list') }}</el-button>
           </template>
         </el-table-column>
         <el-table-column
           prop="remark"
-          label="备注">
+          :label="t('host.remark')">
         </el-table-column>
-        <el-table-column label="操作" width="300" v-if="this.isAdmin">
+        <el-table-column :label="t('common.operation')" :width="locale === 'zh-CN' ? 260 : 300" v-if="this.isAdmin">
           <template #default="scope">
-            <el-row>
-              <el-button type="primary" @click="toEdit(scope.row)">编辑</el-button>
-              <el-button type="info" @click="ping(scope.row)">测试连接</el-button>
-              <el-button type="danger" @click="remove(scope.row)">删除</el-button>
-            </el-row>
-            <br>
+            <el-button type="primary" size="small" @click="toEdit(scope.row)">{{ t('common.edit') }}</el-button>
+            <el-button type="info" size="small" @click="ping(scope.row)">{{ t('system.testSend') }}</el-button>
+            <el-button type="danger" size="small" @click="remove(scope.row)">{{ t('common.delete') }}</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -77,12 +74,17 @@
 </template>
 
 <script>
+import { useI18n } from 'vue-i18n'
 import { ElMessageBox } from 'element-plus'
 import hostService from '../../api/host'
 import { useUserStore } from '../../stores/user'
 
 export default {
   name: 'host-list',
+  setup() {
+    const { t, locale } = useI18n()
+    return { t, locale }
+  },
   data () {
     const userStore = useUserStore()
     return {
@@ -120,9 +122,9 @@ export default {
       })
     },
     remove (item) {
-      ElMessageBox.confirm('确定删除此节点?', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
+      ElMessageBox.confirm(this.t('message.confirmDeleteNode'), this.t('common.tip'), {
+        confirmButtonText: this.t('common.confirm'),
+        cancelButtonText: this.t('common.cancel'),
         type: 'warning',
         center: true
       }).then(() => {
@@ -131,7 +133,7 @@ export default {
     },
     ping (item) {
       hostService.ping(item.id, () => {
-        this.$message.success('连接成功')
+        this.$message.success(this.t('message.connectionSuccess'))
       })
     },
     toEdit (item) {
@@ -145,7 +147,7 @@ export default {
     },
     refresh () {
       this.search(() => {
-        this.$message.success('刷新成功')
+        this.$message.success(this.t('message.refreshSuccess'))
       })
     },
     toTasks (item) {

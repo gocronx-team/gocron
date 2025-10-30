@@ -3,10 +3,10 @@
     <el-main>
       <el-row type="flex" justify="end">
         <el-col :span="2">
-          <el-button type="primary"  @click="toEdit(null)">新增</el-button>
+          <el-button type="primary"  @click="toEdit(null)">{{ t('common.add') }}</el-button>
         </el-col>
         <el-col :span="2">
-          <el-button type="info" @click="refresh">刷新</el-button>
+          <el-button type="info" @click="refresh">{{ t('common.refresh') }}</el-button>
         </el-col>
       </el-row>
       <el-pagination
@@ -25,23 +25,23 @@
         style="width: 100%">
         <el-table-column
           prop="id"
-          label="用户id">
+          label="ID">
         </el-table-column>
         <el-table-column
           prop="name"
-          label="用户名">
+          :label="t('user.username')">
         </el-table-column>
         <el-table-column
           prop="email"
-          label="邮箱">
+          :label="t('user.email')">
         </el-table-column>
         <el-table-column
           prop="is_admin"
           :formatter="formatRole"
-          label="角色">
+          :label="t('user.role')">
         </el-table-column>
         <el-table-column
-          label="状态">
+          :label="t('common.status')">
           <template #default="scope">
             <el-switch
               v-model="scope.row.status"
@@ -53,14 +53,11 @@
             </el-switch>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="300" v-if="this.isAdmin">
+        <el-table-column :label="t('common.operation')" :width="locale === 'zh-CN' ? 280 : 340" v-if="this.isAdmin">
           <template #default="scope">
-            <el-row>
-              <el-button type="primary" @click="toEdit(scope.row)">编辑</el-button>
-              <el-button type="success" @click="editPassword(scope.row)">修改密码</el-button>
-              <el-button type="danger" @click="remove(scope.row)">删除</el-button>
-            </el-row>
-            <br>
+            <el-button type="primary" size="small" @click="toEdit(scope.row)">{{ t('common.edit') }}</el-button>
+            <el-button type="success" size="small" @click="editPassword(scope.row)">{{ t('user.changePassword') }}</el-button>
+            <el-button type="danger" size="small" @click="remove(scope.row)">{{ t('common.delete') }}</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -69,12 +66,17 @@
 </template>
 
 <script>
+import { useI18n } from 'vue-i18n'
 import { ElMessageBox } from 'element-plus'
 import userService from '../../api/user'
 import { useUserStore } from '../../stores/user'
 
 export default {
   name: 'user-list',
+  setup() {
+    const { t, locale } = useI18n()
+    return { t, locale }
+  },
   data () {
     const userStore = useUserStore()
     return {
@@ -100,9 +102,9 @@ export default {
     },
     formatRole (row, col) {
       if (row[col.property] === 1) {
-        return '管理员'
+        return this.t('user.admin')
       }
-      return '普通用户'
+      return this.t('user.normalUser')
     },
     changePage (page) {
       this.searchParams.page = page
@@ -122,9 +124,9 @@ export default {
       })
     },
     remove (item) {
-      ElMessageBox.confirm('确定删除此用户?', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
+      ElMessageBox.confirm(this.t('message.confirmDeleteUser'), this.t('common.tip'), {
+        confirmButtonText: this.t('common.confirm'),
+        cancelButtonText: this.t('common.cancel'),
         type: 'warning',
         center: true
       }).then(() => {
@@ -144,7 +146,7 @@ export default {
     },
     refresh () {
       this.search(() => {
-        this.$message.success('刷新成功')
+        this.$message.success(this.t('message.refreshSuccess'))
       })
     },
     editPassword (item) {

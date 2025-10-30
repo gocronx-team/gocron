@@ -3,19 +3,19 @@
   <task-sidebar></task-sidebar>
   <el-main>
     <el-form :inline="true">
-      <el-form-item label="任务ID">
+      <el-form-item :label="t('task.id')">
         <el-input v-model.trim="searchParams.id" style="width: 180px;"></el-input>
       </el-form-item>
-      <el-form-item label="任务名称">
+      <el-form-item :label="t('task.name')">
         <el-input v-model.trim="searchParams.name" style="width: 180px;"></el-input>
       </el-form-item>
-      <el-form-item label="标签">
+      <el-form-item :label="t('task.tag')">
         <el-input v-model.trim="searchParams.tag" style="width: 180px;"></el-input>
       </el-form-item>
       <br>
-      <el-form-item label="执行方式">
+      <el-form-item :label="t('task.protocol')">
         <el-select v-model.trim="searchParams.protocol" style="width: 180px;">
-          <el-option label="全部" value=""></el-option>
+          <el-option :label="t('select')" value=""></el-option>
           <el-option
             v-for="item in protocolList"
             :key="item.value"
@@ -24,9 +24,9 @@
           </el-option>
         </el-select>
       </el-form-item>
-      <el-form-item label="任务节点">
+      <el-form-item :label="t('task.taskNode')">
         <el-select v-model.trim="searchParams.host_id" style="width: 180px;">
-          <el-option label="全部" value=""></el-option>
+          <el-option :label="t('select')" value=""></el-option>
           <el-option
             v-for="item in hosts"
             :key="item.id"
@@ -35,9 +35,9 @@
           </el-option>
         </el-select>
       </el-form-item>
-      <el-form-item label="状态">
+      <el-form-item :label="t('common.status')">
         <el-select v-model.trim="searchParams.status" style="width: 180px;">
-          <el-option label="全部" value=""></el-option>
+          <el-option :label="t('select')" value=""></el-option>
           <el-option
             v-for="item in statusList"
             :key="item.value"
@@ -47,17 +47,17 @@
         </el-select>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" @click="search()">搜索</el-button>
+        <el-button type="primary" @click="search()">{{ t('common.search') }}</el-button>
       </el-form-item>
     </el-form>
     <el-row type="flex" justify="end" style="margin-bottom: 10px;">
       <el-col :span="24" style="text-align: right;">
-        <span v-if="isAdmin && selectedTasks.length > 0" style="margin-right: 10px; color: #909399;">已选择 {{ selectedTasks.length }} 个任务</span>
-        <el-button v-if="isAdmin" type="success" size="default" @click="batchEnable" :disabled="selectedTasks.length === 0">批量启用</el-button>
-        <el-button v-if="isAdmin" type="warning" size="default" @click="batchDisable" :disabled="selectedTasks.length === 0">批量禁用</el-button>
-        <el-button v-if="isAdmin" type="danger" size="default" @click="batchRemove" :disabled="selectedTasks.length === 0">批量删除</el-button>
-        <el-button type="primary" @click="toEdit(null)" v-if="isAdmin">新增</el-button>
-        <el-button type="info" @click="refresh">刷新</el-button>
+        <span v-if="isAdmin && selectedTasks.length > 0" style="margin-right: 10px; color: #909399;">{{ t('message.selected') }} {{ selectedTasks.length }} {{ t('message.tasks') }}</span>
+        <el-button v-if="isAdmin" type="success" size="default" @click="batchEnable" :disabled="selectedTasks.length === 0">{{ t('message.batchEnable') }}</el-button>
+        <el-button v-if="isAdmin" type="warning" size="default" @click="batchDisable" :disabled="selectedTasks.length === 0">{{ t('message.batchDisable') }}</el-button>
+        <el-button v-if="isAdmin" type="danger" size="default" @click="batchRemove" :disabled="selectedTasks.length === 0">{{ t('message.batchDelete') }}</el-button>
+        <el-button type="primary" @click="toEdit(null)" v-if="isAdmin">{{ t('common.add') }}</el-button>
+        <el-button type="info" @click="refresh">{{ t('common.refresh') }}</el-button>
       </el-col>
     </el-row>
     <el-pagination
@@ -79,33 +79,33 @@
       <el-table-column type="expand">
         <template #default="scope">
           <el-form label-position="left" inline class="demo-table-expand">
-            <el-form-item label="任务创建时间:">
+            <el-form-item :label="t('message.taskCreatedTime') + ':'">
               {{ $filters.formatTime(scope.row.created) }} <br>
             </el-form-item>
-            <el-form-item label="任务类型:">
+            <el-form-item :label="t('message.taskType') + ':'">
               {{ formatLevel(scope.row.level) }} <br>
             </el-form-item>
-            <el-form-item label="单实例运行:">
+            <el-form-item :label="t('message.singleInstanceRun') + ':'">
                {{ formatMulti(scope.row.multi) }} <br>
             </el-form-item>
-            <el-form-item label="超时时间:">
+            <el-form-item :label="t('message.timeoutTime') + ':'">
               {{ formatTimeout(scope.row.timeout) }} <br>
             </el-form-item>
-            <el-form-item label="重试次数:">
+            <el-form-item :label="t('message.retryCount') + ':'">
               {{scope.row.retry_times}} <br>
             </el-form-item>
-            <el-form-item label="重试间隔:">
+            <el-form-item :label="t('message.retryIntervalTime') + ':'">
               {{ formatRetryTimesInterval(scope.row.retry_interval) }}
             </el-form-item> <br>
-            <el-form-item label="任务节点">
+            <el-form-item :label="t('message.taskNodeLabel')">
               <div v-for="item in scope.row.hosts" :key="item.host_id">
                 {{item.alias}} - {{item.name}}:{{item.port}} <br>
               </div>
             </el-form-item> <br>
-            <el-form-item label="命令:" style="width: 100%">
+            <el-form-item :label="t('message.commandLabel') + ':'" style="width: 100%">
               {{scope.row.command}}
             </el-form-item> <br>
-            <el-form-item label="备注" style="width: 100%">
+            <el-form-item :label="t('message.remarkLabel')" style="width: 100%">
               {{scope.row.remark}}
             </el-form-item>
           </el-form>
@@ -113,23 +113,23 @@
       </el-table-column>
       <el-table-column
         prop="id"
-        label="任务ID">
+        :label="t('task.id')">
       </el-table-column>
       <el-table-column
         prop="name"
-        label="任务名称"
+        :label="t('task.name')"
       width="150">
       </el-table-column>
       <el-table-column
         prop="tag"
-        label="标签">
+        :label="t('task.tag')">
       </el-table-column>
       <el-table-column
         prop="spec"
-        label="cron表达式"
+        :label="t('task.cronExpression')"
       width="120">
       </el-table-column>
-      <el-table-column label="下次执行时间" width="160">
+      <el-table-column :label="t('task.nextRunTime')" width="160">
         <template #default="scope">
           {{ $filters.formatTime(scope.row.next_run_time) }}
         </template>
@@ -137,10 +137,10 @@
       <el-table-column
         prop="protocol"
         :formatter="formatProtocol"
-        label="执行方式">
+        :label="t('task.protocol')">
       </el-table-column>
       <el-table-column
-        label="状态" v-if="isAdmin">
+        :label="t('common.status')" v-if="isAdmin">
           <template #default="scope">
             <el-switch
               v-if="scope.row.level === 1"
@@ -153,7 +153,7 @@
             </el-switch>
           </template>
       </el-table-column>
-      <el-table-column label="状态" v-else>
+      <el-table-column :label="t('common.status')" v-else>
         <template #default="scope">
           <el-switch
             v-if="scope.row.level === 1"
@@ -166,17 +166,18 @@
           </el-switch>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="220" v-if="isAdmin">
+      <el-table-column :label="t('common.operation')" :width="locale === 'zh-CN' ? 240 : 280" v-if="isAdmin">
         <template #default="scope">
-          <el-row>
-            <el-button type="primary" @click="toEdit(scope.row)">编辑</el-button>
-            <el-button type="success" @click="runTask(scope.row)">手动执行</el-button>
-          </el-row>
-          <br>
-          <el-row>
-            <el-button type="info" @click="jumpToLog(scope.row)">查看日志</el-button>
-            <el-button type="danger" @click="remove(scope.row)">删除</el-button>
-          </el-row>
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <div style="display: flex; gap: 4px;">
+              <el-button type="primary" size="small" @click="toEdit(scope.row)" style="flex: 1;">{{ t('common.edit') }}</el-button>
+              <el-button type="success" size="small" @click="runTask(scope.row)" style="flex: 1;">{{ t('task.manualRun') }}</el-button>
+            </div>
+            <div style="display: flex; gap: 4px;">
+              <el-button type="info" size="small" @click="jumpToLog(scope.row)" style="flex: 1;">{{ t('task.viewLog') }}</el-button>
+              <el-button type="danger" size="small" @click="remove(scope.row)" style="flex: 1;">{{ t('common.delete') }}</el-button>
+            </div>
+          </div>
         </template>
       </el-table-column>
     </el-table>
@@ -185,6 +186,7 @@
 </template>
 
 <script>
+import { useI18n } from 'vue-i18n'
 import taskSidebar from './sidebar.vue'
 import taskService from '../../api/task'
 import { useUserStore } from '../../stores/user'
@@ -192,6 +194,10 @@ import { ElMessageBox } from 'element-plus'
 
 export default {
   name: 'task-list',
+  setup() {
+    const { t, locale } = useI18n()
+    return { t, locale }
+  },
   data () {
     const userStore = useUserStore()
     return {
@@ -221,16 +227,29 @@ export default {
           label: 'shell'
         }
       ],
-      statusList: [
+      statusList: []
+    }
+  },
+  computed: {
+    computedStatusList() {
+      return [
         {
           value: '2',
-          label: '激活'
+          label: this.t('message.activated')
         },
         {
           value: '1',
-          label: '停止'
+          label: this.t('message.stopped')
         }
       ]
+    }
+  },
+  watch: {
+    computedStatusList: {
+      handler(newVal) {
+        this.statusList = newVal
+      },
+      immediate: true
     }
   },
   components: {taskSidebar},
@@ -251,16 +270,16 @@ export default {
   },
   methods: {
     formatLevel (value) {
-      return value === 1 ? '主任务' : '子任务'
+      return value === 1 ? this.t('task.mainTask') : this.t('task.childTask')
     },
     formatTimeout (value) {
-      return value > 0 ? value + '秒' : '不限制'
+      return value > 0 ? value + this.t('message.seconds') : this.t('message.noLimit')
     },
     formatRetryTimesInterval (value) {
-      return value > 0 ? value + '秒' : '系统默认'
+      return value > 0 ? value + this.t('message.seconds') : this.t('message.systemDefault')
     },
     formatMulti (value) {
-      return value > 0 ? '否' : '是'
+      return value > 0 ? this.t('common.no') : this.t('common.yes')
     },
     changeStatus (item) {
       if (item.status) {
@@ -302,27 +321,27 @@ export default {
     },
     runTask (item) {
       ElMessageBox.confirm(
-        `确定要手动执行任务 "${item.name}" 吗？`,
-        '手动执行任务',
+        this.t('message.confirmRunTask', { name: item.name }),
+        this.t('message.manualRunTask'),
         {
-          confirmButtonText: '确定执行',
-          cancelButtonText: '取消',
+          confirmButtonText: this.t('message.confirmExecute'),
+          cancelButtonText: this.t('common.cancel'),
           type: 'warning',
           center: true
         }
       ).then(() => {
         taskService.run(item.id, () => {
-          this.$message.success('任务已开始执行')
+          this.$message.success(this.t('message.taskStarted'))
         })
       }).catch(() => {})
     },
     remove (item) {
       ElMessageBox.confirm(
-        `确定要删除任务 "${item.name}" 吗？`,
-        '提示',
+        this.t('message.confirmDeleteTask', { name: item.name }),
+        this.t('message.confirmDeleteTitle'),
         {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
+          confirmButtonText: this.t('common.confirm'),
+          cancelButtonText: this.t('common.cancel'),
           type: 'warning'
         }
       ).then(() => {
@@ -336,7 +355,7 @@ export default {
     },
     refresh () {
       this.search(() => {
-        this.$message.success('刷新成功')
+        this.$message.success(this.t('message.refreshSuccess'))
       })
     },
     toEdit (item) {
@@ -353,21 +372,21 @@ export default {
     },
     batchEnable () {
       if (this.selectedTasks.length === 0) {
-        this.$message.warning('请选择要启用的任务')
+        this.$message.warning(this.t('message.pleaseSelectTask', { action: this.t('task.enable') }))
         return
       }
       ElMessageBox.confirm(
-        `确定要启用选中的 ${this.selectedTasks.length} 个任务吗？`,
-        '批量启用任务',
+        this.t('message.confirmBatchEnable', { count: this.selectedTasks.length }),
+        this.t('message.batchEnable'),
         {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
+          confirmButtonText: this.t('common.confirm'),
+          cancelButtonText: this.t('common.cancel'),
           type: 'warning'
         }
       ).then(() => {
         const ids = this.selectedTasks.map(task => task.id)
         taskService.batchEnable(ids, () => {
-          this.$message.success('批量启用成功')
+          this.$message.success(this.t('message.batchEnableSuccess'))
           this.selectedTasks = []
           this.search()
         })
@@ -375,21 +394,21 @@ export default {
     },
     batchDisable () {
       if (this.selectedTasks.length === 0) {
-        this.$message.warning('请选择要禁用的任务')
+        this.$message.warning(this.t('message.pleaseSelectTask', { action: this.t('task.disable') }))
         return
       }
       ElMessageBox.confirm(
-        `确定要禁用选中的 ${this.selectedTasks.length} 个任务吗？`,
-        '批量禁用任务',
+        this.t('message.confirmBatchDisable', { count: this.selectedTasks.length }),
+        this.t('message.batchDisable'),
         {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
+          confirmButtonText: this.t('common.confirm'),
+          cancelButtonText: this.t('common.cancel'),
           type: 'warning'
         }
       ).then(() => {
         const ids = this.selectedTasks.map(task => task.id)
         taskService.batchDisable(ids, () => {
-          this.$message.success('批量禁用成功')
+          this.$message.success(this.t('message.batchDisableSuccess'))
           this.selectedTasks = []
           this.search()
         })
@@ -397,21 +416,21 @@ export default {
     },
     batchRemove () {
       if (this.selectedTasks.length === 0) {
-        this.$message.warning('请选择要删除的任务')
+        this.$message.warning(this.t('message.pleaseSelectTask', { action: this.t('common.delete') }))
         return
       }
       ElMessageBox.confirm(
-        `确定要删除选中的 ${this.selectedTasks.length} 个任务吗？此操作不可恢复！`,
-        '批量删除任务',
+        this.t('message.confirmBatchDelete', { count: this.selectedTasks.length }),
+        this.t('message.batchDelete'),
         {
-          confirmButtonText: '确定删除',
-          cancelButtonText: '取消',
+          confirmButtonText: this.t('message.confirmDeleteButton'),
+          cancelButtonText: this.t('common.cancel'),
           type: 'error'
         }
       ).then(() => {
         const ids = this.selectedTasks.map(task => task.id)
         taskService.batchRemove(ids, () => {
-          this.$message.success('批量删除成功')
+          this.$message.success(this.t('message.batchDeleteSuccess'))
           this.selectedTasks = []
           this.search()
         })
@@ -432,5 +451,8 @@ export default {
     margin-right: 0;
     margin-bottom: 0;
     width: 50%;
+  }
+  .el-main {
+    min-height: calc(100vh - 60px);
   }
 </style>

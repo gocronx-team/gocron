@@ -195,14 +195,14 @@ package_gocron_node() {
 }
  
 # p 平台 linux darwin windows
-# a 架构 386 amd64
+# a 架构 386 amd64 arm64
 # v 版本号  默认取git最新tag
 while getopts "p:a:v:" OPT;
 do
     case ${OPT} in
-    p) IPS=',' read -r -a INPUT_OS <<< "${OPTARG}"
+    p) IFS=',' read -r -a INPUT_OS <<< "${OPTARG}"
     ;;
-    a) IPS=',' read -r -a INPUT_ARCH <<< "${OPTARG}"
+    a) IFS=',' read -r -a INPUT_ARCH <<< "${OPTARG}"
     ;;
     v) VERSION=$OPTARG
     ;;

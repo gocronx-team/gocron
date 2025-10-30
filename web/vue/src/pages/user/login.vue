@@ -1,48 +1,51 @@
 <template>
-  <el-dialog
-    title="用户登录"
-    v-model="dialogVisible"
-    :close-on-click-modal="false"
-    :show-close="false"
-    :close-on-press-escape="false"
-    width="450px">
-    <el-alert
-      v-if="errorMessage"
-      :title="errorMessage"
-      type="error"
-      :closable="false"
-      style="margin-bottom: 20px;"
-    />
-    <el-form ref="formRef" :model="form" label-width="80px" :rules="formRules">
-      <el-form-item label="用户名" prop="username">
-        <el-input v-model.trim="form.username" placeholder="请输入用户名或邮箱" />
-      </el-form-item>
-      <el-form-item label="密码" prop="password">
-        <el-input v-model.trim="form.password" type="password" placeholder="请输入密码" @keyup.enter="submit" />
-      </el-form-item>
-      <el-form-item label="验证码" prop="twoFactorCode" v-if="require2FA">
-        <el-input v-model.trim="form.twoFactorCode" placeholder="请输入6位验证码" maxlength="6" @keyup.enter="submit" />
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" @click="submit" :loading="loading" style="width: 100%;">登录</el-button>
-      </el-form-item>
-    </el-form>
-  </el-dialog>
+  <div class="login-container">
+    <div class="login-box">
+      <div class="language-switcher">
+        <LanguageSwitcher />
+      </div>
+      <h2 class="login-title">{{ t('login.title') }}</h2>
+      <el-alert
+        v-if="errorMessage"
+        :title="errorMessage"
+        type="error"
+        :closable="false"
+        style="margin-bottom: 20px;"
+      />
+      <el-form ref="formRef" :model="form" label-width="120px" :rules="formRules">
+        <el-form-item :label="t('login.username')" prop="username">
+          <el-input v-model.trim="form.username" :placeholder="t('login.usernamePlaceholder')" size="large" />
+        </el-form-item>
+        <el-form-item :label="t('login.password')" prop="password">
+          <el-input v-model.trim="form.password" type="password" :placeholder="t('login.passwordPlaceholder')" @keyup.enter="submit" size="large" />
+        </el-form-item>
+        <el-form-item :label="t('login.verifyCode')" prop="twoFactorCode" v-if="require2FA">
+          <el-input v-model.trim="form.twoFactorCode" :placeholder="t('login.verifyCodePlaceholder')" maxlength="6" @keyup.enter="submit" size="large" />
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="submit" :loading="loading" class="login-button" size="large">{{ t('login.login') }}</el-button>
+        </el-form-item>
+      </el-form>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useUserStore } from '../../stores/user'
 import { useLoading } from '../../composables/useLoading'
 import userService from '../../api/user'
+import LanguageSwitcher from '../../components/common/LanguageSwitcher.vue'
+
+const { t, locale } = useI18n()
 
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 const { loading, withLoading } = useLoading()
 
-const dialogVisible = ref(true)
 const require2FA = ref(false)
 const formRef = ref()
 const errorMessage = ref('')
@@ -53,11 +56,11 @@ const form = reactive({
   twoFactorCode: ''
 })
 
-const formRules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
-  twoFactorCode: [{ required: true, message: '请输入验证码', trigger: 'blur' }]
-}
+const formRules = computed(() => ({
+  username: [{ required: true, message: t('login.usernameRequired'), trigger: 'blur' }],
+  password: [{ required: true, message: t('login.passwordRequired'), trigger: 'blur' }],
+  twoFactorCode: [{ required: true, message: t('login.verifyCodeRequired'), trigger: 'blur' }]
+}))
 
 const submit = async () => {
   if (!formRef.value) return
@@ -68,7 +71,7 @@ const submit = async () => {
     if (!valid) return
     
     if (require2FA.value && !form.twoFactorCode) {
-      errorMessage.value = '请输入验证码'
+      errorMessage.value = t('login.verifyCodeRequired')
       return
     }
     
@@ -107,3 +110,80 @@ const submit = async () => {
   })
 }
 </script>
+
+
+<style scoped>
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.login-container::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 600px;
+  height: 600px;
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: 50%;
+  filter: blur(80px);
+}
+
+.login-container::after {
+  content: '';
+  position: absolute;
+  bottom: -30%;
+  left: -10%;
+  width: 500px;
+  height: 500px;
+  background: rgba(168, 85, 247, 0.08);
+  border-radius: 50%;
+  filter: blur(80px);
+}
+
+.login-box {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 48px 40px;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  max-width: 420px;
+  position: relative;
+  z-index: 1;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+.language-switcher {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+}
+
+.login-title {
+  text-align: center;
+  margin: 0 0 32px 0;
+  font-size: 26px;
+  color: #1f2937;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+}
+
+.el-button--large {
+  height: 40px;
+  line-height: 40px;
+  padding: 0 15px;
+}
+
+.login-button {
+  width: calc(100% + 120px);
+  margin-left: -90px;
+  margin-right: -20px;
+}
+</style>

@@ -5,6 +5,7 @@ import { ElMessageBox, ElMessage } from 'element-plus'
 import 'element-plus/dist/index.css'
 import App from './App.vue'
 import router from './router'
+import i18n from './locales'
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -12,6 +13,7 @@ pinia.use(piniaPluginPersistedstate)
 
 app.use(pinia)
 app.use(router)
+app.use(i18n)
 
 app.directive('focus', {
   mounted(el) {
@@ -20,13 +22,17 @@ app.directive('focus', {
 })
 
 app.config.globalProperties.$appConfirm = function (callback) {
-  ElMessageBox.confirm('确定执行此操作?', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning',
-    center: true,
-    customClass: 'custom-message-box'
-  }).then(() => {
+  ElMessageBox.confirm(
+    i18n.global.t('common.confirmOperation'),
+    i18n.global.t('common.tip'),
+    {
+      confirmButtonText: i18n.global.t('common.confirm'),
+      cancelButtonText: i18n.global.t('common.cancel'),
+      type: 'warning',
+      center: true,
+      customClass: 'custom-message-box'
+    }
+  ).then(() => {
     callback()
   }).catch(() => {})
 }

@@ -7,23 +7,23 @@
       text-color="#fff"
       active-text-color="#ffd04b"
       router>
-      <el-menu-item index="/task">任务管理</el-menu-item>
-      <el-menu-item index="/host">任务节点</el-menu-item>
-      <el-menu-item v-if="userStore.isAdmin" index="/user">用户管理</el-menu-item>
-      <el-menu-item v-if="userStore.isAdmin" index="/system">系统管理</el-menu-item>
+      <el-menu-item index="/task">{{ t('nav.taskManage') }}</el-menu-item>
+      <el-menu-item index="/host">{{ t('nav.taskNode') }}</el-menu-item>
+      <el-menu-item v-if="userStore.isAdmin" index="/user">{{ t('nav.userManage') }}</el-menu-item>
+      <el-menu-item v-if="userStore.isAdmin" index="/system">{{ t('nav.systemManage') }}</el-menu-item>
     </el-menu>
     <div v-if="userStore.isLogin" class="user-menu">
       <el-dropdown trigger="click">
         <span class="user-info">
           <el-icon><User /></el-icon>
-          <span>{{ userStore.username || '用户' }}</span>
+          <span>{{ userStore.username }}</span>
           <el-icon><ArrowDown /></el-icon>
         </span>
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item @click="$router.push('/user/edit-my-password')">修改密码</el-dropdown-item>
-            <el-dropdown-item @click="$router.push('/user/two-factor')">双因素认证</el-dropdown-item>
-            <el-dropdown-item divided @click="logout">退出</el-dropdown-item>
+            <el-dropdown-item @click="$router.push('/user/edit-my-password')">{{ t('nav.changePassword') }}</el-dropdown-item>
+            <el-dropdown-item @click="$router.push('/user/two-factor')">{{ t('nav.twoFactor') }}</el-dropdown-item>
+            <el-dropdown-item divided @click="logout">{{ t('nav.logout') }}</el-dropdown-item>
           </el-dropdown-menu>
         </template>
       </el-dropdown>
@@ -34,8 +34,11 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useUserStore } from '../../stores/user'
 import { ArrowDown, User } from '@element-plus/icons-vue'
+
+const { t } = useI18n()
 
 const route = useRoute()
 const router = useRouter()

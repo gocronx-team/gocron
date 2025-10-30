@@ -22,14 +22,14 @@
         </el-table-column>
         <el-table-column
           prop="username"
-          label="用户名">
+          :label="t('user.username')">
         </el-table-column>
         <el-table-column
           prop="ip"
-          label="登录IP">
+          :label="t('system.loginIp')">
         </el-table-column>
         <el-table-column
-          label="登录时间"
+          :label="t('system.loginTime')"
           width="">
           <template #default="scope">
             {{ $filters.formatTime(scope.row.created) }}
@@ -41,10 +41,15 @@
 </template>
 
 <script>
+import { useI18n } from 'vue-i18n'
 import systemSidebar from './sidebar.vue'
 import systemService from '../../api/system'
 export default {
   name: 'login-log',
+  setup() {
+    const { t } = useI18n()
+    return { t }
+  },
   data () {
     return {
       logs: [],
