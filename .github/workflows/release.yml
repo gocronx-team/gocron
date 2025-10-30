@@ -51,7 +51,7 @@ jobs:
     - name: Build packages for all platforms
       run: |
         chmod +x package.sh
-        bash ./package.sh -p "linux,darwin,windows" -a "amd64"
+        bash ./package.sh -p "linux,darwin,windows" -a "amd64,arm64"
 
     - name: Generate release notes
       id: release_notes
@@ -79,30 +79,7 @@ jobs:
           echo "🎉 Initial release of gocron - A lightweight cron task management system" >> release_notes.md
         fi
         
-        echo "" >> release_notes.md
-        echo "## 📦 Downloads" >> release_notes.md
-        echo "" >> release_notes.md
-        echo "Choose the appropriate package for your platform:" >> release_notes.md
-        echo "" >> release_notes.md
-        echo "### gocron (Web Server)" >> release_notes.md
-        echo "- **Linux AMD64**: \`gocron-${CURRENT_TAG}-linux-amd64.tar.gz\`" >> release_notes.md
-        echo "- **macOS AMD64**: \`gocron-${CURRENT_TAG}-darwin-amd64.tar.gz\`" >> release_notes.md
-        echo "- **Windows AMD64**: \`gocron-${CURRENT_TAG}-windows-amd64.zip\`" >> release_notes.md
-        echo "" >> release_notes.md
-        echo "### gocron-node (Task Agent)" >> release_notes.md
-        echo "- **Linux AMD64**: \`gocron-node-${CURRENT_TAG}-linux-amd64.tar.gz\`" >> release_notes.md
-        echo "- **macOS AMD64**: \`gocron-node-${CURRENT_TAG}-darwin-amd64.tar.gz\`" >> release_notes.md
-        echo "- **Windows AMD64**: \`gocron-node-${CURRENT_TAG}-windows-amd64.zip\`" >> release_notes.md
-        echo "" >> release_notes.md
-        echo "## 🚀 Quick Start" >> release_notes.md
-        echo "" >> release_notes.md
-        echo "1. Download the appropriate packages for your platform" >> release_notes.md
-        echo "2. Extract the archives" >> release_notes.md
-        echo "3. Run \`./gocron web\` to start the web server" >> release_notes.md
-        echo "4. Run \`./gocron-node\` to start the task agent" >> release_notes.md
-        echo "5. Visit http://localhost:5920 to access the web interface" >> release_notes.md
-        echo "" >> release_notes.md
-        echo "For detailed installation and configuration instructions, please refer to the [README](https://github.com/gocronx-team/gocron/blob/master/README.md)." >> release_notes.md
+
 
     - name: Create Release
       run: |

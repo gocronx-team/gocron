@@ -57,7 +57,7 @@ jobs:
     - name: Build packages for all platforms
       run: |
         chmod +x package.sh
-        bash ./package.sh -p "linux,darwin,windows" -a "amd64" -v "${{ github.event.inputs.version }}"
+        bash ./package.sh -p "linux,darwin,windows" -a "amd64,arm64" -v "${{ github.event.inputs.version }}"
 
     - name: Generate release notes
       id: release_notes
@@ -74,19 +74,7 @@ jobs:
           echo "" >> release_notes.md
         fi
         
-        echo "## 📦 Downloads" >> release_notes.md
-        echo "" >> release_notes.md
-        echo "Choose the appropriate package for your platform:" >> release_notes.md
-        echo "" >> release_notes.md
-        echo "### gocron (Web Server)" >> release_notes.md
-        echo "- **Linux AMD64**: \`gocron-${VERSION}-linux-amd64.tar.gz\`" >> release_notes.md
-        echo "- **macOS AMD64**: \`gocron-${VERSION}-darwin-amd64.tar.gz\`" >> release_notes.md
-        echo "- **Windows AMD64**: \`gocron-${VERSION}-windows-amd64.zip\`" >> release_notes.md
-        echo "" >> release_notes.md
-        echo "### gocron-node (Task Agent)" >> release_notes.md
-        echo "- **Linux AMD64**: \`gocron-node-${VERSION}-linux-amd64.tar.gz\`" >> release_notes.md
-        echo "- **macOS AMD64**: \`gocron-node-${VERSION}-darwin-amd64.tar.gz\`" >> release_notes.md
-        echo "- **Windows AMD64**: \`gocron-node-${VERSION}-windows-amd64.zip\`" >> release_notes.md
+
 
     - name: Create Git Tag
       run: |
