@@ -13,16 +13,18 @@
 * 任务依赖配置
 * 多用户与权限控制
 * 双因素认证(2FA)
+* 国际化支持（中文/英文界面切换）
 * 任务类型
     * Shell任务 - 在任务节点上执行shell命令
     * HTTP任务 - 访问指定的URL地址
 * 任务执行日志查看
+* 日志自动清理（数据库日志和文件日志定时清理）
 * 任务执行结果通知（邮件、Slack、Webhook）
 
 ## 环境要求
 
 * Go 1.23+
-* MySQL 或 PostgreSQL
+* MySQL/PostgreSQL/SQLite
 * Node.js 18+ (前端开发)
 
 ## 快速开始
@@ -45,8 +47,8 @@ air
 
 # 5. 启动前端（另一个终端）
 cd web/vue
-npm install
-npm run dev
+yarn install
+yarn run dev
 ```
 
 访问 http://localhost:8080
@@ -90,14 +92,116 @@ gocron-node -enable-tls # 启用TLS
 * 后端：Gin + GORM + gRPC
 * 前端：Vue3 + Element Plus + Vite
 * 定时任务：Cron
-* 数据库：MySQL / PostgreSQL
+* 数据库：MySQL / PostgreSQL / SQLite
 
 ## 开发工具
 
-* `make` - 编译项目
-* `make run` - 编译并运行
+* `make build` - 编译项目（gocron + gocron-node）
+* `make run` - 编译并运行（同时启动后端和节点）
+* `make package` - 构建生产包
+* `make build-vue` - 构建前端
+* `make install-vue` - 安装前端依赖（yarn）
+* `make run-vue` - 启动前端开发服务器（yarn）
+* `make test` - 运行测试
+* `make clean` - 清理构建文件
 * `air` - 后端热更新
-* `npm run dev` - 前端热更新
+* `yarn run dev` - 前端热更新
+
+## 参与贡献
+
+我们非常欢迎社区的贡献！无论是bug修复、新功能开发、文档完善还是问题反馈，都是对项目的宝贵支持。
+
+### Git提交规范
+
+为了保持项目历史的清晰和一致性，请遵循以下提交信息格式：
+
+**基本格式**：
+```
+type(scope): subject
+
+body
+
+footer
+```
+
+**各部分详细说明**：
+- **type**: 提交类型（必填）- 如 feat、fix、docs 等
+- **scope**: 影响范围（可选）- 如 web、api、auth 等，用括号包围
+- **subject**: 简短描述（必填）- 一句话说明本次提交做了什么
+- **body**: 详细描述（可选）- 详细说明为什么做这个改动，如何实现的
+- **footer**: 脚注信息（可选）- 如关闭的issue编号、破坏性变更说明等
+
+**实际示例**：
+```
+feat(auth): 添加双因素认证功能
+
+为了提高系统安全性，实现了基于TOTP的双因素认证：
+- 支持Google Authenticator等认证应用
+- 提供二维码和手动输入两种设置方式
+- 完整的启用/禁用流程
+
+Closes #123
+```
+
+**Type类型**：
+- `feat`: 新功能
+- `fix`: 修复bug
+- `docs`: 文档更新
+- `style`: 代码格式调整（不影响功能）
+- `refactor`: 代码重构
+- `test`: 测试相关
+- `chore`: 构建过程或辅助工具的变动
+- `perf`: 性能优化
+- `ci`: CI/CD相关
+
+**Scope范围**（可选）：
+- `web`: 前端相关
+- `api`: 后端API相关
+- `node`: 任务节点相关
+- `auth`: 认证相关
+- `i18n`: 国际化相关
+- `log`: 日志相关
+- `db`: 数据库相关
+
+**示例**：
+```bash
+feat(auth): 添加双因素认证功能
+fix(web): 修复任务列表分页显示问题
+docs(readme): 更新安装说明文档
+refactor(api): 重构任务调度逻辑
+```
+
+### 如何参与
+
+1. **Fork项目** - 点击右上角的Fork按钮
+2. **创建分支** - `git checkout -b feature/your-feature`
+3. **提交代码** - 遵循上述提交规范
+4. **推送分支** - `git push origin feature/your-feature`
+5. **创建PR** - 在GitHub上创建Pull Request
+
+### 开发建议
+
+- 提交前请运行 `make test` 确保测试通过
+- 新功能请添加相应的测试用例
+- 重要功能请更新相关文档
+- 保持代码风格一致
+- 提交信息请使用中文或英文，保持简洁明了
+
+我们期待您的参与，让gocron变得更加完善！🚀
+
+## 项目来源与致谢
+
+这个项目是在 [gocron](https://github.com/ouqiang/gocron) 的基础上开发改造而来。我非常喜欢原项目的设计理念，但由于原作者不再维护，我在此基础上做了大量的重构工作，包括：
+
+* 完全的国际化支持（中英文切换）
+* 双因素认证(2FA)安全功能
+* 日志自动清理系统
+* 现代化的Vue3前端架构
+* 后端Web框架重构（升级到现代化的Gin框架）
+* 数据库迁移工具重构（基于GORM的自动迁移系统）
+* 更好的用户体验和界面设计
+
+感谢原项目作者的付出，也希望大家多给项目点star、多提issue，鼓励项目的发展，让我们一起完善这个项目！
 
 ## License
 
