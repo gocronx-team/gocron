@@ -218,13 +218,23 @@ export default {
   },
   components: {taskSidebar},
   created () {
-    if (this.$route.query.task_id) {
-      this.searchParams.task_id = this.$route.query.task_id
-    }
+    this.updateTaskIdFromRoute()
     this.search()
   },
   activated () {
+    this.updateTaskIdFromRoute()
     this.search()
+  },
+  watch: {
+    '$route.query.task_id': {
+      handler(newTaskId) {
+        if (newTaskId !== undefined) {
+          this.searchParams.task_id = newTaskId
+          this.searchParams.page = 1
+          this.search()
+        }
+      }
+    }
   },
   methods: {
     formatProtocol (row, col) {
@@ -278,6 +288,12 @@ export default {
       this.search(() => {
         this.$message.success(this.t('message.refreshSuccess'))
       })
+    },
+    updateTaskIdFromRoute () {
+      if (this.$route.query.task_id) {
+        this.searchParams.task_id = this.$route.query.task_id
+        this.searchParams.page = 1
+      }
     }
   }
 }
