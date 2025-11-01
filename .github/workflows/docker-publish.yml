@@ -13,9 +13,6 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     environment: prod
-    strategy:
-      matrix:
-        component: [gocron, gocron-node]
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -45,9 +42,9 @@ jobs:
       run: |
         docker buildx build \
           --platform linux/amd64,linux/arm64 \
-          --file ./Dockerfile.${{ matrix.component }} \
-          --tag ${{ secrets.DOCKER_USERNAME }}/${{ matrix.component }}:${{ steps.version.outputs.version }} \
-          --tag ${{ secrets.DOCKER_USERNAME }}/${{ matrix.component }}:latest \
+          --file ./Dockerfile.gocron \
+          --tag ${{ secrets.DOCKER_USERNAME }}/gocron:${{ steps.version.outputs.version }} \
+          --tag ${{ secrets.DOCKER_USERNAME }}/gocron:latest \
           --no-cache \
           --push \
           .
