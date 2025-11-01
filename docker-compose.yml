@@ -1,0 +1,15 @@
+services:
+  gocron:
+    image: gocronx/gocron:latest
+    container_name: gocron
+    ports:
+      - "5920:5920"
+    volumes:
+      - gocron-data:/.gocron
+    environment:
+      - TZ=Asia/Shanghai
+    restart: unless-stopped
+    
+volumes:
+  gocron-data:
+    driver: local

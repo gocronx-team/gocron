@@ -1,3 +1,14 @@
+# Frontend build stage
+FROM node:20-alpine AS frontend
+
+WORKDIR /app/web/vue
+COPY web/vue/package.json web/vue/yarn.lock ./
+RUN yarn install --frozen-lockfile
+
+COPY web/vue ./
+RUN yarn build
+
+# Backend build stage
 FROM golang:1.23-alpine AS builder
 
 RUN apk add --no-cache git
@@ -7,11 +18,13 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
+# Copy frontend build files to public directory
+COPY --from=frontend /app/web/vue/dist/* ./web/public/
 
 # Install statik separately to avoid concurrent build issues
 RUN go install github.com/rakyll/statik@latest
 
-# Generate static files
+# Generate static files (statik will pack web/public)
 RUN go generate ./...
 
 # Build with reduced parallelism for ARM64 stability

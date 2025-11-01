@@ -42,6 +42,23 @@ Here are some partial screenshots of the system:
 
 ## Quick Start
 
+### Docker Compose Deployment (Recommended)
+
+The simplest deployment method, start gocron and gocron-node with one command:
+
+```bash
+# 1. Download docker-compose.yml
+wget https://raw.githubusercontent.com/gocronx-team/gocron/master/docker-compose.yml
+
+# 2. Start services
+docker-compose up -d
+
+# 3. Access web interface
+# http://localhost:5920
+```
+
+For detailed configuration, see [Docker Compose Deployment Guide](docker-compose.README.md)
+
 ### Development Environment
 
 ```bash

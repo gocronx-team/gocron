@@ -43,6 +43,23 @@
 
 ## 快速开始
 
+### Docker Compose 部署（推荐）
+
+最简单的部署方式，一键启动 gocron 和 gocron-node：
+
+```bash
+# 1. 下载 docker-compose.yml
+wget https://raw.githubusercontent.com/gocronx-team/gocron/master/docker-compose.yml
+
+# 2. 启动服务
+docker-compose up -d
+
+# 3. 访问 Web 界面
+# http://localhost:5920
+```
+
+详细配置说明请查看 [Docker Compose 部署指南](docker-compose.README.md)
+
 ### 开发环境
 
 ```bash
