@@ -6,6 +6,10 @@ service Task {
     rpc Run(TaskRequest) returns (TaskResponse) {}
 }
 
+service NodeRegister {
+    rpc Register(RegisterRequest) returns (RegisterResponse) {}
+}
+
 message TaskRequest {
     string command = 2; // 命令
     int32 timeout = 3;  // 任务执行超时时间
@@ -15,4 +19,17 @@ message TaskRequest {
 message TaskResponse {
     string output = 1; // 命令标准输出
     string error = 2;  // 命令错误
+}
+
+message RegisterRequest {
+    string hostname = 1; // 主机名
+    string ip = 2;       // IP地址
+    int32 port = 3;      // 端口
+    string alias = 4;    // 别名
+    string version = 5;  // 版本
+}
+
+message RegisterResponse {
+    bool success = 1;    // 是否成功
+    string message = 2;  // 消息
 }

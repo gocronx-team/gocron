@@ -24,5 +24,13 @@ export default {
 
   ping (id, callback) {
     httpClient.get(`/host/ping/${id}`, {}, callback)
+  },
+
+  getRegisterToken (callback) {
+    httpClient.get('/host/register-token', {}, callback)
+  },
+
+  generateRegisterToken (callback) {
+    httpClient.post('/host/register-token/generate', {}, callback)
   }
 }

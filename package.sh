@@ -180,8 +180,12 @@ run() {
 package_gocron() {
     BINARY_NAME='gocron'
     MAIN_FILE="./cmd/gocron/gocron.go"
-    INCLUDE_FILE=()
-
+    # 将 gocron-node-package 目录包含到 gocron 包中
+    if [[ -d "gocron-node-package" ]]; then
+        INCLUDE_FILE=(gocron-node-package)
+    else
+        INCLUDE_FILE=()
+    fi
 
     run
 }
@@ -211,6 +215,6 @@ do
     esac
 done
  
-package_gocron
 package_gocron_node
+package_gocron
 

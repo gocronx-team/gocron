@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gocronx-team/gocron/internal/modules/rpc/auth"
+	"github.com/gocronx-team/gocron/internal/modules/rpc/client"
 	pb "github.com/gocronx-team/gocron/internal/modules/rpc/proto"
 	"github.com/gocronx-team/gocron/internal/modules/utils"
 	log "github.com/sirupsen/logrus"
@@ -93,4 +94,10 @@ func Start(addr string, enableTLS bool, certificate auth.Certificate) {
 		}
 	}
 
+}
+
+// StartAutoRegister 启动自动注册和心跳
+func StartAutoRegister(gocronURL string, port int, version string, token string) {
+	// 每 60 秒发送一次心跳
+	client.StartHeartbeat(gocronURL, port, version, token, 60*time.Second)
 }

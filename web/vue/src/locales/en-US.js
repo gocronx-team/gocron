@@ -19,7 +19,9 @@ export default {
     yes: 'Yes',
     no: 'No',
     total: 'Total',
-    items: 'items'
+    items: 'items',
+    copy: 'Copy',
+    close: 'Close'
   },
   nav: {
     taskManage: 'Task Management',
@@ -116,7 +118,22 @@ export default {
     nameRequired: 'Please enter host name',
     portRequired: 'Please enter port',
     aliasRequired: 'Please enter node name',
-    portInvalid: 'Invalid port'
+    portInvalid: 'Invalid port',
+    agentRegister: 'Agent Auto-Register',
+    registerToken: 'Register Token',
+    generateToken: 'Generate Token',
+    serverUrl: 'Server URL',
+    registerCommand: 'Register Command',
+    generateTokenFirst: 'Please generate token first',
+    oneClickInstall: 'One-Click Install',
+    linuxMac: 'Linux/macOS',
+    windows: 'Windows',
+    manualInstall: 'Manual Install',
+    manualDownload: 'Manual Download',
+    installTip: 'Run this command on the node server to automatically download, install and register gocron-node',
+    installTipWindows: 'Run this command in PowerShell as Administrator on Windows server',
+    selectPlatform: 'Select Platform',
+    downloadAgent: 'Download Agent'
   },
   user: {
     list: 'User Management',
@@ -331,6 +348,9 @@ export default {
     stopped: 'Stopped',
     confirmDeleteNode: 'Are you sure you want to delete this node?',
     confirmDeleteUser: 'Are you sure you want to delete this user?',
+    generateSuccess: 'Generated successfully',
+    copySuccess: 'Copied successfully',
+    copyFailed: 'Copy failed',
     connectionSuccess: 'Connection successful',
     all: 'All',
     clearLog: 'Clear Log',

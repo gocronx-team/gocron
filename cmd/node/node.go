@@ -3,6 +3,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"runtime"
 	"strings"
@@ -26,6 +27,9 @@ func main() {
 	var keyFile string
 	var enableTLS bool
 	var logLevel string
+	var gocronURL string
+	var enableRegister bool
+	var registerToken string
 	flag.BoolVar(&allowRoot, "allow-root", false, "./gocron-node -allow-root")
 	flag.StringVar(&serverAddr, "s", "0.0.0.0:5921", "./gocron-node -s ip:port")
 	flag.BoolVar(&version, "v", false, "./gocron-node -v")
@@ -34,6 +38,9 @@ func main() {
 	flag.StringVar(&certFile, "cert-file", "", "./gocron-node -cert-file path")
 	flag.StringVar(&keyFile, "key-file", "", "./gocron-node -key-file path")
 	flag.StringVar(&logLevel, "log-level", "info", "-log-level error")
+	flag.StringVar(&gocronURL, "gocron-url", "", "./gocron-node -gocron-url http://gocron-server:5920")
+	flag.BoolVar(&enableRegister, "enable-register", false, "./gocron-node -enable-register")
+	flag.StringVar(&registerToken, "register-token", "", "./gocron-node -register-token <token>")
 	flag.Parse()
 	level, err := log.ParseLevel(logLevel)
 	if err != nil {
@@ -69,6 +76,19 @@ func main() {
 	if runtime.GOOS != "windows" && os.Getuid() == 0 && !allowRoot {
 		log.Fatal("Do not run gocron-node as root user")
 		return
+	}
+
+	// 启动自动注册
+	if enableRegister && gocronURL != "" {
+		if registerToken == "" {
+			log.Fatal("register-token is required when enable-register is set")
+		}
+		// 解析端口
+		var port int
+		if _, err := fmt.Sscanf(serverAddr, "%*[^:]:%d", &port); err != nil {
+			port = 5921
+		}
+		go server.StartAutoRegister(gocronURL, port, AppVersion, registerToken)
 	}
 
 	server.Start(serverAddr, enableTLS, certificate)

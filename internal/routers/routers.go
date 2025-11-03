@@ -42,6 +42,10 @@ func init() {
 
 // Register 路由泣册
 func Register(r *gin.Engine) {
+	// 一键安装脚本和下载（必须在 api 之前，避免被 NoRoute 拦截）
+	r.GET("/install/agent", host.GetInstallScript)
+	r.GET("/download/agent", host.DownloadAgent)
+
 	api := r.Group(urlPrefix)
 
 	// 系统安装
@@ -101,6 +105,9 @@ func Register(r *gin.Engine) {
 		hostGroup.GET("/all", host.All)
 		hostGroup.GET("/ping/:id", host.Ping)
 		hostGroup.POST("/remove/:id", host.Remove)
+		hostGroup.POST("/register", host.Register) // agent自动注册
+		hostGroup.GET("/register-token", host.GetRegisterToken) // 获取注册 token
+		hostGroup.POST("/register-token/generate", host.GenerateRegisterToken) // 生成注册 token
 	}
 
 	// 管理
@@ -155,6 +162,14 @@ func Register(r *gin.Engine) {
 	// 静态文件路由 - 必须放在最后
 	r.NoRoute(func(c *gin.Context) {
 		filepath := c.Request.URL.Path
+
+		// 安装脚本路径已经在前面注册，不应该到这里
+		// 如果到这里说明路由没有匹配，直接返回404
+		if strings.HasPrefix(filepath, "/install/") {
+			jsonResp := utils.JsonResponse{}
+			c.String(http.StatusNotFound, jsonResp.Failure(utils.NotFound, "Install script not found"))
+			return
+		}
 
 		// 移除 /public 前缀（如果存在）
 		filepath = strings.TrimPrefix(filepath, "/public")
@@ -252,15 +267,15 @@ func userAuth(c *gin.Context) {
 	}
 
 	path := c.Request.URL.Path
-	// 静态文件直接放行
-	if strings.HasSuffix(path, ".js") || strings.HasSuffix(path, ".css") || strings.HasSuffix(path, ".png") || strings.HasSuffix(path, ".jpg") || strings.HasSuffix(path, ".svg") {
+	// 静态文件、安装脚本和下载直接放行
+	if strings.HasSuffix(path, ".js") || strings.HasSuffix(path, ".css") || strings.HasSuffix(path, ".png") || strings.HasSuffix(path, ".jpg") || strings.HasSuffix(path, ".svg") || strings.HasPrefix(path, "/install/") || strings.HasPrefix(path, "/download/") {
 		c.Next()
 		return
 	}
 
 	uri := strings.TrimRight(path, "/")
-	// 登录接口和安装状态接口不需要认证
-	excludePaths := []string{"", "/api/user/login", "/api/install/status"}
+	// 登录接口、安装状态接口、agent注册接口、安装脚本和下载不需要认证
+	excludePaths := []string{"", "/api/user/login", "/api/install/status", "/api/host/register", "/install/agent", "/download/agent"}
 	for _, p := range excludePaths {
 		if uri == p {
 			c.Next()
@@ -304,8 +319,8 @@ func urlAuth(c *gin.Context) {
 	}
 
 	path := c.Request.URL.Path
-	// 静态文件直接放行
-	if strings.HasSuffix(path, ".js") || strings.HasSuffix(path, ".css") || strings.HasSuffix(path, ".png") || strings.HasSuffix(path, ".jpg") || strings.HasSuffix(path, ".svg") {
+	// 静态文件、安装脚本和下载直接放行
+	if strings.HasSuffix(path, ".js") || strings.HasSuffix(path, ".css") || strings.HasSuffix(path, ".png") || strings.HasSuffix(path, ".jpg") || strings.HasSuffix(path, ".svg") || strings.HasPrefix(path, "/install/") || strings.HasPrefix(path, "/download/") {
 		c.Next()
 		return
 	}
@@ -327,6 +342,7 @@ func urlAuth(c *gin.Context) {
 		"/api/task/log",
 		"/api/host",
 		"/api/host/all",
+		"/api/host/register",
 		"/api/user/login",
 		"/api/user/editMyPassword",
 		"/api/user/2fa/status",

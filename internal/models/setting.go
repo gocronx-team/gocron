@@ -58,6 +58,7 @@ const (
 	LogRetentionDaysKey  = "log_retention_days"
 	LogCleanupTimeKey    = "log_cleanup_time"
 	LogFileSizeLimitKey  = "log_file_size_limit"
+	AgentRegisterTokenKey = "agent_register_token"
 )
 
 // 初始化基本字段 邮件、slack等
@@ -77,6 +78,7 @@ func (setting *Setting) InitBasicField() {
 		{SystemCode, LogRetentionDaysKey, "0"},
 		{SystemCode, LogCleanupTimeKey, "03:00"},
 		{SystemCode, LogFileSizeLimitKey, "0"},
+		{SystemCode, AgentRegisterTokenKey, ""},
 	}
 
 	// 检查并创建不存在的配置
@@ -366,6 +368,29 @@ func (setting *Setting) UpdateLogFileSizeLimit(size int) error {
 		return result.Error
 	}
 	result := Db.Model(&Setting{}).Where("code = ? AND key = ?", SystemCode, LogFileSizeLimitKey).Update("value", strconv.Itoa(size))
+	return result.Error
+}
+
+func (setting *Setting) GetAgentRegisterToken() string {
+	var s Setting
+	err := Db.Where("code = ? AND key = ?", SystemCode, AgentRegisterTokenKey).First(&s).Error
+	if err != nil {
+		return ""
+	}
+	return s.Value
+}
+
+func (setting *Setting) UpdateAgentRegisterToken(token string) error {
+	var s Setting
+	err := Db.Where("code = ? AND key = ?", SystemCode, AgentRegisterTokenKey).First(&s).Error
+	if err != nil {
+		s.Code = SystemCode
+		s.Key = AgentRegisterTokenKey
+		s.Value = token
+		result := Db.Create(&s)
+		return result.Error
+	}
+	result := Db.Model(&Setting{}).Where("code = ? AND key = ?", SystemCode, AgentRegisterTokenKey).Update("value", token)
 	return result.Error
 }
 // endregion

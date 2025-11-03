@@ -19,7 +19,9 @@ export default {
     yes: '是',
     no: '否',
     total: '共',
-    items: '条'
+    items: '条',
+    copy: '复制',
+    close: '关闭'
   },
   nav: {
     taskManage: '任务管理',
@@ -116,7 +118,22 @@ export default {
     nameRequired: '请输入主机名',
     portRequired: '请输入端口',
     aliasRequired: '请输入节点名称',
-    portInvalid: '端口无效'
+    portInvalid: '端口无效',
+    agentRegister: 'Agent自动注册',
+    registerToken: '注册 Token',
+    generateToken: '生成 Token',
+    serverUrl: '服务器地址',
+    registerCommand: '注册命令',
+    generateTokenFirst: '请先生成 Token',
+    oneClickInstall: '一键安装',
+    linuxMac: 'Linux/macOS',
+    windows: 'Windows',
+    manualInstall: '手动安装',
+    manualDownload: '手动下载',
+    installTip: '在节点服务器上执行此命令，将自动下载、安装并注册 gocron-node',
+    installTipWindows: '在 Windows 服务器上以管理员身份运行 PowerShell 执行此命令',
+    selectPlatform: '选择平台',
+    downloadAgent: '下载 Agent'
   },
   user: {
     list: '用户管理',
@@ -331,6 +348,9 @@ export default {
     stopped: '停止',
     confirmDeleteNode: '确定删除此节点?',
     confirmDeleteUser: '确定删除此用户?',
+    generateSuccess: '生成成功',
+    copySuccess: '复制成功',
+    copyFailed: '复制失败',
     connectionSuccess: '连接成功',
     all: '全部',
     clearLog: '清空日志',
