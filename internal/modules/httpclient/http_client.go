@@ -16,6 +16,18 @@ type ResponseWrapper struct {
 	Header     http.Header
 }
 
+type httpDoer interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
+var clientFactory = func(timeout int) httpDoer {
+	client := &http.Client{}
+	if timeout > 0 {
+		client.Timeout = time.Duration(timeout) * time.Second
+	}
+	return client
+}
+
 func Get(url string, timeout int) ResponseWrapper {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -49,10 +61,7 @@ func PostJson(url string, body string, timeout int) ResponseWrapper {
 
 func request(req *http.Request, timeout int) ResponseWrapper {
 	wrapper := ResponseWrapper{StatusCode: 0, Body: "", Header: make(http.Header)}
-	client := &http.Client{}
-	if timeout > 0 {
-		client.Timeout = time.Duration(timeout) * time.Second
-	}
+	client := clientFactory(timeout)
 	setRequestHeader(req)
 	resp, err := client.Do(req)
 	if err != nil {

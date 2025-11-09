@@ -13,7 +13,10 @@ import (
 
 type Level int8
 
-var logger seelog.LoggerInterface
+var (
+	logger   seelog.LoggerInterface
+	exitFunc = os.Exit
+)
 
 const (
 	DEBUG = iota
@@ -98,7 +101,7 @@ func write(level Level, v ...interface{}) {
 		logger.Warn(content, v)
 	case FATAL:
 		logger.Critical(content, v)
-		os.Exit(1)
+		exitFunc(1)
 	case ERROR:
 		logger.Error(content, v)
 	}
@@ -126,7 +129,7 @@ func writef(level Level, format string, v ...interface{}) {
 		logger.Warnf(format, v...)
 	case FATAL:
 		logger.Criticalf(format, v...)
-		os.Exit(1)
+		exitFunc(1)
 	case ERROR:
 		logger.Errorf(format, v...)
 	}
