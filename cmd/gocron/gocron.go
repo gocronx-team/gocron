@@ -13,6 +13,7 @@ import (
 
 	"github.com/gocronx-team/gocron/internal/models"
 	"github.com/gocronx-team/gocron/internal/modules/app"
+	"github.com/gocronx-team/gocron/internal/modules/ca"
 	"github.com/gocronx-team/gocron/internal/modules/logger"
 	"github.com/gocronx-team/gocron/internal/modules/setting"
 	"github.com/gocronx-team/gocron/internal/modules/utils"
@@ -120,6 +121,9 @@ func initModule() {
 		logger.Error("修复配置记录失败", err)
 	}
 
+	// 初始化 CA（必须在定时任务之前，因为任务可能需要连接 agent）
+	initCA()
+
 	// 初始化定时任务
 	service.ServiceTask.Initialize()
 }
@@ -191,6 +195,13 @@ func shutdown() {
 	// 停止所有任务调度
 	logger.Info("停止定时任务调度")
 	service.ServiceTask.WaitAndExit()
+}
+
+// 初始化 CA 证书
+func initCA() {
+	logger.Info("初始化 CA 证书...")
+	_ = ca.GetGlobalCA()
+	logger.Info("CA 证书初始化完成")
 }
 
 // 判断应用是否需要升级, 当存在版本号文件且版本小于app.VersionId时升级

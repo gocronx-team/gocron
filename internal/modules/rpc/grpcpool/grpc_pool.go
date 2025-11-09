@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gocronx-team/gocron/internal/modules/app"
+	"github.com/gocronx-team/gocron/internal/modules/ca"
 	"github.com/gocronx-team/gocron/internal/modules/rpc/auth"
 	"github.com/gocronx-team/gocron/internal/modules/rpc/proto"
 	"google.golang.org/grpc"
@@ -83,14 +83,23 @@ func (p *GRPCPool) factory(addr string) (*Client, error) {
 		grpc.WithBackoffMaxDelay(backOffMaxDelay),
 	}
 
-	if !app.Setting.EnableTLS {
+	// 默认启用 TLS
+	enableTLS := true
+	if !enableTLS {
 		opts = append(opts, grpc.WithInsecure())
 	} else {
 		server := strings.Split(addr, ":")
+		// 确保 CA 已初始化
+		_ = ca.GetGlobalCA()
+		
+		// 使用统一的 CA 和客户端证书
+		caCertPath := ca.GetCACertPath()
+		clientCertPath, clientKeyPath := ca.GetClientCertPath()
+		
 		certificate := auth.Certificate{
-			CAFile:     app.Setting.CAFile,
-			CertFile:   app.Setting.CertFile,
-			KeyFile:    app.Setting.KeyFile,
+			CAFile:     caCertPath,
+			CertFile:   clientCertPath,
+			KeyFile:    clientKeyPath,
 			ServerName: server[0],
 		}
 

@@ -124,6 +124,56 @@ fi
 mv $BINARY ./gocron-node
 chmod +x ./gocron-node
 
+# 获取证书
+echo "Fetching certificates..."
+mkdir -p certs
+
+# 获取本机 IP
+if [[ "$OS" == "darwin" ]]; then
+    LOCAL_IP=$(ifconfig | grep "inet " | grep -v 127.0.0.1 | awk '{print $2}' | head -n 1)
+else
+    LOCAL_IP=$(hostname -I | awk '{print $1}')
+fi
+
+HOSTNAME=$(hostname)
+
+if command -v curl &> /dev/null; then
+    curl -s -X POST "$SERVER_URL/api/host/provision" \
+      -H "Content-Type: application/json" \
+      -H "X-Register-Token: $REGISTER_TOKEN" \
+      -d '{"hostname":"'$HOSTNAME'","ip":"'$LOCAL_IP'"}' \
+      -o certs/bundle.json
+elif command -v wget &> /dev/null; then
+    wget -q -O certs/bundle.json --header="Content-Type: application/json" \
+      --header="X-Register-Token: $REGISTER_TOKEN" \
+      --post-data='{"hostname":"'$HOSTNAME'","ip":"'$LOCAL_IP'"}' \
+      "$SERVER_URL/api/host/provision"
+fi
+
+# 解析并保存证书
+if command -v python3 &> /dev/null; then
+    python3 -c "
+import json, sys
+with open('certs/bundle.json') as f:
+    data = json.load(f)
+    if data.get('code') == 0 and 'cert_bundle' in data.get('data', {}):
+        bundle = data['data']['cert_bundle']
+        with open('certs/ca.crt', 'w') as cf: cf.write(bundle['ca_cert'])
+        with open('certs/server.crt', 'w') as cf: cf.write(bundle['server_cert'])
+        with open('certs/server.key', 'w') as cf: cf.write(bundle['server_key'])
+        print('Certificates saved successfully')
+    else:
+        msg = data.get('message', 'Unknown error')
+        print('Failed to get certificates: ' + msg)
+        sys.exit(1)
+"
+    if [ $? -ne 0 ]; then
+        rm -f certs/bundle.json
+        exit 1
+    fi
+fi
+rm -f certs/bundle.json
+
 # 根据操作系统创建服务
 if [[ "$OS" == "darwin" ]]; then
     # macOS - 创建 launchd 服务
@@ -142,11 +192,13 @@ if [[ "$OS" == "darwin" ]]; then
         <string>$INSTALL_DIR/gocron-node</string>
         <string>-s</string>
         <string>0.0.0.0:5921</string>
-        <string>-enable-register</string>
-        <string>-gocron-url</string>
-        <string>$SERVER_URL</string>
-        <string>-register-token</string>
-        <string>$REGISTER_TOKEN</string>
+        <string>-enable-tls</string>
+        <string>-ca-file</string>
+        <string>$INSTALL_DIR/certs/ca.crt</string>
+        <string>-cert-file</string>
+        <string>$INSTALL_DIR/certs/server.crt</string>
+        <string>-key-file</string>
+        <string>$INSTALL_DIR/certs/server.key</string>
     </array>
     <key>WorkingDirectory</key>
     <string>$INSTALL_DIR</string>
@@ -189,7 +241,7 @@ After=network.target
 Type=simple
 User=root
 WorkingDirectory=$INSTALL_DIR
-ExecStart=$INSTALL_DIR/gocron-node -s 0.0.0.0:5921 -enable-register -gocron-url $SERVER_URL -register-token $REGISTER_TOKEN
+ExecStart=$INSTALL_DIR/gocron-node -s 0.0.0.0:5921 -enable-tls -ca-file $INSTALL_DIR/certs/ca.crt -cert-file $INSTALL_DIR/certs/server.crt -key-file $INSTALL_DIR/certs/server.key
 Restart=on-failure
 RestartSec=5s
 

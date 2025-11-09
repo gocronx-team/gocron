@@ -101,3 +101,8 @@ func StartAutoRegister(gocronURL string, port int, version string, token string)
 	// 每 60 秒发送一次心跳
 	client.StartHeartbeat(gocronURL, port, version, token, 60*time.Second)
 }
+
+// HasCertificates 检查是否已有证书
+func HasCertificates() bool {
+	return client.HasCertificates()
+}

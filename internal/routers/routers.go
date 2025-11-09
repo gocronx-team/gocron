@@ -106,6 +106,7 @@ func Register(r *gin.Engine) {
 		hostGroup.GET("/ping/:id", host.Ping)
 		hostGroup.POST("/remove/:id", host.Remove)
 		hostGroup.POST("/register", host.Register) // agent自动注册
+		hostGroup.POST("/provision", host.Provision) // agent配置（获取证书）
 		hostGroup.GET("/register-token", host.GetRegisterToken) // 获取注册 token
 		hostGroup.POST("/register-token/generate", host.GenerateRegisterToken) // 生成注册 token
 	}
@@ -275,7 +276,7 @@ func userAuth(c *gin.Context) {
 
 	uri := strings.TrimRight(path, "/")
 	// 登录接口、安装状态接口、agent注册接口、安装脚本和下载不需要认证
-	excludePaths := []string{"", "/api/user/login", "/api/install/status", "/api/host/register", "/install/agent", "/download/agent"}
+	excludePaths := []string{"", "/api/user/login", "/api/install/status", "/api/host/register", "/api/host/provision", "/install/agent", "/download/agent"}
 	for _, p := range excludePaths {
 		if uri == p {
 			c.Next()
@@ -343,6 +344,7 @@ func urlAuth(c *gin.Context) {
 		"/api/host",
 		"/api/host/all",
 		"/api/host/register",
+		"/api/host/provision",
 		"/api/user/login",
 		"/api/user/editMyPassword",
 		"/api/user/2fa/status",

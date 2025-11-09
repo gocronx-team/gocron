@@ -80,15 +80,23 @@ func main() {
 
 	// 启动自动注册
 	if enableRegister && gocronURL != "" {
-		if registerToken == "" {
-			log.Fatal("register-token is required when enable-register is set")
-		}
 		// 解析端口
 		var port int
 		if _, err := fmt.Sscanf(serverAddr, "%*[^:]:%d", &port); err != nil {
 			port = 5921
 		}
-		go server.StartAutoRegister(gocronURL, port, AppVersion, registerToken)
+		
+		// 检查是否已有证书，如果有则使用证书认证，否则使用 token
+		if server.HasCertificates() {
+			log.Info("Using mTLS authentication")
+			go server.StartAutoRegister(gocronURL, port, AppVersion, "")
+		} else {
+			if registerToken == "" {
+				log.Fatal("register-token is required for initial registration")
+			}
+			log.Info("Using token authentication for initial registration")
+			go server.StartAutoRegister(gocronURL, port, AppVersion, registerToken)
+		}
 	}
 
 	server.Start(serverAddr, enableTLS, certificate)
