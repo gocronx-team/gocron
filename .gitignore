@@ -40,3 +40,4 @@ profile/*
 node_modules
 tmp/
 build-errors.log
+.gocache
