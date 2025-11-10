@@ -184,8 +184,7 @@ echo "Installation directory: ${INSTALL_DIR}"
 echo "========================================"
 `
 
-	c.Header("Content-Type", "text/plain; charset=utf-8")
-	c.String(http.StatusOK, script)
+	c.Data(http.StatusOK, "text/plain; charset=utf-8", []byte(script))
 }
 
 // InstallScriptWindows 返回Windows PowerShell安装脚本
@@ -274,8 +273,7 @@ Write-Host "Installation directory: $INSTALL_DIR"
 Write-Host "========================================"
 `
 
-	c.Header("Content-Type", "text/plain; charset=utf-8")
-	c.String(http.StatusOK, script)
+	c.Data(http.StatusOK, "text/plain; charset=utf-8", []byte(script))
 }
 
 // Register agent注册
