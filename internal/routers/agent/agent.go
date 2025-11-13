@@ -380,7 +380,9 @@ func Download(c *gin.Context) {
 	packagePattern := fmt.Sprintf("./gocron-node-package/gocron-node-*-%s-%s.tar.gz", os, arch)
 	matches, err := filepath.Glob(packagePattern)
 	if err != nil || len(matches) == 0 {
-		c.String(http.StatusNotFound, "Package not found")
+		// 开发环境提示
+		logger.Warnf("Package not found for %s-%s, run 'make package' to build all platforms", os, arch)
+		c.String(http.StatusNotFound, fmt.Sprintf("Package not found for %s-%s. Please run 'make package-all' to build packages for all platforms.", os, arch))
 		return
 	}
 

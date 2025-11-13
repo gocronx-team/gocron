@@ -6,12 +6,12 @@ import (
 
 // AgentToken agent注册token
 type AgentToken struct {
-	Id        int       `json:"id" gorm:"primaryKey;autoIncrement"`
-	Token     string    `json:"token" gorm:"type:varchar(64);uniqueIndex;not null"`
-	ExpiresAt time.Time `json:"expires_at" gorm:"not null"`
-	Used      bool      `json:"used" gorm:"default:false"`
-	UsedAt    time.Time `json:"used_at"`
-	CreatedAt time.Time `json:"created_at" gorm:"autoCreateTime"`
+	Id        int        `json:"id" gorm:"primaryKey;autoIncrement"`
+	Token     string     `json:"token" gorm:"type:varchar(64);uniqueIndex;not null"`
+	ExpiresAt time.Time  `json:"expires_at" gorm:"not null"`
+	Used      bool       `json:"used" gorm:"default:false"`
+	UsedAt    *time.Time `json:"used_at" gorm:"default:null"`
+	CreatedAt time.Time  `json:"created_at" gorm:"autoCreateTime"`
 }
 
 func (t *AgentToken) Create() error {
@@ -25,7 +25,8 @@ func (t *AgentToken) FindByToken(token string) error {
 func (t *AgentToken) MarkAsUsed() error {
 	if !t.Used {
 		t.Used = true
-		t.UsedAt = time.Now()
+		now := time.Now()
+		t.UsedAt = &now
 		return Db.Save(t).Error
 	}
 	return nil

@@ -444,11 +444,12 @@ func (m *Migration) upgradeFor153(tx *gorm.DB) error {
 func (m *Migration) upgradeFor154(tx *gorm.DB) error {
 	logger.Info("开始升级到v1.5.4 - 添加agent自动注册支持")
 
-	if !tx.Migrator().HasTable(&AgentToken{}) {
-		err := tx.AutoMigrate(&AgentToken{})
-		if err != nil {
-			return err
-		}
+	if err := tx.AutoMigrate(&AgentToken{}); err != nil {
+		return err
+	}
+
+	if err := tx.Migrator().AlterColumn(&AgentToken{}, "UsedAt"); err != nil {
+		logger.Warn("调整 agent_token.used_at 可空属性失败", err)
 	}
 
 	logger.Info("已升级到v1.5.4\n")
