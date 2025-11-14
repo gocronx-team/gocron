@@ -221,7 +221,9 @@ package_gocron_node() {
 # p 平台 linux darwin windows
 # a 架构 386 amd64 arm64
 # v 版本号  默认取git最新tag
-while getopts "p:a:v:" OPT;
+# t 类型 all(默认), gocron, node
+BUILD_TYPE="all"
+while getopts "p:a:v:t:" OPT;
 do
     case ${OPT} in
     p) IFS=',' read -r -a INPUT_OS <<< "${OPTARG}"
@@ -230,11 +232,18 @@ do
     ;;
     v) VERSION=$OPTARG
     ;;
+    t) BUILD_TYPE=$OPTARG
+    ;;
     *)
     ;;
     esac
 done
  
-package_gocron
-package_gocron_node
+if [[ "${BUILD_TYPE}" = "all" ]] || [[ "${BUILD_TYPE}" = "gocron" ]]; then
+    package_gocron
+fi
+
+if [[ "${BUILD_TYPE}" = "all" ]] || [[ "${BUILD_TYPE}" = "node" ]]; then
+    package_gocron_node
+fi
 

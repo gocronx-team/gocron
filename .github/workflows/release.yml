@@ -37,8 +37,64 @@ jobs:
         name: frontend-dist
         path: web/public/
 
-  build:
+  build-gocron-node:
     needs: build-frontend
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            goos: linux
+            goarch: amd64
+          - os: ubuntu-latest
+            goos: linux
+            goarch: arm64
+          - os: macos-latest
+            goos: darwin
+            goarch: amd64
+          - os: macos-latest
+            goos: darwin
+            goarch: arm64
+          - os: windows-latest
+            goos: windows
+            goarch: amd64
+          - os: ubuntu-latest
+            goos: windows
+            goarch: arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.23'
+
+    - name: Build gocron-node (Unix)
+      if: runner.os != 'Windows'
+      run: |
+        chmod +x package.sh
+        bash ./package.sh -p "${{ matrix.goos }}" -a "${{ matrix.goarch }}"
+
+    - name: Install zip (Windows)
+      if: runner.os == 'Windows'
+      run: choco install zip -y
+
+    - name: Build gocron-node (Windows)
+      if: runner.os == 'Windows'
+      shell: bash
+      run: bash ./package.sh -p "${{ matrix.goos }}" -a "${{ matrix.goarch }}"
+
+    - name: Upload gocron-node artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: gocron-node-${{ matrix.goos }}-${{ matrix.goarch }}
+        path: gocron-node-package/*
+
+  build:
+    needs: [build-frontend, build-gocron-node]
     strategy:
       matrix:
         include:
@@ -79,25 +135,52 @@ jobs:
         name: frontend-dist
         path: web/public/
 
+    - name: Download all gocron-node artifacts
+      uses: actions/download-artifact@v4
+      with:
+        pattern: gocron-node-*
+        path: gocron-node-package/
+        merge-multiple: true
+
     - name: Generate static assets
       run: |
         go install github.com/rakyll/statik@latest
         go generate ./...
 
-    - name: Build packages (Unix)
+    - name: Build gocron only (Unix)
       if: runner.os != 'Windows'
       run: |
         chmod +x package.sh
-        bash ./package.sh -p "${{ matrix.goos }}" -a "${{ matrix.goarch }}"
+        # 只构建 gocron，不构建 gocron-node（已经下载）
+        VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v1.0.0")
+        BINARY_NAME='gocron'
+        MAIN_FILE="./cmd/gocron/gocron.go"
+        GIT_COMMIT_ID=$(git rev-parse --short HEAD)
+        LDFLAGS="-w -X 'main.AppVersion=${VERSION}' -X 'main.BuildDate=$(date '+%Y-%m-%d %H:%M:%S')' -X 'main.GitCommit=${GIT_COMMIT_ID}'"
+        mkdir -p gocron-build/gocron-${{ matrix.goos }}-${{ matrix.goarch }}
+        env CGO_ENABLED=1 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -ldflags "${LDFLAGS}" -o gocron-build/gocron-${{ matrix.goos }}-${{ matrix.goarch }}/gocron ./cmd/gocron/gocron.go
+        # 将所有 gocron-node 包复制到 gocron 构建目录
+        cp -r gocron-node-package gocron-build/gocron-${{ matrix.goos }}-${{ matrix.goarch }}/
+        mkdir -p gocron-package
+        cd gocron-build
+        tar czf ../gocron-package/gocron-${VERSION}-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz gocron-${{ matrix.goos }}-${{ matrix.goarch }}
 
-    - name: Install zip (Windows)
-      if: runner.os == 'Windows'
-      run: choco install zip -y
-
-    - name: Build packages (Windows)
+    - name: Build gocron only (Windows)
       if: runner.os == 'Windows'
       shell: bash
-      run: bash ./package.sh -p "${{ matrix.goos }}" -a "${{ matrix.goarch }}"
+      run: |
+        VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v1.0.0")
+        BINARY_NAME='gocron'
+        MAIN_FILE="./cmd/gocron/gocron.go"
+        GIT_COMMIT_ID=$(git rev-parse --short HEAD)
+        LDFLAGS="-w -X 'main.AppVersion=${VERSION}' -X 'main.BuildDate=$(date '+%Y-%m-%d %H:%M:%S')' -X 'main.GitCommit=${GIT_COMMIT_ID}'"
+        mkdir -p gocron-build/gocron-${{ matrix.goos }}-${{ matrix.goarch }}
+        env CGO_ENABLED=1 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -ldflags "${LDFLAGS}" -o gocron-build/gocron-${{ matrix.goos }}-${{ matrix.goarch }}/gocron.exe ./cmd/gocron/gocron.go
+        # 将所有 gocron-node 包复制到 gocron 构建目录
+        cp -r gocron-node-package gocron-build/gocron-${{ matrix.goos }}-${{ matrix.goarch }}/
+        mkdir -p gocron-package
+        cd gocron-build
+        zip -rq ../gocron-package/gocron-${VERSION}-${{ matrix.goos }}-${{ matrix.goarch }}.zip gocron-${{ matrix.goos }}-${{ matrix.goarch }}
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4

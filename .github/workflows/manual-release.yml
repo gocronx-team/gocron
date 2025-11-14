@@ -54,10 +54,46 @@ jobs:
         go install github.com/rakyll/statik@latest
         go generate ./...
 
-    - name: Build packages for all platforms
+    - name: Build all gocron-node packages first
       run: |
         chmod +x package.sh
+        # 先构建所有平台的 gocron-node
         bash ./package.sh -p "linux,darwin,windows" -a "amd64,arm64" -v "${{ github.event.inputs.version }}"
+
+    - name: Build gocron packages with all gocron-node
+      run: |
+        VERSION="${{ github.event.inputs.version }}"
+        GIT_COMMIT_ID=$(git rev-parse --short HEAD)
+        LDFLAGS="-w -X 'main.AppVersion=${VERSION}' -X 'main.BuildDate=$(date '+%Y-%m-%d %H:%M:%S')' -X 'main.GitCommit=${GIT_COMMIT_ID}'"
+        
+        # 为每个平台构建 gocron
+        for OS in linux darwin windows; do
+          for ARCH in amd64 arm64; do
+            mkdir -p gocron-build/gocron-${OS}-${ARCH}
+            
+            if [ "${OS}" = "windows" ]; then
+              env CGO_ENABLED=0 GOOS=${OS} GOARCH=${ARCH} go build -ldflags "${LDFLAGS}" -o gocron-build/gocron-${OS}-${ARCH}/gocron.exe ./cmd/gocron/gocron.go
+            else
+              env CGO_ENABLED=0 GOOS=${OS} GOARCH=${ARCH} go build -ldflags "${LDFLAGS}" -o gocron-build/gocron-${OS}-${ARCH}/gocron ./cmd/gocron/gocron.go
+            fi
+            
+            # 将所有 gocron-node 包复制到每个 gocron 构建目录
+            cp -r gocron-node-package gocron-build/gocron-${OS}-${ARCH}/
+          done
+        done
+        
+        # 打包 gocron（包含所有平台的 gocron-node）
+        mkdir -p gocron-package
+        cd gocron-build
+        for OS in linux darwin windows; do
+          for ARCH in amd64 arm64; do
+            if [ "${OS}" = "windows" ]; then
+              zip -rq ../gocron-package/gocron-${VERSION}-${OS}-${ARCH}.zip gocron-${OS}-${ARCH}
+            else
+              tar czf ../gocron-package/gocron-${VERSION}-${OS}-${ARCH}.tar.gz gocron-${OS}-${ARCH}
+            fi
+          done
+        done
 
     - name: Generate release notes
       id: release_notes
