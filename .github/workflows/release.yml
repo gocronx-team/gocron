@@ -89,6 +89,10 @@ jobs:
         chmod +x package.sh
         bash ./package.sh -p "${{ matrix.goos }}" -a "${{ matrix.goarch }}"
 
+    - name: Install zip (Windows)
+      if: runner.os == 'Windows'
+      run: choco install zip -y
+
     - name: Build packages (Windows)
       if: runner.os == 'Windows'
       shell: bash
