@@ -169,10 +169,10 @@ fi
 cat > /tmp/release_notes.md <<EOF
 ## 🚀 Release $VERSION
 
-### Features
-- Fixed zero-value initialization for upcoming tasks
-- Corrected root node directory logic
-- Updated JWT dependency to the latest version
+- Fixed notification and node management issues.
+- Added login rate limiting with account lockout protection.
+- Strengthened password complexity requirements.
+- Hardened file permissions for sensitive configuration files.
 
 EOF
 

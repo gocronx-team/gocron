@@ -13,7 +13,8 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/Tang-RoseChild/mahonia"
+	"golang.org/x/text/encoding/simplifiedchinese"
+	"golang.org/x/text/transform"
 )
 
 func RandAuthToken() string {
@@ -57,9 +58,9 @@ func RandNumber(max int) int {
 
 // GBK编码转换为UTF8
 func GBK2UTF8(s string) (string, bool) {
-	dec := mahonia.NewDecoder("gbk")
-
-	return dec.ConvertStringOK(s)
+	decoder := simplifiedchinese.GBK.NewDecoder()
+	result, _, err := transform.String(decoder, s)
+	return result, err == nil
 }
 
 // 批量替换字符串

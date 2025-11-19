@@ -8,7 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Tang-RoseChild/mahonia"
+	"golang.org/x/text/encoding/simplifiedchinese"
+	"golang.org/x/text/transform"
 )
 
 func TestRandAuthToken(t *testing.T) {
@@ -64,8 +65,8 @@ func TestRandNumber(t *testing.T) {
 }
 
 func TestGBK2UTF8(t *testing.T) {
-	encoder := mahonia.NewEncoder("gbk")
-	gbkStr := encoder.ConvertString("你好")
+	encoder := simplifiedchinese.GBK.NewEncoder()
+	gbkStr, _, _ := transform.String(encoder, "你好")
 	utf8Str, ok := GBK2UTF8(gbkStr)
 	if !ok {
 		t.Fatal("expected conversion success")

@@ -1,7 +1,5 @@
 filippo.io/edwards25519 v1.1.0 h1:FNf4tywRC1HmFuKW5xopWpigGjJKiJSV0Cqo0cJWDaA=
 filippo.io/edwards25519 v1.1.0/go.mod h1:BxyFTGdWcka3PhytdK4V28tE5sGfRvvvRV7EaN4VDT4=
-github.com/Tang-RoseChild/mahonia v0.0.0-20131226213531-0eef680515cc h1:7QGNag2vwx98HBiQ8A9M2PWO0ws/xNU6eZVlAbvIWZw=
-github.com/Tang-RoseChild/mahonia v0.0.0-20131226213531-0eef680515cc/go.mod h1:Dl60+a8Tcs+dl3UbHuY54vuwwXo6JJ22RwnDGZ+0U+o=
 github.com/boombuler/barcode v1.0.1-0.20190219062509-6c824513bacc h1:biVzkmvwrH8WK8raXaxBx6fRVTlJILwEwQGL1I/ByEI=
 github.com/boombuler/barcode v1.0.1-0.20190219062509-6c824513bacc/go.mod h1:paBWMcWSl3LHKBqUq+rly7CNSldXjb2rDl3JlRe0mD8=
 github.com/bytedance/sonic v1.14.0 h1:/OfKt8HFw0kh2rj8N0F6C/qPGRESq0BbaNZgcNXXzQQ=
