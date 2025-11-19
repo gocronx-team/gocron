@@ -177,14 +177,14 @@ ${this.t('task.remark')}: {{.Remark}}`
       this.username = ''
       this.email = ''
       notificationService.mail((data) => {
-        this.form.host = data.host
+        this.form.host = data.host || ''
         if (data.port) {
           this.form.port = data.port
         }
-        this.form.user = data.user
-        this.form.password = data.password
-        this.form.template = data.template
-        this.receivers = data.mail_users
+        this.form.user = data.user || ''
+        this.form.password = data.password || ''
+        this.form.template = data.template || ''
+        this.receivers = data.mail_users || []
       })
     }
   }

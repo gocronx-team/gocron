@@ -78,6 +78,7 @@ export default {
   created () {
     const id = this.$route.params.id
     if (!id) {
+      this.resetForm()
       return
     }
     hostService.detail(id, (data) => {
@@ -94,6 +95,18 @@ export default {
     })
   },
   methods: {
+    resetForm() {
+      this.form = {
+        id: '',
+        name: '',
+        port: 5921,
+        alias: '',
+        remark: ''
+      }
+      if (this.$refs.form) {
+        this.$refs.form.clearValidate()
+      }
+    },
     submit () {
       this.$refs['form'].validate((valid) => {
         if (!valid) {

@@ -93,7 +93,7 @@ func Mail(c *gin.Context) {
 type MailServerForm struct {
 	Host     string `form:"host" json:"host" binding:"required,max=100"`
 	Port     int    `form:"port" json:"port" binding:"required,min=1,max=65535"`
-	User     string `form:"user" json:"user" binding:"required,email,max=64"`
+	User     string `form:"user" json:"user" binding:"required,max=64"`
 	Password string `form:"password" json:"password" binding:"required,max=64"`
 	Template string `form:"template" json:"template"`
 }
@@ -126,7 +126,20 @@ func UpdateMail(c *gin.Context) {
 	if err := c.ShouldBind(&form); err != nil {
 		logger.Errorf("邮件配置表单验证失败: %v", err)
 		json := utils.JsonResponse{}
-		result := json.CommonFailure("表单验证失败, 请检测输入")
+		// 提供更具体的错误信息
+		errorMsg := "表单验证失败: "
+		if strings.Contains(err.Error(), "email") {
+			errorMsg += "用户名必须是有效的邮箱地址"
+		} else if strings.Contains(err.Error(), "required") {
+			errorMsg += "请填写所有必填字段"
+		} else if strings.Contains(err.Error(), "max") {
+			errorMsg += "输入内容过长"
+		} else if strings.Contains(err.Error(), "min") || strings.Contains(err.Error(), "port") {
+			errorMsg += "端口号必须在1-65535之间"
+		} else {
+			errorMsg += "请检查输入格式"
+		}
+		result := json.CommonFailure(errorMsg)
 		c.String(http.StatusOK, result)
 		return
 	}

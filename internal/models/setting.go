@@ -169,11 +169,15 @@ func (setting *Setting) formatMail(list []Setting, mail *Mail) {
 	for _, v := range list {
 		switch v.Key {
 		case MailServerKey:
-			json.Unmarshal([]byte(v.Value), mail)
+			if v.Value != "" {
+				json.Unmarshal([]byte(v.Value), mail)
+			}
 		case MailUserKey:
-			json.Unmarshal([]byte(v.Value), &mailUser)
-			mailUser.Id = v.Id
-			mail.MailUsers = append(mail.MailUsers, mailUser)
+			if v.Value != "" {
+				json.Unmarshal([]byte(v.Value), &mailUser)
+				mailUser.Id = v.Id
+				mail.MailUsers = append(mail.MailUsers, mailUser)
+			}
 		case MailTemplateKey:
 			mail.Template = v.Value
 		}
