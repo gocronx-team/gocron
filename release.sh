@@ -169,10 +169,11 @@ fi
 cat > /tmp/release_notes.md <<EOF
 ## 🚀 Release $VERSION
 
-- Fixed notification and node management issues.
-- Added login rate limiting with account lockout protection.
-- Strengthened password complexity requirements.
-- Hardened file permissions for sensitive configuration files.
+- Add local package support (gocron-node-package directory)
+- Prioritize local download, auto-fallback to GitHub
+- Add friendly prompts and detection logic in install script
+- Fix path issue: use executable directory instead of working directory
+- Update README docs, migrate details to documentation site
 
 EOF
 
