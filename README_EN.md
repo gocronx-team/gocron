@@ -54,6 +54,10 @@ For more deployment methods (Binary, Development), please refer to the [Installa
 
 ![Agent Auto-Registration](assets/screenshot/agent_en.png)
 
+![Agent自动注册](assets/screenshot/task_en.png)
+
+![Agent自动注册](assets/screenshot/notification_en.png)
+
 ## 🤝 Contributing
 
 We warmly welcome community contributions!

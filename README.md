@@ -54,6 +54,10 @@ docker-compose up -d
 
 ![Agent自动注册](assets/screenshot/agent.png)
 
+![Agent自动注册](assets/screenshot/task.png)
+
+![Agent自动注册](assets/screenshot/notification.png)
+
 ## 🤝 贡献
 
 我们非常欢迎社区的贡献！
