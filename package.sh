@@ -184,8 +184,14 @@ package_binary() {
         for ARCH in "${INPUT_ARCH[@]}";do
         package_file ${BINARY_NAME}-${OS}-${ARCH}
         
-        # 如果 VERSION 为空，不带版本号
-        if [[ -z "${VERSION}" ]]; then
+        # gocron-node 不使用版本号
+        if [[ "${BINARY_NAME}" = "gocron-node" ]]; then
+            if [[ "${OS}" = "windows" ]];then
+                zip -rq ../${PACKAGE_DIR}/${BINARY_NAME}-${OS}-${ARCH}.zip ${BINARY_NAME}-${OS}-${ARCH}
+            else
+                tar czf ../${PACKAGE_DIR}/${BINARY_NAME}-${OS}-${ARCH}.tar.gz ${BINARY_NAME}-${OS}-${ARCH}
+            fi
+        elif [[ -z "${VERSION}" ]]; then
             if [[ "${OS}" = "windows" ]];then
                 zip -rq ../${PACKAGE_DIR}/${BINARY_NAME}-${OS}-${ARCH}.zip ${BINARY_NAME}-${OS}-${ARCH}
             else
