@@ -124,25 +124,28 @@ build() {
     local FILENAME=''
     for OS in "${INPUT_OS[@]}";do
         for ARCH in "${INPUT_ARCH[@]}";do
-            # 跨平台编译时禁用 CGO（不支持 SQLite）
-            # 本平台编译时启用 CGO（支持 SQLite）
+            # gocron-node 不需要数据库，强制禁用 CGO
+            # gocron 需要 SQLite，根据平台决定是否启用 CGO
             local CGO_ENABLED_VALUE='1'
             local CC_COMPILER=''
             
-            if [[ "${OS}" != "${GOHOSTOS}" ]] || [[ "${ARCH}" != "${GOHOSTARCH}" ]]; then
+            if [[ "${BINARY_NAME}" = "gocron-node" ]]; then
+                CGO_ENABLED_VALUE='0'
+                print_message "编译 gocron-node ${OS}-${ARCH} 版本（纯静态编译）"
+            elif [[ "${OS}" != "${GOHOSTOS}" ]] || [[ "${ARCH}" != "${GOHOSTARCH}" ]]; then
                 # 检查是否安装了交叉编译工具链
                 if [[ "${OS}" = "windows" ]] && [[ "${ARCH}" = "amd64" ]] && command -v x86_64-w64-mingw32-gcc &> /dev/null; then
                     # macOS/Linux 交叉编译 Windows amd64，使用 MinGW
                     CC_COMPILER='x86_64-w64-mingw32-gcc'
                     print_message "使用 MinGW 交叉编译 Windows amd64 版本（支持 SQLite）"
                 elif [[ "${OS}" = "linux" ]] && [[ "${ARCH}" = "amd64" ]] && command -v x86_64-linux-musl-gcc &> /dev/null; then
-                    # macOS 交叉编译 Linux amd64，使用 musl-cross
+                    # macOS 交叉编译 Linux amd64，使用 musl-cross，完全静态链接
                     CC_COMPILER='x86_64-linux-musl-gcc'
-                    print_message "使用 musl-cross 交叉编译 Linux amd64 版本（支持 SQLite）"
+                    print_message "使用 musl-cross 交叉编译 Linux amd64 版本（支持 SQLite，完全静态）"
                 elif [[ "${OS}" = "linux" ]] && [[ "${ARCH}" = "arm64" ]] && command -v aarch64-linux-musl-gcc &> /dev/null; then
-                    # macOS 交叉编译 Linux arm64，使用 musl-cross
+                    # macOS 交叉编译 Linux arm64，使用 musl-cross，完全静态链接
                     CC_COMPILER='aarch64-linux-musl-gcc'
-                    print_message "使用 musl-cross 交叉编译 Linux arm64 版本（支持 SQLite）"
+                    print_message "使用 musl-cross 交叉编译 Linux arm64 版本（支持 SQLite，完全静态）"
                 elif [[ "${OS}" = "darwin" ]]; then
                     # macOS 同平台不同架构编译，保持 CGO 启用
                     print_message "macOS 交叉架构编译 ${OS}-${ARCH} 版本（支持 SQLite）"
@@ -160,7 +163,12 @@ build() {
             fi
             
             if [[ -n "${CC_COMPILER}" ]]; then
-                env CGO_ENABLED=${CGO_ENABLED_VALUE} CC=${CC_COMPILER} GOOS=${OS} GOARCH=${ARCH} go build -ldflags "${LDFLAGS}" -o ${BUILD_DIR}/${BINARY_NAME}-${OS}-${ARCH}/${FILENAME} ${MAIN_FILE}
+                if [[ "${OS}" = "linux" ]]; then
+                    # Linux 使用静态链接
+                    env CGO_ENABLED=${CGO_ENABLED_VALUE} CC=${CC_COMPILER} GOOS=${OS} GOARCH=${ARCH} go build -ldflags "${LDFLAGS} -extldflags '-static'" -o ${BUILD_DIR}/${BINARY_NAME}-${OS}-${ARCH}/${FILENAME} ${MAIN_FILE}
+                else
+                    env CGO_ENABLED=${CGO_ENABLED_VALUE} CC=${CC_COMPILER} GOOS=${OS} GOARCH=${ARCH} go build -ldflags "${LDFLAGS}" -o ${BUILD_DIR}/${BINARY_NAME}-${OS}-${ARCH}/${FILENAME} ${MAIN_FILE}
+                fi
             else
                 env CGO_ENABLED=${CGO_ENABLED_VALUE} GOOS=${OS} GOARCH=${ARCH} go build -ldflags "${LDFLAGS}" -o ${BUILD_DIR}/${BINARY_NAME}-${OS}-${ARCH}/${FILENAME} ${MAIN_FILE}
             fi
@@ -175,6 +183,7 @@ package_binary() {
     for OS in "${INPUT_OS[@]}";do
         for ARCH in "${INPUT_ARCH[@]}";do
         package_file ${BINARY_NAME}-${OS}-${ARCH}
+        
         # 如果 VERSION 为空，不带版本号
         if [[ -z "${VERSION}" ]]; then
             if [[ "${OS}" = "windows" ]];then
@@ -238,11 +247,7 @@ package_gocron_node() {
     MAIN_FILE="./cmd/node/node.go"
     INCLUDE_FILE=()
 
-    init
-    VERSION=""  # gocron-node 不使用版本号
-    build
-    package_binary
-    clean
+    run
 }
  
 # p 平台 linux darwin windows

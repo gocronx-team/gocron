@@ -45,7 +45,7 @@ gocron:
 .PHONY: node
 node:
 	@mkdir -p $(BIN_DIR)
-	go build $(RACE) -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/gocron-node ./cmd/node
+	CGO_ENABLED=0 go build $(RACE) -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/gocron-node ./cmd/node
 
 .PHONY: test
 test:
@@ -68,6 +68,11 @@ package: build-web
 package-linux: build-web
 	@echo "Building packages for Linux..."
 	bash ./package.sh -p linux -a "amd64,arm64"
+
+.PHONY: package-linux-nosqlite
+package-linux-nosqlite: build-web
+	@echo "Building Linux packages without SQLite..."
+	CGO_ENABLED=0 bash ./package.sh -p linux -a "amd64,arm64"
 
 .PHONY: package-darwin
 package-darwin: build-web
