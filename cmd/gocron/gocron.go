@@ -190,6 +190,7 @@ func catchSignal() {
 func shutdown() {
 	defer func() {
 		logger.Info("已退出")
+		logger.Close() // 确保日志刷新
 		os.Exit(0)
 	}()
 

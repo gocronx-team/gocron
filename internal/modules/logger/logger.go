@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,8 +17,9 @@ import (
 type Level int8
 
 var (
-	logger   *slog.Logger
-	exitFunc = os.Exit
+	logger         *slog.Logger
+	asyncLogWriter *asyncHandler
+	exitFunc       = os.Exit
 )
 
 const (
@@ -41,10 +43,21 @@ func InitLogger() {
 	}
 
 	writer := io.MultiWriter(os.Stdout, file)
+
+	// 使用异步处理器：批量大小50，刷新间隔100ms
+	asyncLogWriter = newAsyncHandler(writer, 50, 100*time.Millisecond)
+
 	handler := slog.NewTextHandler(writer, &slog.HandlerOptions{
 		Level: slog.LevelDebug,
 	})
 	logger = slog.New(handler)
+}
+
+// 优雅关闭
+func Close() {
+	if asyncLogWriter != nil {
+		asyncLogWriter.close()
+	}
 }
 
 func Debug(v ...interface{}) {
@@ -104,6 +117,26 @@ func write(level Level, v ...interface{}) {
 		}
 	}
 
+	// 使用异步写入
+	if asyncLogWriter != nil {
+		switch level {
+		case DEBUG:
+			asyncLogWriter.log(slog.LevelDebug, msg, args...)
+		case INFO:
+			asyncLogWriter.log(slog.LevelInfo, msg, args...)
+		case WARN:
+			asyncLogWriter.log(slog.LevelWarn, msg, args...)
+		case ERROR:
+			asyncLogWriter.log(slog.LevelError, msg, args...)
+		case FATAL:
+			asyncLogWriter.log(slog.LevelError, msg, args...)
+			asyncLogWriter.close()
+			exitFunc(1)
+		}
+		return
+	}
+
+	// 降级到同步写入
 	switch level {
 	case DEBUG:
 		logger.Debug(msg, args...)
@@ -130,6 +163,26 @@ func writef(level Level, format string, v ...interface{}) {
 		}
 	}
 
+	// 使用异步写入
+	if asyncLogWriter != nil {
+		switch level {
+		case DEBUG:
+			asyncLogWriter.log(slog.LevelDebug, msg, args...)
+		case INFO:
+			asyncLogWriter.log(slog.LevelInfo, msg, args...)
+		case WARN:
+			asyncLogWriter.log(slog.LevelWarn, msg, args...)
+		case ERROR:
+			asyncLogWriter.log(slog.LevelError, msg, args...)
+		case FATAL:
+			asyncLogWriter.log(slog.LevelError, msg, args...)
+			asyncLogWriter.close()
+			exitFunc(1)
+		}
+		return
+	}
+
+	// 降级到同步写入
 	switch level {
 	case DEBUG:
 		logger.Debug(msg, args...)
