@@ -146,9 +146,13 @@ build() {
                     # macOS 交叉编译 Linux arm64，使用 musl-cross，完全静态链接
                     CC_COMPILER='aarch64-linux-musl-gcc'
                     print_message "使用 musl-cross 交叉编译 Linux arm64 版本（支持 SQLite，完全静态）"
+                elif [[ "${OS}" = "darwin" ]] && [[ "${GOHOSTOS}" = "darwin" ]]; then
+                    # 在 macOS 主机上编译 macOS，启用 CGO
+                    print_message "在 macOS 主机上编译 ${OS}-${ARCH} 版本（支持 SQLite）"
                 elif [[ "${OS}" = "darwin" ]]; then
-                    # macOS 同平台不同架构编译，保持 CGO 启用
-                    print_message "macOS 交叉架构编译 ${OS}-${ARCH} 版本（支持 SQLite）"
+                    # Linux 或 Windows 上编译 macOS，禁用 CGO
+                    CGO_ENABLED_VALUE='0'
+                    print_message "警告: 在非 macOS 主机上编译 macOS 版本，禁用 CGO（不支持 SQLite）"
                 else
                     # 没有交叉编译工具链或不支持的架构，禁用 CGO
                     CGO_ENABLED_VALUE='0'
