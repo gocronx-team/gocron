@@ -4,7 +4,9 @@ GO111MODULE=on
 VERSION ?= $(shell git describe --tags --always --dirty)
 GIT_COMMIT ?= $(shell git rev-parse --short HEAD)
 BUILD_DATE ?= $(shell date '+%Y-%m-%d %H:%M:%S')
-LDFLAGS = -w -X 'main.AppVersion=$(VERSION)' -X 'main.BuildDate=$(BUILD_DATE)' -X 'main.GitCommit=$(GIT_COMMIT)'
+# 优化：添加编译优化标志，减小二进制大小并提升性能
+LDFLAGS = -s -w -X 'main.AppVersion=$(VERSION)' -X 'main.BuildDate=$(BUILD_DATE)' -X 'main.GitCommit=$(GIT_COMMIT)'
+GCFLAGS = -trimpath
 
 # 构建目录
 BIN_DIR = bin
@@ -40,12 +42,12 @@ kill:
 .PHONY: gocron
 gocron:
 	@mkdir -p $(BIN_DIR)
-	go build $(RACE) -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/gocron ./cmd/gocron
+	go build $(RACE) -ldflags "$(LDFLAGS)" -gcflags "$(GCFLAGS)" -o $(BIN_DIR)/gocron ./cmd/gocron
 
 .PHONY: node
 node:
 	@mkdir -p $(BIN_DIR)
-	CGO_ENABLED=0 go build $(RACE) -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/gocron-node ./cmd/node
+	CGO_ENABLED=0 go build $(RACE) -ldflags "$(LDFLAGS)" -gcflags "$(GCFLAGS)" -o $(BIN_DIR)/gocron-node ./cmd/node
 
 .PHONY: test
 test:

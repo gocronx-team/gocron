@@ -188,6 +188,19 @@ func (task *Task) Enable(id int) (int64, error) {
 	return task.Update(id, CommonMap{"status": Enabled})
 }
 
+// 获取所有激活任务（优化：一次性查询，避免分页循环）
+func (task *Task) AllActiveTasks() ([]Task, error) {
+	list := make([]Task, 0)
+	err := Db.Where("status = ? AND level = ?", Enabled, TaskLevelParent).
+		Find(&list).Error
+
+	if err != nil {
+		return list, err
+	}
+
+	return task.setHostsForTasks(list)
+}
+
 // 获取所有激活任务
 func (task *Task) ActiveList(page, pageSize int) ([]Task, error) {
 	params := CommonMap{"Page": page, "PageSize": pageSize}

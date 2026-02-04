@@ -42,6 +42,15 @@ var (
 
 	// 并发队列, 限制同时运行的任务数量
 	concurrencyQueue ConcurrencyQueue
+
+	// 日志清理配置缓存
+	logCleanupCache struct {
+		sync.RWMutex
+		retentionDays   int
+		fileSizeLimit   int
+		lastUpdate      time.Time
+		cacheDuration   time.Duration
+	}
 )
 
 // 并发队列
@@ -127,24 +136,18 @@ func (task Task) Initialize() {
 
 	logger.Info("开始初始化定时任务")
 	taskModel := new(models.Task)
+	
+	// 优化：一次性获取所有激活任务，避免分页循环
+	taskList, err := taskModel.AllActiveTasks()
+	if err != nil {
+		logger.Fatalf("定时任务初始化#获取任务列表错误: %s", err)
+	}
+	
 	taskNum := 0
-	page := 1
-	pageSize := 1000
-	maxPage := 1000
-	for page < maxPage {
-		taskList, err := taskModel.ActiveList(page, pageSize)
-		if err != nil {
-			logger.Fatalf("定时任务初始化#获取任务列表错误: %s", err)
-		}
-		if len(taskList) == 0 {
-			break
-		}
-		for _, item := range taskList {
-			logger.Infof("添加任务到调度器#ID-%d#名称-%s#协议-%d#主机数量-%d", item.Id, item.Name, item.Protocol, len(item.Hosts))
-			task.Add(item)
-			taskNum++
-		}
-		page++
+	for _, item := range taskList {
+		logger.Infof("添加任务到调度器#ID-%d#名称-%s#协议-%d#主机数量-%d", item.Id, item.Name, item.Protocol, len(item.Hosts))
+		task.Add(item)
+		taskNum++
 	}
 	logger.Infof("定时任务初始化完成, 共%d个定时任务添加到调度器", taskNum)
 
@@ -154,6 +157,9 @@ func (task Task) Initialize() {
 
 // 初始化日志清理任务
 func (task Task) initLogCleanupTask() {
+	// 初始化缓存配置
+	logCleanupCache.cacheDuration = 5 * time.Minute // 缓存5分钟
+	
 	settingModel := new(models.Setting)
 	cleanupTime := settingModel.GetLogCleanupTime()
 	// 解析时间 HH:MM
@@ -163,8 +169,8 @@ func (task Task) initLogCleanupTask() {
 	cronSpec := fmt.Sprintf("0 %d %d * * *", minute, hour)
 
 	serviceCron.AddFunc(cronSpec, func() {
-		settingModel := new(models.Setting)
-		days := settingModel.GetLogRetentionDays()
+		// 使用缓存的配置
+		days := getLogRetentionDaysFromCache()
 		if days > 0 {
 			// 清理数据库日志
 			taskLogModel := new(models.TaskLog)
@@ -181,8 +187,59 @@ func (task Task) initLogCleanupTask() {
 	logger.Infof("日志自动清理任务已添加, 执行时间: %s", cleanupTime)
 }
 
+// 从缓存获取日志保留天数，减少数据库查询
+func getLogRetentionDaysFromCache() int {
+	logCleanupCache.RLock()
+	// 检查缓存是否有效
+	if time.Since(logCleanupCache.lastUpdate) < logCleanupCache.cacheDuration {
+		days := logCleanupCache.retentionDays
+		logCleanupCache.RUnlock()
+		return days
+	}
+	logCleanupCache.RUnlock()
+
+	// 缓存过期，重新获取
+	logCleanupCache.Lock()
+	defer logCleanupCache.Unlock()
+
+	// 双重检查，避免重复查询
+	if time.Since(logCleanupCache.lastUpdate) < logCleanupCache.cacheDuration {
+		return logCleanupCache.retentionDays
+	}
+
+	settingModel := new(models.Setting)
+	logCleanupCache.retentionDays = settingModel.GetLogRetentionDays()
+	logCleanupCache.fileSizeLimit = settingModel.GetLogFileSizeLimit()
+	logCleanupCache.lastUpdate = time.Now()
+	
+	return logCleanupCache.retentionDays
+}
+
+// 从缓存获取日志文件大小限制
+func getLogFileSizeLimitFromCache() int {
+	logCleanupCache.RLock()
+	if time.Since(logCleanupCache.lastUpdate) < logCleanupCache.cacheDuration {
+		limit := logCleanupCache.fileSizeLimit
+		logCleanupCache.RUnlock()
+		return limit
+	}
+	logCleanupCache.RUnlock()
+
+	// 触发缓存更新
+	getLogRetentionDaysFromCache()
+	
+	logCleanupCache.RLock()
+	defer logCleanupCache.RUnlock()
+	return logCleanupCache.fileSizeLimit
+}
+
 // 重新加载日志清理任务
 func (task Task) ReloadLogCleanupTask() {
+	// 清除缓存
+	logCleanupCache.Lock()
+	logCleanupCache.lastUpdate = time.Time{}
+	logCleanupCache.Unlock()
+	
 	// 先移除旧任务
 	serviceCron.RemoveJob("log-cleanup")
 	// 重新添加任务
@@ -594,8 +651,8 @@ func execJob(handler Handler, taskModel models.Task, taskUniqueId int64) TaskRes
 
 // 清理日志文件
 func cleanupLogFiles() {
-	settingModel := new(models.Setting)
-	fileSizeLimit := settingModel.GetLogFileSizeLimit()
+	// 使用缓存的配置
+	fileSizeLimit := getLogFileSizeLimitFromCache()
 
 	// 如果设置为0，不清理日志文件
 	if fileSizeLimit <= 0 {
