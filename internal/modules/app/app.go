@@ -44,10 +44,12 @@ func InitEnv(versionString string) {
 	execDir := filepath.Dir(execPath)
 
 	// 开发环境检测：Air 热重载（tmp 目录）或 go run（go-build cache 目录）
+	execName := filepath.Base(execPath)
 	if filepath.Base(execDir) == "tmp" {
 		AppDir = filepath.Join(filepath.Dir(execDir), ".gocron")
-	} else if strings.Contains(execDir, "go-build") {
+	} else if strings.Contains(execDir, "go-build") && !strings.HasSuffix(execName, ".test") {
 		// go run 会将二进制编译到 go-build cache 中，使用当前工作目录
+		// 排除 go test（测试二进制以 .test 结尾）
 		wd, wdErr := os.Getwd()
 		if wdErr != nil {
 			logger.Fatal(wdErr)
