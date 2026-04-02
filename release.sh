@@ -221,9 +221,12 @@ fi
 # 生成 release notes
 cat > /tmp/release_notes.md <<EOF
 
-feat: support high availability deployment by @gocronx
-feat: update cron version(allocs -85%, ns/op -73%) @gocronx
-feat: feat(web): Display a progress bar for web request by @WShihan
+feat: multi-tag support, comma-separated storage, el-select multi-picker, GET /api/task/tags
+feat: per-task log cleanup, POST /api/task/log/clear/:id, batch delete, admin-only
+feat: task-level log retention, log_retention_days field, excludes custom tasks from global cleanup
+fix: go run AppDir detection for dev environment
+fix: el-alert \\n literal rendering, use v-html with <br>
+chore: bump to v1.5.8 with migration 158
 
 EOF
 
