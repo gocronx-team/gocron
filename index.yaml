@@ -1,0 +1,24 @@
+apiVersion: v1
+entries:
+  gocron:
+  - apiVersion: v2
+    appVersion: 1.5.9
+    created: "2026-04-15T05:37:53.817766669Z"
+    description: A Helm chart for gocron - cron job management system
+    digest: 7b76206e620eb9452b4f8dc69d0f2edcbe33c5ad8d7a591802149487e87064ea
+    home: https://github.com/gocronx-team/gocron
+    icon: https://raw.githubusercontent.com/gocronx-team/gocron/master/web/vue/public/favicon.ico
+    keywords:
+    - cron
+    - scheduler
+    - task
+    maintainers:
+    - name: gocronx-team
+    name: gocron
+    sources:
+    - https://github.com/gocronx-team/gocron
+    type: application
+    urls:
+    - https://github.com/gocronx-team/gocron/releases/download/gocron-0.1.0/gocron-0.1.0.tgz
+    version: 0.1.0
+generated: "2026-04-15T05:37:53.81777263Z"
