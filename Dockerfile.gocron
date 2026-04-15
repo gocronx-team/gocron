@@ -30,7 +30,7 @@ RUN CGO_ENABLED=0 go build -ldflags="-s -w" -trimpath -o gocron ./cmd/gocron
 
 FROM alpine:latest
 
-RUN apk add --no-cache ca-certificates
+RUN apk add --no-cache ca-certificates tzdata
 
 COPY --from=builder /app/gocron /gocron
 

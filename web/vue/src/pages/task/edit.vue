@@ -109,6 +109,27 @@
               </el-input>
             </el-form-item>
           </el-col>
+          <el-col :span="8">
+            <el-form-item :label="t('task.timezone')">
+              <el-select
+                v-model="form.timezone"
+                filterable
+                clearable
+                :placeholder="t('task.timezoneServer')">
+                <el-option-group
+                  v-for="group in timezoneGroups"
+                  :key="group.label"
+                  :label="group.label">
+                  <el-option
+                    v-for="tz in group.zones"
+                    :key="tz"
+                    :label="tz"
+                    :value="tz">
+                  </el-option>
+                </el-option-group>
+              </el-select>
+            </el-form-item>
+          </el-col>
         </el-row>
         <el-row>
           <el-col :span="8">
@@ -357,7 +378,7 @@
 import { useI18n } from 'vue-i18n'
 import taskService from '../../api/task'
 import notificationService from '../../api/notification'
-import { validateCronSpec, getCronExamples } from '../../utils/cronValidator'
+import { validateCronSpec, getCronExamples, extractTimezone } from '../../utils/cronValidator'
 
 const createDefaultForm = () => ({
   id: '',
@@ -368,6 +389,7 @@ const createDefaultForm = () => ({
   dependency_status: 1,
   dependency_task_id: '',
   spec: '',
+  timezone: '',
   protocol: 2,
   http_method: 1,
   http_body: '',
@@ -434,6 +456,43 @@ export default {
     }
   },
   computed: {
+    timezoneGroups () {
+      try {
+        const zones = Intl.supportedValuesOf('timeZone')
+        const groups = { UTC: ['UTC'] }
+        for (const tz of zones) {
+          const region = tz.split('/')[0]
+          if (!groups[region]) {
+            groups[region] = []
+          }
+          groups[region].push(tz)
+        }
+        // Sort regions, put common ones first
+        const priority = ['UTC', 'Asia', 'America', 'Europe', 'Pacific', 'Australia', 'Africa']
+        const sorted = Object.keys(groups).sort((a, b) => {
+          const ai = priority.indexOf(a)
+          const bi = priority.indexOf(b)
+          if (ai !== -1 && bi !== -1) return ai - bi
+          if (ai !== -1) return -1
+          if (bi !== -1) return 1
+          return a.localeCompare(b)
+        })
+        return sorted.map(region => ({ label: region, zones: groups[region] }))
+      } catch {
+        // Fallback for browsers without Intl.supportedValuesOf
+        const fallback = [
+          'UTC',
+          'Asia/Shanghai', 'Asia/Tokyo', 'Asia/Seoul', 'Asia/Singapore',
+          'Asia/Hong_Kong', 'Asia/Kolkata', 'Asia/Dubai',
+          'America/New_York', 'America/Chicago', 'America/Denver',
+          'America/Los_Angeles', 'America/Sao_Paulo',
+          'Europe/London', 'Europe/Paris', 'Europe/Berlin', 'Europe/Moscow',
+          'Australia/Sydney', 'Australia/Perth',
+          'Pacific/Auckland', 'Pacific/Honolulu'
+        ]
+        return [{ label: 'All', zones: fallback }]
+      }
+    },
     commandPlaceholder () {
       if (this.form.protocol === 1) {
         return this.t('message.pleaseEnterUrl')
@@ -644,6 +703,7 @@ export default {
       })
     },
     populateForm (taskData) {
+      const { timezone, spec: cronSpec } = extractTimezone(taskData.spec)
       Object.assign(this.form, {
         id: taskData.id,
         name: taskData.name,
@@ -652,7 +712,8 @@ export default {
         level: taskData.level,
         dependency_status: taskData.dependency_status || 1,
         dependency_task_id: taskData.dependency_task_id || '',
-        spec: taskData.spec,
+        spec: cronSpec,
+        timezone: timezone,
         protocol: taskData.protocol,
         http_method: taskData.http_method || 1,
         http_body: taskData.http_body || '',
@@ -731,12 +792,19 @@ export default {
       }).catch(() => {})
     },
     save () {
+      // 构建提交用的 spec，不修改 form.spec 避免重试时双重前缀
+      let specToSave = this.form.spec
+      if (this.form.level === 1 && this.form.timezone && specToSave) {
+        specToSave = 'CRON_TZ=' + this.form.timezone + ' ' + specToSave
+      }
+
       // 将标签数组转换为逗号分隔的字符串
       this.form.tag = (this.form.tags || []).join(',')
 
       // 清理命令中的 HTML 实体编码
-      if (this.form.command) {
-        this.form.command = this.form.command
+      let command = this.form.command || ''
+      if (command) {
+        command = command
           .replace(/&quot;/g, '"')
           .replace(/&apos;/g, "'")
           .replace(/&lt;/g, '<')
@@ -744,24 +812,25 @@ export default {
           .replace(/&amp;/g, '&')
       }
 
-      if (Number(this.form.protocol) === 2) {
-        this.form.host_id = this.form.host_ids.join(',')
+      const payload = { ...this.form, spec: specToSave, command: command }
+
+      if (Number(payload.protocol) === 2) {
+        payload.host_id = this.form.host_ids.join(',')
       } else {
-        this.form.host_id = ''
-        this.form.host_ids = []
+        payload.host_id = ''
       }
-      if (this.form.notify_status > 0) {
-        if (this.form.notify_type === 0) {
-          this.form.notify_receiver_id = this.selectedMailNotifyIds.join(',')
-        } else if (this.form.notify_type === 1) {
-          this.form.notify_receiver_id = this.selectedSlackNotifyIds.join(',')
-        } else if (this.form.notify_type === 2) {
-          this.form.notify_receiver_id = this.selectedWebhookNotifyIds.join(',')
+      if (payload.notify_status > 0) {
+        if (payload.notify_type === 0) {
+          payload.notify_receiver_id = this.selectedMailNotifyIds.join(',')
+        } else if (payload.notify_type === 1) {
+          payload.notify_receiver_id = this.selectedSlackNotifyIds.join(',')
+        } else if (payload.notify_type === 2) {
+          payload.notify_receiver_id = this.selectedWebhookNotifyIds.join(',')
         }
       } else {
-        this.form.notify_receiver_id = ''
+        payload.notify_receiver_id = ''
       }
-      taskService.update(this.form, () => {
+      taskService.update(payload, () => {
         this.$router.push('/task')
       })
     },

@@ -6,7 +6,7 @@ require (
 	github.com/gin-gonic/gin v1.12.0
 	github.com/go-gomail/gomail v0.0.0-20160411212932-81ebce5c23df
 	github.com/go-sql-driver/mysql v1.9.3
-	github.com/gocronx-team/cron v0.1.2
+	github.com/gocronx-team/cron v0.1.3
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/lib/pq v1.12.0
 	github.com/ncruces/go-sqlite3/gormlite v0.33.3

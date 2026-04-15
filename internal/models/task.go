@@ -78,8 +78,8 @@ type Task struct {
 	Protocol         TaskProtocol         `json:"protocol" gorm:"type:tinyint;not null;index"`
 	Command          string               `json:"command" gorm:"type:text;not null"`
 	HttpMethod       TaskHTTPMethod       `json:"http_method" gorm:"type:tinyint;not null;default:1"`
-	HttpBody         string               `json:"http_body" gorm:"type:text;not null;default:''"`
-	HttpHeaders      string               `json:"http_headers" gorm:"type:text;not null;default:''"`
+	HttpBody         string               `json:"http_body" gorm:"type:text"`
+	HttpHeaders      string               `json:"http_headers" gorm:"type:text"`
 	SuccessPattern   string               `json:"success_pattern" gorm:"type:varchar(512);not null;default:''"`
 	Timeout          int                  `json:"timeout" gorm:"type:mediumint;not null;default:0"`
 	Multi            int8                 `json:"multi" gorm:"type:tinyint;not null;default:1"`

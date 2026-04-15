@@ -149,10 +149,15 @@
         </template>
       </el-table-column>
       <el-table-column
-        prop="spec"
         :label="t('task.cronExpression')"
-        width="150"
+        min-width="150"
         class-name="no-wrap-header">
+        <template #default="scope">
+          <span>{{ parseCronSpec(scope.row.spec).expr }}</span>
+          <div v-if="parseCronSpec(scope.row.spec).tz" style="color: #909399; font-size: 12px; line-height: 1.4;">
+            {{ parseCronSpec(scope.row.spec).tz }}
+          </div>
+        </template>
       </el-table-column>
       <el-table-column :label="t('task.nextRunTime')" width="180" class-name="no-wrap-header">
         <template #default="scope">
@@ -318,6 +323,12 @@ export default {
           this.search()
         })
       }
+    },
+    parseCronSpec (spec) {
+      if (!spec) return { expr: '', tz: '' }
+      const match = spec.match(/^(?:CRON_TZ|TZ)=(\S+)\s+(.+)$/)
+      if (match) return { tz: match[1], expr: match[2] }
+      return { expr: spec, tz: '' }
     },
     formatProtocol (row, col) {
       if (row[col.property] === 2) {

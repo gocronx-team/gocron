@@ -63,6 +63,8 @@ export default {
     cronExpression: 'crontab表达式',
     cronPlaceholder: '秒 分 时 天 月 周',
     cronExample: '示例',
+    timezone: '时区',
+    timezoneServer: '服务器时区',
     protocol: '执行方式',
     httpMethod: '请求方法',
     httpBody: '请求 Body',

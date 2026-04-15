@@ -20,8 +20,24 @@ const SHORTCUTS = [
 const EVERY_PATTERN = /^@every\s+(\d+[smh])+$/
 
 /**
+ * 从 spec 中提取 CRON_TZ=/TZ= 前缀，返回 { timezone, spec }
+ * 无前缀时 timezone 为空字符串
+ */
+export function extractTimezone(spec) {
+  if (!spec || typeof spec !== 'string') {
+    return { timezone: '', spec: spec || '' }
+  }
+  const trimmed = spec.trim()
+  const match = trimmed.match(/^(?:CRON_TZ|TZ)=(\S+)\s+(.+)$/)
+  if (match) {
+    return { timezone: match[1], spec: match[2] }
+  }
+  return { timezone: '', spec: trimmed }
+}
+
+/**
  * 验证cron表达式
- * @param {string} spec - cron表达式
+ * @param {string} spec - cron表达式（可带 CRON_TZ= 前缀）
  * @returns {{valid: boolean, message: string}}
  */
 export function validateCronSpec(spec) {
@@ -29,7 +45,13 @@ export function validateCronSpec(spec) {
     return { valid: false, message: '请输入cron表达式' }
   }
 
-  const trimmed = spec.trim()
+  // 剥离 CRON_TZ=/TZ= 前缀后再验证
+  const { spec: cronExpr } = extractTimezone(spec)
+  const trimmed = cronExpr.trim()
+
+  if (!trimmed) {
+    return { valid: false, message: '请输入cron表达式' }
+  }
 
   // 检查快捷语法
   if (trimmed.startsWith('@')) {

@@ -63,6 +63,8 @@ export default {
     cronExpression: 'Cron Expression',
     cronPlaceholder: 'Second Minute Hour Day Month Week',
     cronExample: 'Examples',
+    timezone: 'Timezone',
+    timezoneServer: 'Server Timezone',
     protocol: 'Method',
     httpMethod: 'HTTP Method',
     httpBody: 'Request Body',

@@ -200,6 +200,9 @@ func (task Task) IsSchedulerRunning() bool {
 
 // 初始化日志清理任务
 func (task Task) initLogCleanupTask() {
+	if serviceCron == nil {
+		return
+	}
 	settingModel := new(models.Setting)
 	cleanupTime := settingModel.GetLogCleanupTime()
 	// 解析时间 HH:MM
@@ -255,6 +258,9 @@ func (task Task) initLogCleanupTask() {
 
 // 重新加载日志清理任务
 func (task Task) ReloadLogCleanupTask() {
+	if serviceCron == nil {
+		return // follower node or scheduler not started, skip
+	}
 	// 先移除旧任务
 	serviceCron.RemoveJob("log-cleanup")
 	// 重新添加任务

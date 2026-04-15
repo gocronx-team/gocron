@@ -95,8 +95,9 @@ func Store(c *gin.Context) {
 
 	// 标记为已安装
 	app.Installed = true
-	// 初始化定时任务
+	// 初始化并启动定时任务调度器
 	service.ServiceTask.Initialize()
+	service.ServiceTask.StartScheduler()
 
 	base.RespondSuccess(c, "安装成功", nil)
 }

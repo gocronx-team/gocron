@@ -34,7 +34,7 @@ func RepairSettings() error {
 	// 检查并创建缺失的配置
 	for _, cfg := range requiredSettings {
 		var count int64
-		err := Db.Model(&Setting{}).Where("code = ? AND key = ?", cfg.Code, cfg.Key).Count(&count).Error
+		err := Db.Model(&Setting{}).Where("code = ? AND `key` = ?", cfg.Code, cfg.Key).Count(&count).Error
 		if err != nil {
 			logger.Error("Failed to check configuration:", err)
 			return err

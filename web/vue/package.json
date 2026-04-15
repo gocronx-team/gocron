@@ -18,7 +18,7 @@
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
     "@vueuse/core": "^14.2.1",
-    "axios": "^1.13.6",
+    "axios": "^1.15.0",
     "dayjs": "^1.11.20",
     "element-plus": "^2.13.5",
     "nprogress": "^0.2.0",
@@ -40,7 +40,7 @@
     "prettier": "^3.8.1",
     "unplugin-auto-import": "^20.3.0",
     "unplugin-vue-components": "^30.0.0",
-    "vite": "^7.3.1",
+    "vite": "^7.3.2",
     "vite-plugin-compression": "^0.5.1",
     "vitest": "^3.2.4"
   },
@@ -48,7 +48,11 @@
     "overrides": {
       "flatted": ">=3.4.2",
       "picomatch": ">=4.0.4",
-      "brace-expansion": "2.0.3"
+      "brace-expansion": "2.0.3",
+      "lodash": ">=4.18.0",
+      "lodash-es": ">=4.18.0",
+      "defu": ">=6.1.5",
+      "follow-redirects": ">=1.16.0"
     }
   }
 }
