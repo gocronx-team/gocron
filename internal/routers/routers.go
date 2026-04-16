@@ -23,6 +23,7 @@ import (
 	"github.com/gocronx-team/gocron/internal/routers/manage"
 	"github.com/gocronx-team/gocron/internal/routers/statistics"
 	"github.com/gocronx-team/gocron/internal/routers/task"
+	"github.com/gocronx-team/gocron/internal/routers/template"
 	"github.com/gocronx-team/gocron/internal/routers/tasklog"
 	"github.com/gocronx-team/gocron/internal/routers/user"
 )
@@ -77,6 +78,9 @@ func Register(r *gin.Engine) {
 	// 定时任务
 	taskGroup := api.Group("/task")
 	{
+		taskGroup.GET("/versions/:id", task.VersionList)
+		taskGroup.GET("/versions/:id/:version_id", task.VersionDetail)
+		taskGroup.POST("/versions/:id/:version_id/rollback", task.VersionRollback)
 		taskGroup.POST("/store", task.Store)
 		taskGroup.GET("/tags", task.GetAllTags)
 		taskGroup.GET("/:id", task.Detail)
@@ -112,6 +116,18 @@ func Register(r *gin.Engine) {
 		agentGroup.GET("/install.sh", agent.InstallScript)
 		agentGroup.POST("/register", agent.Register)
 		agentGroup.GET("/download", agent.Download)
+	}
+
+	// 任务模板
+	templateGroup := api.Group("/template")
+	{
+		templateGroup.GET("", template.Index)
+		templateGroup.GET("/categories", template.Categories)
+		templateGroup.GET("/:id", template.Detail)
+		templateGroup.POST("/store", template.Store)
+		templateGroup.POST("/remove/:id", template.Remove)
+		templateGroup.POST("/apply/:id", template.Apply)
+		templateGroup.POST("/save-from-task", template.SaveFromTask)
 	}
 
 	// 管理
@@ -370,6 +386,8 @@ func urlAuth(c *gin.Context) {
 		"/api/user/2fa/setup",
 		"/api/user/2fa/enable",
 		"/api/user/2fa/disable",
+		"/api/template",
+		"/api/template/categories",
 		"/api/statistics/overview",
 		"/api/agent/install.sh",
 		"/api/agent/register",
@@ -493,6 +511,20 @@ func resolveModuleAction(path string, c *gin.Context) (module, action string) {
 	case "/api/user/editPassword/:id":
 		return "user", "reset-password"
 
+	// Template routes
+	case "/api/template/store":
+		idStr := c.PostForm("id")
+		if idStr == "" || idStr == "0" {
+			return "template", "create"
+		}
+		return "template", "update"
+	case "/api/template/remove/:id":
+		return "template", "delete"
+	case "/api/template/apply/:id":
+		return "template", "update"
+	case "/api/template/save-from-task":
+		return "template", "create"
+
 	// System routes — any POST under /api/system
 	default:
 		if strings.HasPrefix(path, "/api/system/") {
@@ -526,6 +558,11 @@ func resolveTargetName(module string, targetId int) string {
 		u := &models.User{}
 		if err := models.Db.Select("name").First(u, targetId).Error; err == nil {
 			return u.Name
+		}
+	case "template":
+		tmpl := &models.TaskTemplate{}
+		if err := models.Db.Select("name").First(tmpl, targetId).Error; err == nil {
+			return tmpl.Name
 		}
 	}
 	return ""

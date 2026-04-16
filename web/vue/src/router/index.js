@@ -35,6 +35,22 @@ const routes = [
     meta: { noNeedAdmin: true }
   },
   {
+    path: '/template',
+    name: 'template-list',
+    component: () => import('../pages/template/list.vue'),
+    meta: { noNeedAdmin: true }
+  },
+  {
+    path: '/template/create',
+    name: 'template-create',
+    component: () => import('../pages/template/edit.vue')
+  },
+  {
+    path: '/template/edit/:id',
+    name: 'template-edit',
+    component: () => import('../pages/template/edit.vue')
+  },
+  {
     path: '/host',
     name: 'host-list',
     component: () => import('../pages/host/list.vue'),

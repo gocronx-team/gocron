@@ -81,4 +81,12 @@ var zhCN = map[string]string{
 	"rpc_unavailable":                        "无法连接远程服务器",
 	"rpc_timeout":                            "执行超时, 强制结束",
 	"rpc_manual_stop":                        "手动停止",
+	"version_not_found":                      "版本不存在",
+	"rollback_success":                       "回滚成功",
+	"rollback_failed":                        "回滚失败",
+	"template_name_exists":                   "模板名称已存在",
+	"template_not_found":                     "模板不存在",
+	"builtin_template_readonly":              "内置模板不可修改",
+	"builtin_template_no_delete":             "内置模板不可删除",
+	"task_not_found":                         "任务不存在",
 }

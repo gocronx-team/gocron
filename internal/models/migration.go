@@ -13,7 +13,7 @@ type Migration struct{}
 func (migration *Migration) Install(dbName string) error {
 	setting := new(Setting)
 	tables := []interface{}{
-		&User{}, &Task{}, &TaskLog{}, &Host{}, setting, &LoginLog{}, &TaskHost{}, &AgentToken{}, &AuditLog{},
+		&User{}, &Task{}, &TaskLog{}, &Host{}, setting, &LoginLog{}, &TaskHost{}, &AgentToken{}, &AuditLog{}, &TaskScriptVersion{}, &TaskTemplate{},
 	}
 
 	for _, table := range tables {
@@ -46,7 +46,7 @@ func (migration *Migration) Upgrade(oldVersionId int) {
 		return
 	}
 
-	versionIds := []int{110, 122, 130, 140, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 1510}
+	versionIds := []int{110, 122, 130, 140, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 1510, 160}
 	upgradeFuncs := []func(*gorm.DB) error{
 		migration.upgradeFor110,
 		migration.upgradeFor122,
@@ -63,6 +63,7 @@ func (migration *Migration) Upgrade(oldVersionId int) {
 		migration.upgradeFor158,
 		migration.upgradeFor159,
 		migration.upgradeFor1510,
+		migration.upgradeFor160,
 	}
 
 	startIndex := -1
@@ -619,6 +620,33 @@ func (m *Migration) upgradeFor1510(tx *gorm.DB) error {
 	}
 
 	logger.Info("已升级到v1.5.10\n")
+
+	return nil
+}
+
+// 升级到v1.6.0版本 - 添加脚本版本管理和任务模板
+func (m *Migration) upgradeFor160(tx *gorm.DB) error {
+	logger.Info("开始升级到v1.6.0 - 添加脚本版本管理和任务模板")
+
+	if err := tx.AutoMigrate(&TaskScriptVersion{}); err != nil {
+		return err
+	}
+	logger.Info("✓ 已创建 task_script_version 表")
+
+	if err := tx.AutoMigrate(&TaskTemplate{}); err != nil {
+		return err
+	}
+	logger.Info("✓ 已创建 task_template 表")
+
+	// 初始化内置模板
+	var count int64
+	tx.Model(&TaskTemplate{}).Where("is_builtin = ?", 1).Count(&count)
+	if count == 0 {
+		seedBuiltinTemplates(tx)
+		logger.Info("✓ 已初始化内置模板")
+	}
+
+	logger.Info("已升级到v1.6.0\n")
 
 	return nil
 }

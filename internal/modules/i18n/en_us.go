@@ -81,4 +81,12 @@ var enUS = map[string]string{
 	"rpc_unavailable":                        "Unable to connect to remote server",
 	"rpc_timeout":                            "Execution timeout, forcibly terminated",
 	"rpc_manual_stop":                        "Manually stopped",
+	"version_not_found":                      "Version not found",
+	"rollback_success":                       "Rollback successful",
+	"rollback_failed":                        "Rollback failed",
+	"template_name_exists":                   "Template name already exists",
+	"template_not_found":                     "Template not found",
+	"builtin_template_readonly":              "Built-in template is read-only",
+	"builtin_template_no_delete":             "Built-in template cannot be deleted",
+	"task_not_found":                         "Task not found",
 }

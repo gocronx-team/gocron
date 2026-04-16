@@ -1,5 +1,9 @@
 <template>
   <el-main>
+    <el-row type="flex" justify="end" style="margin-bottom: 10px;">
+      <el-button v-if="form.id === ''" size="small" @click="showTemplateDialog = true">{{ t('template.useTemplate') }}</el-button>
+      <el-button v-if="form.id !== ''" size="small" @click="showSaveTemplateDialog = true">{{ t('template.saveAsTemplate') }}</el-button>
+    </el-row>
     <el-form ref="form" :model="form" :rules="formRules" label-width="auto">
         <el-input v-model="form.id" type="hidden"></el-input>
         <el-row>
@@ -175,19 +179,24 @@
           </el-col>
         </el-row>
         <el-row>
-          <el-col :span="16">
+          <el-col :span="20">
             <el-form-item :label="t('task.command')" prop="command">
-              <el-input
-                type="textarea"
-                :rows="5"
-                :placeholder="commandPlaceholder"
-                v-model="form.command"
-                @blur="validateCommand">
-              </el-input>
-              <div v-if="commandWarning" class="command-warning" style="color: #E6A23C; font-size: 12px; margin-top: 4px;">
-                {{ commandWarning }}
+              <div style="width: 100%;">
+                <MonacoEditor
+                  v-model="form.command"
+                  :language="editorLanguage"
+                  height="200px"
+                />
+                <div v-if="commandWarning" class="command-warning" style="color: #E6A23C; font-size: 12px; margin-top: 4px;">
+                  {{ commandWarning }}
+                </div>
               </div>
             </el-form-item>
+          </el-col>
+          <el-col :span="4" v-if="form.id !== ''" style="padding-top: 32px; padding-left: 8px;">
+            <el-button type="info" size="small" @click="showVersionDrawer = true">
+              {{ t('task.versionHistory') }}
+            </el-button>
           </el-col>
         </el-row>
         <el-row v-if="Number(form.protocol) === 1 && Number(form.http_method) === 2">
@@ -370,6 +379,105 @@
           <el-button @click="cancel">{{ t('common.cancel') }}</el-button>
         </el-form-item>
       </el-form>
+    <el-drawer v-model="showVersionDrawer" :title="t('task.versionHistory')" size="50%">
+      <el-table :data="versions" border style="width: 100%">
+        <el-table-column prop="version" :label="t('task.version')" width="80" align="center"></el-table-column>
+        <el-table-column prop="username" :label="t('task.versionUser')" width="120"></el-table-column>
+        <el-table-column prop="remark" :label="t('task.versionRemark')"></el-table-column>
+        <el-table-column prop="created_at" :label="t('task.versionTime')" width="180">
+          <template #default="scope">
+            {{ $filters.formatTime(scope.row.created_at) }}
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('common.operation')" width="160" align="center">
+          <template #default="scope">
+            <el-button size="small" @click="previewVersion(scope.row)">{{ t('task.versionCommand') }}</el-button>
+            <el-button type="warning" size="small" @click="rollbackVersion(scope.row)">{{ t('task.versionRollback') }}</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+      <el-pagination
+        v-if="versionTotal > 10"
+        background
+        layout="prev, pager, next"
+        :total="versionTotal"
+        v-model:current-page="versionPage"
+        :page-size="10"
+        @current-change="loadVersions"
+        style="margin-top: 16px;">
+      </el-pagination>
+      <el-dialog v-model="showVersionCommand" :title="t('task.versionCommand')" width="60%" append-to-body>
+        <pre style="white-space: pre-wrap; word-break: break-all; background: #f5f7fa; padding: 12px; border-radius: 4px; max-height: 400px; overflow: auto;">{{ selectedVersionCommand }}</pre>
+      </el-dialog>
+    </el-drawer>
+
+    <!-- 从模板创建对话框 -->
+    <el-dialog v-model="showTemplateDialog" :title="t('template.useTemplate')" width="70%">
+      <el-form :inline="true" style="margin-bottom: 10px;">
+        <el-form-item>
+          <el-select v-model="templateCategory" size="small" @change="loadTemplates" style="width: 120px;">
+            <el-option :label="t('template.category_all')" value=""></el-option>
+            <el-option v-for="cat in templateCategories" :key="cat" :label="getCategoryLabel(cat)" :value="cat"></el-option>
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <el-table :data="templateList" border highlight-current-row @row-click="selectTemplate" style="cursor: pointer;">
+        <el-table-column prop="name" :label="t('template.name')" min-width="150">
+          <template #default="scope">
+            {{ scope.row.name }}
+            <el-tag v-if="scope.row.is_builtin === 1" size="small" type="info" style="margin-left: 4px;">{{ t('template.builtin') }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="description" :label="t('template.description')" min-width="200"></el-table-column>
+        <el-table-column prop="category" :label="t('template.category')" width="100" align="center">
+          <template #default="scope">
+            <el-tag size="small">{{ getCategoryLabel(scope.row.category) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('template.protocol')" width="80" align="center">
+          <template #default="scope">{{ scope.row.protocol === 1 ? 'HTTP' : 'Shell' }}</template>
+        </el-table-column>
+      </el-table>
+    </el-dialog>
+
+    <!-- 模板变量填写对话框 -->
+    <el-dialog v-model="showVariableDialog" :title="t('template.fillVariables')" width="500px" append-to-body>
+      <el-form label-width="120px">
+        <el-form-item v-for="v in templateVariables" :key="v" :label="v">
+          <el-input v-model="templateVarValues[v]"></el-input>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showVariableDialog = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="applyTemplateWithVars">{{ t('template.applyTemplate') }}</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 保存为模板对话框 -->
+    <el-dialog v-model="showSaveTemplateDialog" :title="t('template.saveAsTemplate')" width="500px">
+      <el-form label-width="100px">
+        <el-form-item :label="t('template.saveAsTemplateName')">
+          <el-input v-model="saveTemplateForm.name" :placeholder="t('template.templateNamePlaceholder')"></el-input>
+        </el-form-item>
+        <el-form-item :label="t('template.saveAsTemplateDesc')">
+          <el-input v-model="saveTemplateForm.description" :placeholder="t('template.templateDescPlaceholder')"></el-input>
+        </el-form-item>
+        <el-form-item :label="t('template.saveAsTemplateCategory')">
+          <el-select v-model="saveTemplateForm.category" filterable allow-create style="width: 100%;">
+            <el-option value="backup" :label="t('template.category_backup')"></el-option>
+            <el-option value="cleanup" :label="t('template.category_cleanup')"></el-option>
+            <el-option value="monitor" :label="t('template.category_monitor')"></el-option>
+            <el-option value="deploy" :label="t('template.category_deploy')"></el-option>
+            <el-option value="api" :label="t('template.category_api')"></el-option>
+            <el-option value="custom" :label="t('template.category_custom')"></el-option>
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showSaveTemplateDialog = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="saveAsTemplate">{{ t('common.save') }}</el-button>
+      </template>
+    </el-dialog>
     </el-main>
 </template>
 
@@ -377,8 +485,11 @@
 <script>
 import { useI18n } from 'vue-i18n'
 import taskService from '../../api/task'
+import templateService from '../../api/template'
 import notificationService from '../../api/notification'
 import { validateCronSpec, getCronExamples, extractTimezone } from '../../utils/cronValidator'
+import { ElMessageBox } from 'element-plus'
+import MonacoEditor from '../../components/common/MonacoEditor.vue'
 
 const createDefaultForm = () => ({
   id: '',
@@ -412,6 +523,7 @@ const createDefaultForm = () => ({
 
 export default {
   name: 'task-edit',
+  components: { MonacoEditor },
   setup() {
     const { t, locale } = useI18n()
     return { t, locale }
@@ -452,7 +564,27 @@ export default {
       selectedMailNotifyIds: [],
       selectedSlackNotifyIds: [],
       selectedWebhookNotifyIds: [],
-      tagOptions: []
+      tagOptions: [],
+      showVersionDrawer: false,
+      showVersionCommand: false,
+      selectedVersionCommand: '',
+      versions: [],
+      versionTotal: 0,
+      versionPage: 1,
+      showTemplateDialog: false,
+      showVariableDialog: false,
+      showSaveTemplateDialog: false,
+      templateList: [],
+      templateCategories: [],
+      templateCategory: '',
+      selectedTemplate: null,
+      templateVariables: [],
+      templateVarValues: {},
+      saveTemplateForm: {
+        name: '',
+        description: '',
+        category: 'custom'
+      }
     }
   },
   computed: {
@@ -493,6 +625,13 @@ export default {
         return [{ label: 'All', zones: fallback }]
       }
     },
+    editorLanguage () {
+      if (this.form.protocol === 1) return 'plaintext'
+      const cmd = this.form.command || ''
+      if (cmd.startsWith('#!/usr/bin/python') || cmd.startsWith('python ')) return 'python'
+      if (cmd.startsWith('#!/usr/bin/node') || cmd.startsWith('node ')) return 'javascript'
+      return 'shell'
+    },
     commandPlaceholder () {
       if (this.form.protocol === 1) {
         return this.t('message.pleaseEnterUrl')
@@ -510,6 +649,30 @@ export default {
   watch: {
     $route () {
       this.initializeForm()
+    },
+    showVersionDrawer (val) {
+      if (val) {
+        this.versionPage = 1
+        this.loadVersions()
+      }
+    },
+    'form.command' (newVal) {
+      if (newVal && newVal.includes('&quot;')) {
+        this.$nextTick(() => {
+          this.form.command = newVal
+            .replace(/&quot;/g, '"')
+            .replace(/&apos;/g, "'")
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&amp;/g, '&')
+        })
+      }
+    },
+    showTemplateDialog (val) {
+      if (val) {
+        this.loadTemplateCategories()
+        this.loadTemplates()
+      }
     },
     'form.notify_status' () {
       this.updateNotifyKeywordRule()
@@ -836,6 +999,121 @@ export default {
     },
     cancel () {
       this.$router.push('/task')
+    },
+    loadVersions () {
+      if (!this.form.id) return
+      taskService.versions(this.form.id, { page: this.versionPage, page_size: 10 }, (data) => {
+        this.versions = data.data || []
+        this.versionTotal = data.total || 0
+      })
+    },
+    previewVersion (row) {
+      this.selectedVersionCommand = row.command
+      this.showVersionCommand = true
+    },
+    getCategoryLabel (cat) {
+      const key = `template.category_${cat}`
+      const label = this.t(key)
+      return label === key ? cat : label
+    },
+    loadTemplateCategories () {
+      templateService.categories((data) => {
+        this.templateCategories = data || []
+      })
+    },
+    loadTemplates () {
+      templateService.list({ category: this.templateCategory, page_size: 50 }, (data) => {
+        this.templateList = data.data || []
+      })
+    },
+    selectTemplate (row) {
+      this.selectedTemplate = row
+      // 提取模板变量
+      const regex = /\{\{(\w+)\}\}/g
+      const vars = new Set()
+      let match
+      const fields = [row.command, row.http_body, row.http_headers]
+      for (const field of fields) {
+        if (!field) continue
+        while ((match = regex.exec(field)) !== null) {
+          vars.add(match[1])
+        }
+      }
+      this.templateVariables = Array.from(vars)
+      this.templateVarValues = {}
+      for (const v of this.templateVariables) {
+        this.templateVarValues[v] = ''
+      }
+
+      if (this.templateVariables.length > 0) {
+        this.showTemplateDialog = false
+        this.showVariableDialog = true
+      } else {
+        this.applyTemplate(row)
+      }
+    },
+    applyTemplateWithVars () {
+      if (!this.selectedTemplate) return
+      const tmpl = { ...this.selectedTemplate }
+      // 替换变量
+      for (const [key, val] of Object.entries(this.templateVarValues)) {
+        const pattern = new RegExp(`\\{\\{${key}\\}\\}`, 'g')
+        tmpl.command = (tmpl.command || '').replace(pattern, val)
+        tmpl.http_body = (tmpl.http_body || '').replace(pattern, val)
+        tmpl.http_headers = (tmpl.http_headers || '').replace(pattern, val)
+      }
+      this.applyTemplate(tmpl)
+      this.showVariableDialog = false
+    },
+    applyTemplate (tmpl) {
+      this.form.protocol = tmpl.protocol
+      this.form.command = tmpl.command
+      this.form.http_method = tmpl.http_method || 1
+      this.form.http_body = tmpl.http_body || ''
+      this.form.http_headers = tmpl.http_headers || ''
+      if (tmpl.timeout > 0) {
+        this.form.timeout = tmpl.timeout
+      }
+      this.handleProtocolChange(tmpl.protocol, true)
+      this.showTemplateDialog = false
+      // 增加使用次数
+      if (tmpl.id) {
+        templateService.apply(tmpl.id, () => {})
+      }
+      this.$message.success(this.t('template.applySuccess'))
+    },
+    saveAsTemplate () {
+      if (!this.saveTemplateForm.name) {
+        this.$message.warning(this.t('template.templateNamePlaceholder'))
+        return
+      }
+      templateService.saveFromTask({
+        task_id: this.form.id,
+        name: this.saveTemplateForm.name,
+        description: this.saveTemplateForm.description,
+        category: this.saveTemplateForm.category
+      }, () => {
+        this.$message.success(this.t('message.saveSuccess'))
+        this.showSaveTemplateDialog = false
+        this.saveTemplateForm = { name: '', description: '', category: 'custom' }
+      })
+    },
+    rollbackVersion (row) {
+      ElMessageBox.confirm(
+        this.t('task.versionRollbackConfirm', { version: row.version }),
+        this.t('common.tip'),
+        {
+          confirmButtonText: this.t('common.confirm'),
+          cancelButtonText: this.t('common.cancel'),
+          type: 'warning'
+        }
+      ).then(() => {
+        taskService.versionRollback(this.form.id, row.id, () => {
+          this.$message.success(this.t('task.versionRollbackSuccess'))
+          this.showVersionDrawer = false
+          this.initializeForm()
+        })
+      }).catch(() => {})
     }
   }
 }

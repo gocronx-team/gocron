@@ -26,7 +26,7 @@ import (
 )
 
 var (
-	AppVersion           = "1.5.9"
+	AppVersion           = "1.6.0"
 	BuildDate, GitCommit string
 
 	// leaderElection 全局选举实例，用于 graceful shutdown 时释放锁
@@ -333,6 +333,24 @@ func ensureTables() {
 			logger.Error("Failed to create audit_log table", err)
 		} else {
 			logger.Info("audit_log table created successfully")
+		}
+	}
+
+	if !models.Db.Migrator().HasTable(&models.TaskScriptVersion{}) {
+		logger.Info("task_script_version table not found, creating...")
+		if err := models.Db.AutoMigrate(&models.TaskScriptVersion{}); err != nil {
+			logger.Error("Failed to create task_script_version table", err)
+		} else {
+			logger.Info("task_script_version table created successfully")
+		}
+	}
+
+	if !models.Db.Migrator().HasTable(&models.TaskTemplate{}) {
+		logger.Info("task_template table not found, creating...")
+		if err := models.Db.AutoMigrate(&models.TaskTemplate{}); err != nil {
+			logger.Error("Failed to create task_template table", err)
+		} else {
+			logger.Info("task_template table created successfully")
 		}
 	}
 }

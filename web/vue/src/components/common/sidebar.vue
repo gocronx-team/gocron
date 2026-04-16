@@ -27,6 +27,10 @@
           <el-icon><Document /></el-icon>
           <span>{{ t('task.log') }}</span>
         </el-menu-item>
+        <el-menu-item index="/template">
+          <el-icon><Files /></el-icon>
+          <span>{{ t('template.list') }}</span>
+        </el-menu-item>
         <el-menu-item index="/statistics">
           <el-icon><TrendCharts /></el-icon>
           <span>{{ t('nav.statistics') }}</span>
@@ -87,6 +91,7 @@ import {
   Calendar,
   List,
   Document,
+  Files,
   TrendCharts,
   Monitor,
   User,
@@ -105,6 +110,7 @@ const currentRoute = computed(() => {
   // 精确匹配路由
   if (path === '/task/log') return '/task/log'
   if (path === '/statistics') return '/statistics'
+  if (path.startsWith('/template')) return '/template'
   if (path.startsWith('/task')) return '/task'
   if (path.startsWith('/host')) return '/host'
   if (path.startsWith('/user')) return '/user'

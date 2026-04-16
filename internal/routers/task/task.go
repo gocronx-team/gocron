@@ -13,6 +13,7 @@ import (
 	"github.com/gocronx-team/gocron/internal/modules/logger"
 	"github.com/gocronx-team/gocron/internal/modules/utils"
 	"github.com/gocronx-team/gocron/internal/routers/base"
+	"github.com/gocronx-team/gocron/internal/routers/user"
 	"github.com/gocronx-team/gocron/internal/service"
 )
 
@@ -203,6 +204,24 @@ func Store(c *gin.Context) {
 	} else {
 		// 更新前记录旧值用于审计 diff
 		oldTask, _ := taskModel.Detail(id)
+
+		// 保存脚本版本（命令变更时）
+		if oldTask.Command != taskModel.Command {
+			versionModel := new(models.TaskScriptVersion)
+			latestVersion, _ := versionModel.GetLatestVersion(id)
+			newVersion := &models.TaskScriptVersion{
+				TaskId:   id,
+				Command:  oldTask.Command,
+				Username: user.Username(c),
+				Version:  latestVersion + 1,
+			}
+			if _, vErr := newVersion.Create(); vErr != nil {
+				logger.Warnf("保存脚本版本失败 TaskID-%d: %v", id, vErr)
+			}
+			if cErr := versionModel.CleanOldVersions(id, 30); cErr != nil {
+				logger.Warnf("清理旧版本失败 TaskID-%d: %v", id, cErr)
+			}
+		}
 
 		logger.Infof("[Task Update] Before Update - ID: %d, Multi: %d", id, taskModel.Multi)
 		_, err = taskModel.UpdateBean(id)
