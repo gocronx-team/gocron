@@ -336,21 +336,11 @@ func ensureTables() {
 		}
 	}
 
-	if !models.Db.Migrator().HasTable(&models.TaskScriptVersion{}) {
-		logger.Info("task_script_version table not found, creating...")
-		if err := models.Db.AutoMigrate(&models.TaskScriptVersion{}); err != nil {
-			logger.Error("Failed to create task_script_version table", err)
-		} else {
-			logger.Info("task_script_version table created successfully")
-		}
+	// 始终 AutoMigrate 新表，确保字段同步（AutoMigrate 幂等，只加列不删列）
+	if err := models.Db.AutoMigrate(&models.TaskScriptVersion{}); err != nil {
+		logger.Error("Failed to migrate task_script_version table", err)
 	}
-
-	if !models.Db.Migrator().HasTable(&models.TaskTemplate{}) {
-		logger.Info("task_template table not found, creating...")
-		if err := models.Db.AutoMigrate(&models.TaskTemplate{}); err != nil {
-			logger.Error("Failed to create task_template table", err)
-		} else {
-			logger.Info("task_template table created successfully")
-		}
+	if err := models.Db.AutoMigrate(&models.TaskTemplate{}); err != nil {
+		logger.Error("Failed to migrate task_template table", err)
 	}
 }
