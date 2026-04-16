@@ -859,6 +859,16 @@ export default {
         this.hosts = hosts || []
         this.handleProtocolChange(this.form.protocol, true)
         this.updateSpecRule()
+
+        // 从模板列表页跳转过来时，自动加载并应用模板
+        const templateId = this.$route.query.template_id
+        if (templateId) {
+          templateService.apply(templateId, (data) => {
+            if (data) {
+              this.applyTemplate(data)
+            }
+          })
+        }
       })
     },
     populateForm (taskData) {
@@ -1067,15 +1077,15 @@ export default {
       this.form.http_method = tmpl.http_method || 1
       this.form.http_body = tmpl.http_body || ''
       this.form.http_headers = tmpl.http_headers || ''
+      this.form.success_pattern = tmpl.success_pattern || ''
       if (tmpl.timeout > 0) {
         this.form.timeout = tmpl.timeout
       }
+      if (tmpl.description) {
+        this.form.remark = tmpl.description
+      }
       this.handleProtocolChange(tmpl.protocol, true)
       this.showTemplateDialog = false
-      // 增加使用次数
-      if (tmpl.id) {
-        templateService.apply(tmpl.id, () => {})
-      }
       this.$message.success(this.t('template.applySuccess'))
     },
     saveAsTemplate () {

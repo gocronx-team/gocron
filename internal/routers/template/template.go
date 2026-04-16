@@ -22,9 +22,10 @@ type TemplateForm struct {
 	Protocol    int8   `form:"protocol" json:"protocol" binding:"oneof=1 2"`
 	Command     string `form:"command" json:"command" binding:"required,max=65535"`
 	HttpMethod  int8   `form:"http_method" json:"http_method" binding:"oneof=1 2"`
-	HttpBody    string `form:"http_body" json:"http_body"`
-	HttpHeaders string `form:"http_headers" json:"http_headers"`
-	Timeout     int    `form:"timeout" json:"timeout" binding:"min=0,max=86400"`
+	HttpBody       string `form:"http_body" json:"http_body"`
+	HttpHeaders    string `form:"http_headers" json:"http_headers"`
+	SuccessPattern string `form:"success_pattern" json:"success_pattern" binding:"max=512"`
+	Timeout        int    `form:"timeout" json:"timeout" binding:"min=0,max=86400"`
 }
 
 type SaveFromTaskForm struct {
@@ -120,6 +121,7 @@ func Store(c *gin.Context) {
 	tmplModel.HttpMethod = form.HttpMethod
 	tmplModel.HttpBody = form.HttpBody
 	tmplModel.HttpHeaders = form.HttpHeaders
+	tmplModel.SuccessPattern = form.SuccessPattern
 	tmplModel.Timeout = form.Timeout
 
 	if id == 0 {
@@ -216,6 +218,7 @@ func SaveFromTask(c *gin.Context) {
 	tmplModel.HttpMethod = int8(task.HttpMethod)
 	tmplModel.HttpBody = task.HttpBody
 	tmplModel.HttpHeaders = task.HttpHeaders
+	tmplModel.SuccessPattern = task.SuccessPattern
 	tmplModel.Timeout = task.Timeout
 	tmplModel.CreatedBy = user.Username(c)
 

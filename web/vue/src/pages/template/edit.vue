@@ -86,6 +86,13 @@
           </el-form-item>
         </el-col>
       </el-row>
+      <el-row v-if="form.protocol === 1">
+        <el-col :span="12">
+          <el-form-item :label="t('task.successPattern')">
+            <el-input v-model.trim="form.success_pattern" :placeholder="t('task.successPatternPlaceholder')"></el-input>
+          </el-form-item>
+        </el-col>
+      </el-row>
       <el-form-item>
         <el-button type="primary" @click="submit">{{ t('common.save') }}</el-button>
         <el-button @click="cancel">{{ t('common.cancel') }}</el-button>
@@ -123,6 +130,7 @@ export default {
         http_method: 1,
         http_body: '',
         http_headers: '',
+        success_pattern: '',
         timeout: 300
       },
       formRules: {
@@ -157,6 +165,7 @@ export default {
             http_method: data.http_method || 1,
             http_body: data.http_body || '',
             http_headers: data.http_headers || '',
+            success_pattern: data.success_pattern || '',
             timeout: data.timeout || 300
           }
         }

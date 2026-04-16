@@ -17,8 +17,9 @@ type TaskTemplate struct {
 	Command     string    `json:"command" gorm:"type:text;not null"`
 	HttpMethod  int8      `json:"http_method" gorm:"type:tinyint;not null;default:1"`
 	HttpBody    string    `json:"http_body" gorm:"type:text"`
-	HttpHeaders string    `json:"http_headers" gorm:"type:text"`
-	Timeout     int       `json:"timeout" gorm:"type:int;not null;default:0"`
+	HttpHeaders    string `json:"http_headers" gorm:"type:text"`
+	SuccessPattern string `json:"success_pattern" gorm:"type:varchar(512);not null;default:''"`
+	Timeout        int    `json:"timeout" gorm:"type:int;not null;default:0"`
 	IsBuiltin   int8      `json:"is_builtin" gorm:"type:tinyint;not null;default:0"`
 	UsageCount  int       `json:"usage_count" gorm:"type:int;not null;default:0"`
 	CreatedBy   string    `json:"created_by" gorm:"type:varchar(64);not null;default:''"`
@@ -35,17 +36,18 @@ func (t *TaskTemplate) Create() (int, error) {
 func (t *TaskTemplate) UpdateBean(id int) (int64, error) {
 	result := Db.Model(&TaskTemplate{}).Where("id = ?", id).
 		Select("name", "description", "category", "protocol", "command",
-			"http_method", "http_body", "http_headers", "timeout").
+			"http_method", "http_body", "http_headers", "success_pattern", "timeout").
 		UpdateColumns(map[string]interface{}{
-			"name":         t.Name,
-			"description":  t.Description,
-			"category":     t.Category,
-			"protocol":     t.Protocol,
-			"command":      t.Command,
-			"http_method":  t.HttpMethod,
-			"http_body":    t.HttpBody,
-			"http_headers": t.HttpHeaders,
-			"timeout":      t.Timeout,
+			"name":            t.Name,
+			"description":     t.Description,
+			"category":        t.Category,
+			"protocol":        t.Protocol,
+			"command":         t.Command,
+			"http_method":     t.HttpMethod,
+			"http_body":       t.HttpBody,
+			"http_headers":    t.HttpHeaders,
+			"success_pattern": t.SuccessPattern,
+			"timeout":         t.Timeout,
 		})
 	return result.RowsAffected, result.Error
 }
