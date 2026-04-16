@@ -62,11 +62,15 @@
         </template>
       </el-table-column>
       <el-table-column prop="usage_count" :label="t('template.usageCount')" width="90" align="center"></el-table-column>
-      <el-table-column :label="t('common.operation')" width="200" align="center" v-if="isAdmin">
+      <el-table-column :label="t('common.operation')" width="180" align="center" v-if="isAdmin">
         <template #default="scope">
-          <el-button type="primary" size="small" @click="useTemplate(scope.row)">{{ t('template.useTemplate') }}</el-button>
-          <el-button v-if="scope.row.is_builtin !== 1" size="small" @click="toEdit(scope.row)">{{ t('common.edit') }}</el-button>
-          <el-button v-if="scope.row.is_builtin !== 1" type="danger" size="small" @click="remove(scope.row)">{{ t('common.delete') }}</el-button>
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <el-button type="primary" size="small" style="width: 100%;" @click="useTemplate(scope.row)">{{ t('template.useTemplate') }}</el-button>
+            <div v-if="scope.row.is_builtin !== 1" style="display: flex; gap: 4px;">
+              <el-button size="small" style="flex: 1;" @click="toEdit(scope.row)">{{ t('common.edit') }}</el-button>
+              <el-button type="danger" size="small" style="flex: 1;" @click="remove(scope.row)">{{ t('common.delete') }}</el-button>
+            </div>
+          </div>
         </template>
       </el-table-column>
     </el-table>
@@ -97,10 +101,19 @@ export default {
         page_size: 20,
         category: '',
         name: ''
-      }
+      },
+      isFirstActivate: true
     }
   },
   created() {
+    this.loadCategories()
+    this.search()
+  },
+  activated() {
+    if (this.isFirstActivate) {
+      this.isFirstActivate = false
+      return
+    }
     this.loadCategories()
     this.search()
   },
