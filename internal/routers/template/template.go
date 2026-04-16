@@ -25,7 +25,12 @@ type TemplateForm struct {
 	HttpBody       string `form:"http_body" json:"http_body"`
 	HttpHeaders    string `form:"http_headers" json:"http_headers"`
 	SuccessPattern string `form:"success_pattern" json:"success_pattern" binding:"max=512"`
+	Tag            string `form:"tag" json:"tag"`
+	Spec           string `form:"spec" json:"spec"`
 	Timeout        int    `form:"timeout" json:"timeout" binding:"min=0,max=86400"`
+	Multi          int8   `form:"multi" json:"multi" binding:"oneof=0 1"`
+	RetryTimes     int8   `form:"retry_times" json:"retry_times"`
+	RetryInterval  int16  `form:"retry_interval" json:"retry_interval"`
 }
 
 type SaveFromTaskForm struct {
@@ -122,7 +127,12 @@ func Store(c *gin.Context) {
 	tmplModel.HttpBody = form.HttpBody
 	tmplModel.HttpHeaders = form.HttpHeaders
 	tmplModel.SuccessPattern = form.SuccessPattern
+	tmplModel.Tag = form.Tag
+	tmplModel.Spec = form.Spec
 	tmplModel.Timeout = form.Timeout
+	tmplModel.Multi = form.Multi
+	tmplModel.RetryTimes = form.RetryTimes
+	tmplModel.RetryInterval = form.RetryInterval
 
 	if id == 0 {
 		tmplModel.CreatedBy = user.Username(c)
@@ -219,7 +229,12 @@ func SaveFromTask(c *gin.Context) {
 	tmplModel.HttpBody = task.HttpBody
 	tmplModel.HttpHeaders = task.HttpHeaders
 	tmplModel.SuccessPattern = task.SuccessPattern
+	tmplModel.Tag = task.Tag
+	tmplModel.Spec = task.Spec
 	tmplModel.Timeout = task.Timeout
+	tmplModel.Multi = task.Multi
+	tmplModel.RetryTimes = task.RetryTimes
+	tmplModel.RetryInterval = task.RetryInterval
 	tmplModel.CreatedBy = user.Username(c)
 
 	_, err = tmplModel.Create()

@@ -34,7 +34,19 @@
         </el-col>
       </el-row>
       <el-row>
-        <el-col :span="8">
+        <el-col :span="12">
+          <el-form-item :label="t('task.tag')">
+            <el-input v-model="form.tag" :placeholder="t('task.tagPlaceholder')"></el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item :label="t('task.cronExpression')">
+            <el-input v-model.trim="form.spec" :placeholder="t('task.cronPlaceholder')"></el-input>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row>
+        <el-col :span="6">
           <el-form-item :label="t('template.protocol')">
             <el-select v-model.trim="form.protocol">
               <el-option :value="1" label="HTTP"></el-option>
@@ -42,7 +54,7 @@
             </el-select>
           </el-form-item>
         </el-col>
-        <el-col :span="8" v-if="form.protocol === 1">
+        <el-col :span="6" v-if="form.protocol === 1">
           <el-form-item :label="t('task.httpMethod')">
             <el-select v-model.trim="form.http_method">
               <el-option :value="1" label="GET"></el-option>
@@ -50,9 +62,30 @@
             </el-select>
           </el-form-item>
         </el-col>
-        <el-col :span="8">
+        <el-col :span="6">
           <el-form-item :label="t('template.timeout')">
             <el-input-number v-model="form.timeout" :min="0" :max="86400"></el-input-number>
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
+          <el-form-item :label="t('task.singleInstance')">
+            <el-select v-model.trim="form.multi">
+              <el-option :value="0" :label="t('common.yes')"></el-option>
+              <el-option :value="1" :label="t('common.no')"></el-option>
+            </el-select>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row>
+        <el-col :span="12">
+          <el-form-item :label="t('task.retryTimes')">
+            <el-input-number v-model="form.retry_times" :min="0" :max="10"></el-input-number>
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item :label="t('task.retryInterval')">
+            <el-input-number v-model="form.retry_interval" :min="0" :max="3600"></el-input-number>
+            <span style="margin-left: 8px; color: #909399; font-size: 12px;">({{ t('message.seconds') }})</span>
           </el-form-item>
         </el-col>
       </el-row>
@@ -131,7 +164,12 @@ export default {
         http_body: '',
         http_headers: '',
         success_pattern: '',
-        timeout: 300
+        tag: '',
+        spec: '',
+        timeout: 300,
+        multi: 1,
+        retry_times: 0,
+        retry_interval: 0
       },
       formRules: {
         name: [
@@ -166,7 +204,12 @@ export default {
             http_body: data.http_body || '',
             http_headers: data.http_headers || '',
             success_pattern: data.success_pattern || '',
-            timeout: data.timeout || 300
+            tag: data.tag || '',
+            spec: data.spec || '',
+            timeout: data.timeout || 300,
+            multi: data.multi ?? 1,
+            retry_times: data.retry_times || 0,
+            retry_interval: data.retry_interval || 0
           }
         }
       })

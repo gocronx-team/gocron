@@ -19,7 +19,12 @@ type TaskTemplate struct {
 	HttpBody    string    `json:"http_body" gorm:"type:text"`
 	HttpHeaders    string `json:"http_headers" gorm:"type:text"`
 	SuccessPattern string `json:"success_pattern" gorm:"type:varchar(512);not null;default:''"`
+	Tag            string `json:"tag" gorm:"type:varchar(255);not null;default:''"`
+	Spec           string `json:"spec" gorm:"type:varchar(64);not null;default:''"`
 	Timeout        int    `json:"timeout" gorm:"type:int;not null;default:0"`
+	Multi          int8   `json:"multi" gorm:"type:tinyint;not null;default:1"`
+	RetryTimes     int8   `json:"retry_times" gorm:"type:tinyint;not null;default:0"`
+	RetryInterval  int16  `json:"retry_interval" gorm:"type:smallint;not null;default:0"`
 	IsBuiltin   int8      `json:"is_builtin" gorm:"type:tinyint;not null;default:0"`
 	UsageCount  int       `json:"usage_count" gorm:"type:int;not null;default:0"`
 	CreatedBy   string    `json:"created_by" gorm:"type:varchar(64);not null;default:''"`
@@ -36,7 +41,8 @@ func (t *TaskTemplate) Create() (int, error) {
 func (t *TaskTemplate) UpdateBean(id int) (int64, error) {
 	result := Db.Model(&TaskTemplate{}).Where("id = ?", id).
 		Select("name", "description", "category", "protocol", "command",
-			"http_method", "http_body", "http_headers", "success_pattern", "timeout").
+			"http_method", "http_body", "http_headers", "success_pattern",
+			"tag", "spec", "timeout", "multi", "retry_times", "retry_interval").
 		UpdateColumns(map[string]interface{}{
 			"name":            t.Name,
 			"description":     t.Description,
@@ -47,7 +53,12 @@ func (t *TaskTemplate) UpdateBean(id int) (int64, error) {
 			"http_body":       t.HttpBody,
 			"http_headers":    t.HttpHeaders,
 			"success_pattern": t.SuccessPattern,
+			"tag":             t.Tag,
+			"spec":            t.Spec,
 			"timeout":         t.Timeout,
+			"multi":           t.Multi,
+			"retry_times":     t.RetryTimes,
+			"retry_interval":  t.RetryInterval,
 		})
 	return result.RowsAffected, result.Error
 }
@@ -125,7 +136,10 @@ func seedBuiltinTemplates(tx *gorm.DB) {
 			Category:    "backup",
 			Protocol:    2,
 			Command:     `mysqldump -h {{db_host}} -u {{db_user}} -p'{{db_pass}}' {{db_name}} | gzip > /backup/{{db_name}}_$(date +%Y%m%d_%H%M%S).sql.gz`,
+			Tag:         "backup,database",
+			Spec:        "0 0 2 * * *",
 			Timeout:     3600,
+			Multi:       0,
 			IsBuiltin:   1,
 		},
 		{
@@ -134,7 +148,10 @@ func seedBuiltinTemplates(tx *gorm.DB) {
 			Category:    "backup",
 			Protocol:    2,
 			Command:     `PGPASSWORD='{{db_pass}}' pg_dump -h {{db_host}} -U {{db_user}} {{db_name}} | gzip > /backup/{{db_name}}_$(date +%Y%m%d_%H%M%S).sql.gz`,
+			Tag:         "backup,database",
+			Spec:        "0 0 2 * * *",
 			Timeout:     3600,
+			Multi:       0,
 			IsBuiltin:   1,
 		},
 		{
@@ -143,7 +160,10 @@ func seedBuiltinTemplates(tx *gorm.DB) {
 			Category:    "cleanup",
 			Protocol:    2,
 			Command:     `find {{log_dir}} -name "*.log" -mtime +{{retain_days}} -delete && echo "Cleanup completed"`,
+			Tag:         "cleanup,logs",
+			Spec:        "0 0 3 * * *",
 			Timeout:     300,
+			Multi:       0,
 			IsBuiltin:   1,
 		},
 		{
@@ -152,7 +172,10 @@ func seedBuiltinTemplates(tx *gorm.DB) {
 			Category:    "cleanup",
 			Protocol:    2,
 			Command:     `find {{temp_dir}} -type f -mtime +{{retain_days}} -delete && echo "Cleaned $(date)"`,
+			Tag:         "cleanup",
+			Spec:        "0 0 4 * * *",
 			Timeout:     300,
+			Multi:       0,
 			IsBuiltin:   1,
 		},
 		{
@@ -161,7 +184,11 @@ func seedBuiltinTemplates(tx *gorm.DB) {
 			Category:    "monitor",
 			Protocol:    2,
 			Command:     `curl -sf -o /dev/null -w "%{http_code}" {{check_url}} || exit 1`,
+			Tag:         "monitor,health",
+			Spec:        "0 */5 * * * *",
 			Timeout:     30,
+			RetryTimes:  3,
+			RetryInterval: 30,
 			IsBuiltin:   1,
 		},
 		{
@@ -170,6 +197,8 @@ func seedBuiltinTemplates(tx *gorm.DB) {
 			Category:    "monitor",
 			Protocol:    2,
 			Command:     `usage=$(df {{mount_point}} | awk 'NR==2{print $5}' | tr -d '%%') && [ "$usage" -lt {{threshold}} ] && echo "OK: ${usage}%% used" || (echo "WARN: ${usage}%% used, exceeds {{threshold}}%%" && exit 1)`,
+			Tag:         "monitor,disk",
+			Spec:        "0 */30 * * * *",
 			Timeout:     30,
 			IsBuiltin:   1,
 		},
@@ -179,7 +208,9 @@ func seedBuiltinTemplates(tx *gorm.DB) {
 			Category:    "deploy",
 			Protocol:    2,
 			Command:     `docker restart {{container_name}} && sleep 3 && docker ps | grep {{container_name}}`,
+			Tag:         "deploy,docker",
 			Timeout:     120,
+			Multi:       0,
 			IsBuiltin:   1,
 		},
 		{
@@ -189,7 +220,10 @@ func seedBuiltinTemplates(tx *gorm.DB) {
 			Protocol:    1,
 			Command:     `{{api_url}}`,
 			HttpMethod:  1,
+			Tag:         "api,http",
 			Timeout:     30,
+			RetryTimes:  2,
+			RetryInterval: 10,
 			IsBuiltin:   1,
 		},
 		{
@@ -201,7 +235,10 @@ func seedBuiltinTemplates(tx *gorm.DB) {
 			HttpMethod:  2,
 			HttpBody:    `{{json_body}}`,
 			HttpHeaders: `{"Content-Type": "application/json"}`,
+			Tag:         "api,http",
 			Timeout:     30,
+			RetryTimes:  2,
+			RetryInterval: 10,
 			IsBuiltin:   1,
 		},
 	}

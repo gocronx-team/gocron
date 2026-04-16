@@ -1078,8 +1078,24 @@ export default {
       this.form.http_body = tmpl.http_body || ''
       this.form.http_headers = tmpl.http_headers || ''
       this.form.success_pattern = tmpl.success_pattern || ''
+      if (tmpl.tag) {
+        this.form.tags = tmpl.tag.split(',').filter(Boolean)
+        this.form.tag = tmpl.tag
+      }
+      if (tmpl.spec) {
+        this.form.spec = tmpl.spec
+      }
       if (tmpl.timeout > 0) {
         this.form.timeout = tmpl.timeout
+      }
+      if (tmpl.multi !== undefined) {
+        this.form.multi = tmpl.multi
+      }
+      if (tmpl.retry_times > 0) {
+        this.form.retry_times = tmpl.retry_times
+      }
+      if (tmpl.retry_interval > 0) {
+        this.form.retry_interval = tmpl.retry_interval
       }
       if (tmpl.description) {
         this.form.remark = tmpl.description
