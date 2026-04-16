@@ -21,7 +21,6 @@
     "axios": "^1.15.0",
     "dayjs": "^1.11.20",
     "element-plus": "^2.13.5",
-    "monaco-editor": "^0.55.1",
     "nprogress": "^0.2.0",
     "pinia": "^3.0.4",
     "pinia-plugin-persistedstate": "^4.7.1",

@@ -108,11 +108,7 @@ export default {
   },
   computed: {
     editorLanguage() {
-      if (this.form.protocol === 1) return 'plaintext'
-      const cmd = this.form.command || ''
-      if (cmd.startsWith('#!/usr/bin/python') || cmd.startsWith('python ')) return 'python'
-      if (cmd.startsWith('#!/usr/bin/node') || cmd.startsWith('node ')) return 'javascript'
-      return 'shell'
+      return this.form.protocol === 1 ? 'plaintext' : 'shell'
     }
   },
   data() {

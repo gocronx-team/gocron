@@ -1,17 +1,26 @@
 <template>
-  <div ref="editorContainer" :style="{ height: height, width: '100%', border: '1px solid #dcdfe6', borderRadius: '4px' }"></div>
+  <div class="code-editor-wrapper">
+    <div class="line-numbers" ref="lineNumbers">
+      <span v-for="n in lineCount" :key="n">{{ n }}</span>
+    </div>
+    <textarea
+      ref="textarea"
+      class="code-textarea"
+      :value="modelValue"
+      :readonly="readOnly"
+      :style="{ height: height }"
+      spellcheck="false"
+      autocomplete="off"
+      autocorrect="off"
+      autocapitalize="off"
+      @input="onInput"
+      @scroll="syncScroll"
+      @keydown="onKeydown"
+    ></textarea>
+  </div>
 </template>
 
 <script>
-import * as monaco from 'monaco-editor'
-import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
-
-self.MonacoEnvironment = {
-  getWorker() {
-    return new editorWorker()
-  }
-}
-
 export default {
   name: 'MonacoEditor',
   props: {
@@ -33,67 +42,90 @@ export default {
     }
   },
   emits: ['update:modelValue'],
-  data() {
-    return {
-      editor: null
-    }
-  },
-  watch: {
-    modelValue(newVal) {
-      if (this.editor && this.editor.getValue() !== newVal) {
-        this.editor.setValue(newVal || '')
-      }
-    },
-    language(newVal) {
-      if (this.editor) {
-        const model = this.editor.getModel()
-        if (model) {
-          monaco.editor.setModelLanguage(model, newVal)
-        }
-      }
-    },
-    readOnly(newVal) {
-      if (this.editor) {
-        this.editor.updateOptions({ readOnly: newVal })
-      }
-    }
-  },
-  mounted() {
-    this.initEditor()
-  },
-  beforeUnmount() {
-    if (this.editor) {
-      this.editor.dispose()
+  computed: {
+    lineCount() {
+      if (!this.modelValue) return 1
+      return this.modelValue.split('\n').length
     }
   },
   methods: {
-    initEditor() {
-      this.editor = monaco.editor.create(this.$refs.editorContainer, {
-        value: this.modelValue || '',
-        language: this.language,
-        theme: 'vs',
-        minimap: { enabled: false },
-        lineNumbers: 'on',
-        wordWrap: 'on',
-        fontSize: 14,
-        scrollBeyondLastLine: false,
-        automaticLayout: true,
-        tabSize: 2,
-        readOnly: this.readOnly,
-        scrollbar: {
-          verticalScrollbarSize: 8,
-          horizontalScrollbarSize: 8
-        },
-        overviewRulerLanes: 0,
-        hideCursorInOverviewRuler: true,
-        overviewRulerBorder: false,
-        renderLineHighlight: 'line'
-      })
-
-      this.editor.onDidChangeModelContent(() => {
-        this.$emit('update:modelValue', this.editor.getValue())
-      })
+    onInput(e) {
+      this.$emit('update:modelValue', e.target.value)
+    },
+    syncScroll() {
+      if (this.$refs.lineNumbers && this.$refs.textarea) {
+        this.$refs.lineNumbers.scrollTop = this.$refs.textarea.scrollTop
+      }
+    },
+    onKeydown(e) {
+      // Tab 键插入两个空格
+      if (e.key === 'Tab') {
+        e.preventDefault()
+        const textarea = e.target
+        const start = textarea.selectionStart
+        const end = textarea.selectionEnd
+        const value = textarea.value
+        textarea.value = value.substring(0, start) + '  ' + value.substring(end)
+        textarea.selectionStart = textarea.selectionEnd = start + 2
+        this.$emit('update:modelValue', textarea.value)
+      }
     }
   }
 }
 </script>
+
+<style scoped>
+.code-editor-wrapper {
+  display: flex;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #1e1e1e;
+}
+
+.line-numbers {
+  padding: 10px 0;
+  background: #2d2d2d;
+  color: #858585;
+  font-family: 'Menlo', 'Monaco', 'Consolas', 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: right;
+  user-select: none;
+  overflow: hidden;
+  min-width: 40px;
+}
+
+.line-numbers span {
+  display: block;
+  padding: 0 8px;
+}
+
+.code-textarea {
+  flex: 1;
+  padding: 10px 12px;
+  border: none;
+  outline: none;
+  resize: none;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  font-family: 'Menlo', 'Monaco', 'Consolas', 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  tab-size: 2;
+  white-space: pre;
+  overflow: auto;
+}
+
+.code-textarea::placeholder {
+  color: #5a5a5a;
+}
+
+.code-textarea:focus {
+  outline: none;
+}
+
+.code-editor-wrapper:focus-within {
+  border-color: #409eff;
+}
+</style>
