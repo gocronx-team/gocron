@@ -829,12 +829,12 @@ export default {
         this.handleProtocolChange(this.form.protocol, true)
         this.updateSpecRule()
 
-        // 从模板列表页跳转过来时，自动加载并应用模板
+        // 从模板列表页跳转过来时，加载模板并走变量检测流程
         const templateId = this.$route.query.template_id
         if (templateId) {
           templateService.apply(templateId, (data) => {
             if (data) {
-              this.applyTemplate(data)
+              this.selectTemplate(data)
             }
           })
         }
