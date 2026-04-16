@@ -78,39 +78,7 @@
         <el-row v-if="form.level === 1">
           <el-col :span="12">
             <el-form-item :label="t('task.cronExpression')" prop="spec">
-              <el-input v-model.trim="form.spec"
-                        :placeholder="t('task.cronPlaceholder')">
-                <template #append>
-                  <el-popover
-                    placement="bottom"
-                    :width="500"
-                    trigger="click">
-                    <template #reference>
-                      <el-button>{{ t('task.cronExample') }}</el-button>
-                    </template>
-                    <div>
-                      <h4>{{ t('task.cronStandard') }}</h4>
-                      <ul style="padding-left: 20px; margin: 10px 0;">
-                        <li>0 * * * * * - {{ t('message.everyMinute') }}</li>
-                        <li>*/20 * * * * * - {{ t('message.every20Seconds') }}</li>
-                        <li>0 30 21 * * * - {{ t('message.everyDay21_30') }}</li>
-                        <li>0 0 23 * * 6 - {{ t('message.everySaturday23') }}</li>
-                      </ul>
-                      <h4>{{ t('task.cronShortcut') }}</h4>
-                      <ul style="padding-left: 20px; margin: 10px 0;">
-                        <li>@reboot - {{ t('message.reboot') }}</li>
-                        <li>@yearly - {{ t('message.yearly') }}</li>
-                        <li>@monthly - {{ t('message.monthly') }}</li>
-                        <li>@weekly - {{ t('message.weekly') }}</li>
-                        <li>@daily - {{ t('message.daily') }}</li>
-                        <li>@hourly - {{ t('message.hourly') }}</li>
-                        <li>@every 30s - {{ t('message.every30s') }}</li>
-                        <li>@every 1m20s - {{ t('message.every1m20s') }}</li>
-                      </ul>
-                    </div>
-                  </el-popover>
-                </template>
-              </el-input>
+              <CronInput v-model="form.spec" />
             </el-form-item>
           </el-col>
           <el-col :span="8">
@@ -490,6 +458,7 @@ import notificationService from '../../api/notification'
 import { validateCronSpec, getCronExamples, extractTimezone } from '../../utils/cronValidator'
 import { ElMessageBox } from 'element-plus'
 import MonacoEditor from '../../components/common/MonacoEditor.vue'
+import CronInput from '../../components/common/CronInput.vue'
 
 const createDefaultForm = () => ({
   id: '',
@@ -523,7 +492,7 @@ const createDefaultForm = () => ({
 
 export default {
   name: 'task-edit',
-  components: { MonacoEditor },
+  components: { MonacoEditor, CronInput },
   setup() {
     const { t, locale } = useI18n()
     return { t, locale }

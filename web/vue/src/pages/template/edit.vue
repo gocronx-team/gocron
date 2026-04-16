@@ -41,7 +41,7 @@
         </el-col>
         <el-col :span="12">
           <el-form-item :label="t('task.cronExpression')">
-            <el-input v-model.trim="form.spec" :placeholder="t('task.cronPlaceholder')"></el-input>
+            <CronInput v-model="form.spec" />
           </el-form-item>
         </el-col>
       </el-row>
@@ -138,10 +138,11 @@
 import { useI18n } from 'vue-i18n'
 import templateService from '../../api/template'
 import MonacoEditor from '../../components/common/MonacoEditor.vue'
+import CronInput from '../../components/common/CronInput.vue'
 
 export default {
   name: 'template-edit',
-  components: { MonacoEditor },
+  components: { MonacoEditor, CronInput },
   setup() {
     const { t } = useI18n()
     return { t }
