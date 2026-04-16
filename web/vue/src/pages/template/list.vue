@@ -61,7 +61,6 @@
           {{ scope.row.protocol === 1 ? 'HTTP' : 'Shell' }}
         </template>
       </el-table-column>
-      <el-table-column prop="usage_count" :label="t('template.usageCount')" width="90" align="center"></el-table-column>
       <el-table-column :label="t('common.operation')" width="180" align="center" v-if="isAdmin">
         <template #default="scope">
           <div style="display: flex; flex-direction: column; gap: 4px;">

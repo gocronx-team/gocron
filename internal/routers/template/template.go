@@ -28,9 +28,14 @@ type TemplateForm struct {
 	Tag            string `form:"tag" json:"tag"`
 	Spec           string `form:"spec" json:"spec"`
 	Timeout        int    `form:"timeout" json:"timeout" binding:"min=0,max=86400"`
-	Multi          int8   `form:"multi" json:"multi" binding:"oneof=0 1"`
-	RetryTimes     int8   `form:"retry_times" json:"retry_times"`
-	RetryInterval  int16  `form:"retry_interval" json:"retry_interval"`
+	Multi            int8   `form:"multi" json:"multi" binding:"oneof=0 1"`
+	RetryTimes       int8   `form:"retry_times" json:"retry_times"`
+	RetryInterval    int16  `form:"retry_interval" json:"retry_interval"`
+	Timezone         string `form:"timezone" json:"timezone"`
+	NotifyStatus     int8   `form:"notify_status" json:"notify_status"`
+	NotifyType       int8   `form:"notify_type" json:"notify_type"`
+	NotifyKeyword    string `form:"notify_keyword" json:"notify_keyword"`
+	LogRetentionDays int    `form:"log_retention_days" json:"log_retention_days" binding:"min=0,max=3650"`
 }
 
 type SaveFromTaskForm struct {
@@ -133,6 +138,11 @@ func Store(c *gin.Context) {
 	tmplModel.Multi = form.Multi
 	tmplModel.RetryTimes = form.RetryTimes
 	tmplModel.RetryInterval = form.RetryInterval
+	tmplModel.Timezone = form.Timezone
+	tmplModel.NotifyStatus = form.NotifyStatus
+	tmplModel.NotifyType = form.NotifyType
+	tmplModel.NotifyKeyword = form.NotifyKeyword
+	tmplModel.LogRetentionDays = form.LogRetentionDays
 
 	if id == 0 {
 		tmplModel.CreatedBy = user.Username(c)
@@ -230,11 +240,25 @@ func SaveFromTask(c *gin.Context) {
 	tmplModel.HttpHeaders = task.HttpHeaders
 	tmplModel.SuccessPattern = task.SuccessPattern
 	tmplModel.Tag = task.Tag
-	tmplModel.Spec = task.Spec
+	// 从 spec 中解析 timezone（格式: CRON_TZ=Asia/Shanghai 0 0 2 * * *）
+	spec := task.Spec
+	if strings.HasPrefix(spec, "CRON_TZ=") || strings.HasPrefix(spec, "TZ=") {
+		parts := strings.SplitN(spec, " ", 2)
+		if len(parts) == 2 {
+			tzPart := parts[0]
+			spec = parts[1]
+			tmplModel.Timezone = strings.SplitN(tzPart, "=", 2)[1]
+		}
+	}
+	tmplModel.Spec = spec
 	tmplModel.Timeout = task.Timeout
 	tmplModel.Multi = task.Multi
 	tmplModel.RetryTimes = task.RetryTimes
 	tmplModel.RetryInterval = task.RetryInterval
+	tmplModel.NotifyStatus = task.NotifyStatus
+	tmplModel.NotifyType = task.NotifyType
+	tmplModel.NotifyKeyword = task.NotifyKeyword
+	tmplModel.LogRetentionDays = task.LogRetentionDays
 	tmplModel.CreatedBy = user.Username(c)
 
 	_, err = tmplModel.Create()

@@ -1066,6 +1066,19 @@ export default {
       if (tmpl.retry_interval > 0) {
         this.form.retry_interval = tmpl.retry_interval
       }
+      if (tmpl.timezone) {
+        this.form.timezone = tmpl.timezone
+      }
+      if (tmpl.notify_status > 0) {
+        this.form.notify_status = tmpl.notify_status
+        this.form.notify_type = tmpl.notify_type || 0
+        if (tmpl.notify_keyword) {
+          this.form.notify_keyword = tmpl.notify_keyword
+        }
+      }
+      if (tmpl.log_retention_days > 0) {
+        this.form.log_retention_days = tmpl.log_retention_days
+      }
       if (tmpl.description) {
         this.form.remark = tmpl.description
       }

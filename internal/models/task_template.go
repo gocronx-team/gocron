@@ -23,9 +23,14 @@ type TaskTemplate struct {
 	Spec           string `json:"spec" gorm:"type:varchar(64);not null;default:''"`
 	Timeout        int    `json:"timeout" gorm:"type:int;not null;default:0"`
 	Multi          int8   `json:"multi" gorm:"type:tinyint;not null;default:1"`
-	RetryTimes     int8   `json:"retry_times" gorm:"type:tinyint;not null;default:0"`
-	RetryInterval  int16  `json:"retry_interval" gorm:"type:smallint;not null;default:0"`
-	IsBuiltin   int8      `json:"is_builtin" gorm:"type:tinyint;not null;default:0"`
+	RetryTimes       int8   `json:"retry_times" gorm:"type:tinyint;not null;default:0"`
+	RetryInterval    int16  `json:"retry_interval" gorm:"type:smallint;not null;default:0"`
+	Timezone         string `json:"timezone" gorm:"type:varchar(64);not null;default:''"`
+	NotifyStatus     int8   `json:"notify_status" gorm:"type:tinyint;not null;default:0"`
+	NotifyType       int8   `json:"notify_type" gorm:"type:tinyint;not null;default:0"`
+	NotifyKeyword    string `json:"notify_keyword" gorm:"type:varchar(128);not null;default:''"`
+	LogRetentionDays int    `json:"log_retention_days" gorm:"type:smallint;not null;default:0"`
+	IsBuiltin        int8   `json:"is_builtin" gorm:"type:tinyint;not null;default:0"`
 	UsageCount  int       `json:"usage_count" gorm:"type:int;not null;default:0"`
 	CreatedBy   string    `json:"created_by" gorm:"type:varchar(64);not null;default:''"`
 	CreatedAt   time.Time `json:"created_at" gorm:"column:created_at;autoCreateTime"`
@@ -42,23 +47,29 @@ func (t *TaskTemplate) UpdateBean(id int) (int64, error) {
 	result := Db.Model(&TaskTemplate{}).Where("id = ?", id).
 		Select("name", "description", "category", "protocol", "command",
 			"http_method", "http_body", "http_headers", "success_pattern",
-			"tag", "spec", "timeout", "multi", "retry_times", "retry_interval").
+			"tag", "spec", "timeout", "multi", "retry_times", "retry_interval",
+			"timezone", "notify_status", "notify_type", "notify_keyword", "log_retention_days").
 		UpdateColumns(map[string]interface{}{
-			"name":            t.Name,
-			"description":     t.Description,
-			"category":        t.Category,
-			"protocol":        t.Protocol,
-			"command":         t.Command,
-			"http_method":     t.HttpMethod,
-			"http_body":       t.HttpBody,
-			"http_headers":    t.HttpHeaders,
-			"success_pattern": t.SuccessPattern,
-			"tag":             t.Tag,
-			"spec":            t.Spec,
-			"timeout":         t.Timeout,
-			"multi":           t.Multi,
-			"retry_times":     t.RetryTimes,
-			"retry_interval":  t.RetryInterval,
+			"name":               t.Name,
+			"description":        t.Description,
+			"category":           t.Category,
+			"protocol":           t.Protocol,
+			"command":            t.Command,
+			"http_method":        t.HttpMethod,
+			"http_body":          t.HttpBody,
+			"http_headers":       t.HttpHeaders,
+			"success_pattern":    t.SuccessPattern,
+			"tag":                t.Tag,
+			"spec":               t.Spec,
+			"timeout":            t.Timeout,
+			"multi":              t.Multi,
+			"retry_times":        t.RetryTimes,
+			"retry_interval":     t.RetryInterval,
+			"timezone":           t.Timezone,
+			"notify_status":      t.NotifyStatus,
+			"notify_type":        t.NotifyType,
+			"notify_keyword":     t.NotifyKeyword,
+			"log_retention_days": t.LogRetentionDays,
 		})
 	return result.RowsAffected, result.Error
 }

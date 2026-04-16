@@ -39,9 +39,31 @@
             <el-input v-model="form.tag" :placeholder="t('task.tagPlaceholder')"></el-input>
           </el-form-item>
         </el-col>
-        <el-col :span="12">
+        <el-col :span="6">
           <el-form-item :label="t('task.cronExpression')">
             <CronInput v-model="form.spec" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
+          <el-form-item :label="t('task.timezone')">
+            <el-select
+              v-model="form.timezone"
+              filterable
+              clearable
+              :placeholder="t('task.timezoneServer')"
+              style="width: 100%;">
+              <el-option-group
+                v-for="group in timezoneGroups"
+                :key="group.label"
+                :label="group.label">
+                <el-option
+                  v-for="tz in group.zones"
+                  :key="tz"
+                  :label="tz"
+                  :value="tz">
+                </el-option>
+              </el-option-group>
+            </el-select>
           </el-form-item>
         </el-col>
       </el-row>
@@ -86,6 +108,40 @@
           <el-form-item :label="t('task.retryInterval')">
             <el-input-number v-model="form.retry_interval" :min="0" :max="3600"></el-input-number>
             <span style="margin-left: 8px; color: #909399; font-size: 12px;">({{ t('message.seconds') }})</span>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row>
+        <el-col :span="8">
+          <el-form-item :label="t('task.notification')">
+            <el-select v-model.trim="form.notify_status">
+              <el-option :value="0" :label="t('task.notifyDisabled')"></el-option>
+              <el-option :value="1" :label="t('task.notifyOnFailure')"></el-option>
+              <el-option :value="2" :label="t('task.notifyAlways')"></el-option>
+              <el-option :value="3" :label="t('task.notifyKeywordMatch')"></el-option>
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8" v-if="form.notify_status !== 0">
+          <el-form-item :label="t('task.notifyType')">
+            <el-select v-model.trim="form.notify_type">
+              <el-option :value="0" :label="t('task.notifyEmail')"></el-option>
+              <el-option :value="1" :label="t('task.notifySlack')"></el-option>
+              <el-option :value="2" :label="t('task.notifyWebhook')"></el-option>
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8" v-if="form.notify_status === 3">
+          <el-form-item :label="t('task.notifyKeyword')">
+            <el-input v-model.trim="form.notify_keyword" :placeholder="t('task.notifyKeywordPlaceholder')"></el-input>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row>
+        <el-col :span="12">
+          <el-form-item :label="t('task.logRetentionDays')">
+            <el-input-number v-model="form.log_retention_days" :min="0" :max="3650"></el-input-number>
+            <span style="margin-left: 8px; color: #909399; font-size: 12px;">{{ t('task.logRetentionDaysTip') }}</span>
           </el-form-item>
         </el-col>
       </el-row>
@@ -150,6 +206,29 @@ export default {
   computed: {
     editorLanguage() {
       return this.form.protocol === 1 ? 'plaintext' : 'shell'
+    },
+    timezoneGroups() {
+      try {
+        const zones = Intl.supportedValuesOf('timeZone')
+        const groups = { UTC: ['UTC'] }
+        for (const tz of zones) {
+          const region = tz.split('/')[0]
+          if (!groups[region]) groups[region] = []
+          groups[region].push(tz)
+        }
+        const priority = ['UTC', 'Asia', 'America', 'Europe', 'Pacific', 'Australia', 'Africa']
+        const sorted = Object.keys(groups).sort((a, b) => {
+          const ai = priority.indexOf(a)
+          const bi = priority.indexOf(b)
+          if (ai !== -1 && bi !== -1) return ai - bi
+          if (ai !== -1) return -1
+          if (bi !== -1) return 1
+          return a.localeCompare(b)
+        })
+        return sorted.map(region => ({ label: region, zones: groups[region] }))
+      } catch {
+        return [{ label: 'All', zones: ['UTC', 'Asia/Shanghai', 'America/New_York', 'Europe/London'] }]
+      }
     }
   },
   data() {
@@ -170,7 +249,12 @@ export default {
         timeout: 300,
         multi: 1,
         retry_times: 0,
-        retry_interval: 0
+        retry_interval: 0,
+        timezone: '',
+        notify_status: 0,
+        notify_type: 0,
+        notify_keyword: '',
+        log_retention_days: 0
       },
       formRules: {
         name: [
@@ -210,7 +294,12 @@ export default {
             timeout: data.timeout || 300,
             multi: data.multi ?? 1,
             retry_times: data.retry_times || 0,
-            retry_interval: data.retry_interval || 0
+            retry_interval: data.retry_interval || 0,
+            timezone: data.timezone || '',
+            notify_status: data.notify_status || 0,
+            notify_type: data.notify_type || 0,
+            notify_keyword: data.notify_keyword || '',
+            log_retention_days: data.log_retention_days || 0
           }
         }
       })
