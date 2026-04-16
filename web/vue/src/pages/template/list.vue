@@ -44,13 +44,13 @@
         </template>
       </el-table-column>
       <el-table-column prop="id" label="ID" width="60" align="center"></el-table-column>
-      <el-table-column prop="name" :label="t('template.name')" min-width="150">
+      <el-table-column prop="name" :label="t('template.name')" min-width="150" align="center">
         <template #default="scope">
           {{ scope.row.name }}
           <el-tag v-if="scope.row.is_builtin === 1" size="small" type="info" style="margin-left: 4px;">{{ t('template.builtin') }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="description" :label="t('template.description')" min-width="200"></el-table-column>
+      <el-table-column prop="description" :label="t('template.description')" min-width="200" align="center"></el-table-column>
       <el-table-column prop="category" :label="t('template.category')" width="100" align="center">
         <template #default="scope">
           <el-tag size="small">{{ getCategoryLabel(scope.row.category) }}</el-tag>

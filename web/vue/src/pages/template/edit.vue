@@ -1,21 +1,17 @@
 <template>
   <el-main>
     <el-form ref="form" :model="form" :rules="formRules" label-width="auto">
+      <!-- 基本信息 -->
       <el-row>
-        <el-col :span="12">
+        <el-col :span="8">
           <el-form-item :label="t('template.name')" prop="name">
             <el-input v-model.trim="form.name" :placeholder="t('template.templateNamePlaceholder')"></el-input>
           </el-form-item>
         </el-col>
-        <el-col :span="12">
+        <el-col :span="8">
           <el-form-item :label="t('template.category')" prop="category">
-            <el-select
-              v-model="form.category"
-              filterable
-              allow-create
-              default-first-option
-              :placeholder="t('template.selectCategory')"
-              style="width: 100%">
+            <el-select v-model="form.category" filterable allow-create default-first-option
+              :placeholder="t('template.selectCategory')" style="width: 100%">
               <el-option value="backup" :label="t('template.category_backup')"></el-option>
               <el-option value="cleanup" :label="t('template.category_cleanup')"></el-option>
               <el-option value="monitor" :label="t('template.category_monitor')"></el-option>
@@ -25,50 +21,42 @@
             </el-select>
           </el-form-item>
         </el-col>
+        <el-col :span="8">
+          <el-form-item :label="t('task.tag')">
+            <el-input v-model="form.tag" :placeholder="t('task.tagPlaceholder')"></el-input>
+          </el-form-item>
+        </el-col>
       </el-row>
       <el-row>
-        <el-col :span="24">
+        <el-col :span="16">
           <el-form-item :label="t('template.description')">
             <el-input v-model="form.description" :placeholder="t('template.templateDescPlaceholder')"></el-input>
           </el-form-item>
         </el-col>
       </el-row>
+
+      <!-- 调度配置 -->
       <el-row>
         <el-col :span="12">
-          <el-form-item :label="t('task.tag')">
-            <el-input v-model="form.tag" :placeholder="t('task.tagPlaceholder')"></el-input>
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
           <el-form-item :label="t('task.cronExpression')">
             <CronInput v-model="form.spec" />
           </el-form-item>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="8">
           <el-form-item :label="t('task.timezone')">
-            <el-select
-              v-model="form.timezone"
-              filterable
-              clearable
-              :placeholder="t('task.timezoneServer')"
-              style="width: 100%;">
-              <el-option-group
-                v-for="group in timezoneGroups"
-                :key="group.label"
-                :label="group.label">
-                <el-option
-                  v-for="tz in group.zones"
-                  :key="tz"
-                  :label="tz"
-                  :value="tz">
-                </el-option>
+            <el-select v-model="form.timezone" filterable clearable
+              :placeholder="t('task.timezoneServer')" style="width: 100%;">
+              <el-option-group v-for="group in timezoneGroups" :key="group.label" :label="group.label">
+                <el-option v-for="tz in group.zones" :key="tz" :label="tz" :value="tz"></el-option>
               </el-option-group>
             </el-select>
           </el-form-item>
         </el-col>
       </el-row>
+
+      <!-- 执行配置 -->
       <el-row>
-        <el-col :span="6">
+        <el-col :span="8">
           <el-form-item :label="t('template.protocol')">
             <el-select v-model.trim="form.protocol">
               <el-option :value="1" label="HTTP"></el-option>
@@ -76,7 +64,7 @@
             </el-select>
           </el-form-item>
         </el-col>
-        <el-col :span="6" v-if="form.protocol === 1">
+        <el-col :span="8" v-if="form.protocol === 1">
           <el-form-item :label="t('task.httpMethod')">
             <el-select v-model.trim="form.http_method">
               <el-option :value="1" label="GET"></el-option>
@@ -84,76 +72,12 @@
             </el-select>
           </el-form-item>
         </el-col>
-        <el-col :span="6">
-          <el-form-item :label="t('template.timeout')">
-            <el-input-number v-model="form.timeout" :min="0" :max="86400"></el-input-number>
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item :label="t('task.singleInstance')">
-            <el-select v-model.trim="form.multi">
-              <el-option :value="0" :label="t('common.yes')"></el-option>
-              <el-option :value="1" :label="t('common.no')"></el-option>
-            </el-select>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row>
-        <el-col :span="12">
-          <el-form-item :label="t('task.retryTimes')">
-            <el-input-number v-model="form.retry_times" :min="0" :max="10"></el-input-number>
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item :label="t('task.retryInterval')">
-            <el-input-number v-model="form.retry_interval" :min="0" :max="3600"></el-input-number>
-            <span style="margin-left: 8px; color: #909399; font-size: 12px;">({{ t('message.seconds') }})</span>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row>
-        <el-col :span="8">
-          <el-form-item :label="t('task.notification')">
-            <el-select v-model.trim="form.notify_status">
-              <el-option :value="0" :label="t('task.notifyDisabled')"></el-option>
-              <el-option :value="1" :label="t('task.notifyOnFailure')"></el-option>
-              <el-option :value="2" :label="t('task.notifyAlways')"></el-option>
-              <el-option :value="3" :label="t('task.notifyKeywordMatch')"></el-option>
-            </el-select>
-          </el-form-item>
-        </el-col>
-        <el-col :span="8" v-if="form.notify_status !== 0">
-          <el-form-item :label="t('task.notifyType')">
-            <el-select v-model.trim="form.notify_type">
-              <el-option :value="0" :label="t('task.notifyEmail')"></el-option>
-              <el-option :value="1" :label="t('task.notifySlack')"></el-option>
-              <el-option :value="2" :label="t('task.notifyWebhook')"></el-option>
-            </el-select>
-          </el-form-item>
-        </el-col>
-        <el-col :span="8" v-if="form.notify_status === 3">
-          <el-form-item :label="t('task.notifyKeyword')">
-            <el-input v-model.trim="form.notify_keyword" :placeholder="t('task.notifyKeywordPlaceholder')"></el-input>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row>
-        <el-col :span="12">
-          <el-form-item :label="t('task.logRetentionDays')">
-            <el-input-number v-model="form.log_retention_days" :min="0" :max="3650"></el-input-number>
-            <span style="margin-left: 8px; color: #909399; font-size: 12px;">{{ t('task.logRetentionDaysTip') }}</span>
-          </el-form-item>
-        </el-col>
       </el-row>
       <el-row>
         <el-col :span="20">
           <el-form-item :label="t('template.command')" prop="command">
             <div style="width: 100%;">
-              <MonacoEditor
-                v-model="form.command"
-                :language="editorLanguage"
-                height="250px"
-              />
+              <MonacoEditor v-model="form.command" :language="editorLanguage" height="250px" />
               <div style="color: #909399; font-size: 12px; margin-top: 4px;">
                 {{ t('template.templateVarTip') }}
               </div>
@@ -182,6 +106,72 @@
           </el-form-item>
         </el-col>
       </el-row>
+
+      <!-- 超时与重试 -->
+      <el-row>
+        <el-col :span="6">
+          <el-form-item :label="t('template.timeout')">
+            <el-input-number v-model="form.timeout" :min="0" :max="86400" style="width: 100%;"></el-input-number>
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
+          <el-form-item :label="t('task.singleInstance')">
+            <el-select v-model.trim="form.multi" style="width: 100%;">
+              <el-option :value="0" :label="t('common.yes')"></el-option>
+              <el-option :value="1" :label="t('common.no')"></el-option>
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
+          <el-form-item :label="t('task.retryTimes')">
+            <el-input-number v-model="form.retry_times" :min="0" :max="10" style="width: 100%;"></el-input-number>
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
+          <el-form-item :label="t('task.retryInterval')">
+            <el-input-number v-model="form.retry_interval" :min="0" :max="3600" style="width: 100%;"></el-input-number>
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <!-- 通知策略 -->
+      <el-row>
+        <el-col :span="8">
+          <el-form-item :label="t('task.notification')">
+            <el-select v-model.trim="form.notify_status" style="width: 100%;">
+              <el-option :value="0" :label="t('task.notifyDisabled')"></el-option>
+              <el-option :value="1" :label="t('task.notifyOnFailure')"></el-option>
+              <el-option :value="2" :label="t('task.notifyAlways')"></el-option>
+              <el-option :value="3" :label="t('task.notifyKeywordMatch')"></el-option>
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8" v-if="form.notify_status !== 0">
+          <el-form-item :label="t('task.notifyType')">
+            <el-select v-model.trim="form.notify_type" style="width: 100%;">
+              <el-option :value="0" :label="t('task.notifyEmail')"></el-option>
+              <el-option :value="1" :label="t('task.notifySlack')"></el-option>
+              <el-option :value="2" :label="t('task.notifyWebhook')"></el-option>
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8" v-if="form.notify_status === 3">
+          <el-form-item :label="t('task.notifyKeyword')">
+            <el-input v-model.trim="form.notify_keyword" :placeholder="t('task.notifyKeywordPlaceholder')"></el-input>
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <!-- 日志保留 -->
+      <el-row>
+        <el-col :span="12">
+          <el-form-item :label="t('task.logRetentionDays')">
+            <el-input-number v-model="form.log_retention_days" :min="0" :max="3650"></el-input-number>
+            <span style="margin-left: 8px; color: #909399; font-size: 12px;">{{ t('task.logRetentionDaysTip') }}</span>
+          </el-form-item>
+        </el-col>
+      </el-row>
+
       <el-form-item>
         <el-button type="primary" @click="submit">{{ t('common.save') }}</el-button>
         <el-button @click="cancel">{{ t('common.cancel') }}</el-button>
