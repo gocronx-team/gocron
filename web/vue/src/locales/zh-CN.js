@@ -465,7 +465,11 @@ export default {
     selectCategory: '请选择分类',
     saveAsTemplateName: '模板名称',
     saveAsTemplateDesc: '模板描述',
-    saveAsTemplateCategory: '分类'
+    saveAsTemplateCategory: '分类',
+    securityWarning:
+      '变量值将明文存储在任务命令中。请勿填入密码等敏感信息，建议使用环境变量引用（如 $DB_PASS）。',
+    saveAsTemplateWarning:
+      '命令内容将原样保存为模板（所有用户可见）。请先移除密码、密钥等敏感信息，用 {{变量名}} 占位符替代。'
   },
   audit: {
     log: '操作审计',

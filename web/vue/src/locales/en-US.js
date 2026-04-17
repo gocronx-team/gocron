@@ -471,7 +471,11 @@ export default {
     selectCategory: 'Select category',
     saveAsTemplateName: 'Template Name',
     saveAsTemplateDesc: 'Description',
-    saveAsTemplateCategory: 'Category'
+    saveAsTemplateCategory: 'Category',
+    securityWarning:
+      'Variable values will be stored in plaintext in the task command. Avoid entering passwords directly. Use environment variable references (e.g. $DB_PASS) instead.',
+    saveAsTemplateWarning:
+      'The command will be saved as-is into the template (visible to all users). Remove any passwords or secrets first and replace them with {{variable}} placeholders.'
   },
   audit: {
     log: 'Audit Log',

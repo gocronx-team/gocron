@@ -49,15 +49,16 @@ func VersionList(c *gin.Context) {
 
 // VersionDetail 获取单个版本详情
 func VersionDetail(c *gin.Context) {
+	taskId, _ := strconv.Atoi(c.Param("id"))
 	versionId, _ := strconv.Atoi(c.Param("version_id"))
-	if versionId <= 0 {
+	if taskId <= 0 || versionId <= 0 {
 		base.RespondError(c, i18n.T(c, "param_error"))
 		return
 	}
 
 	versionModel := new(models.TaskScriptVersion)
 	version, err := versionModel.Detail(versionId)
-	if err != nil {
+	if err != nil || version.TaskId != taskId {
 		base.RespondError(c, i18n.T(c, "version_not_found"))
 		return
 	}

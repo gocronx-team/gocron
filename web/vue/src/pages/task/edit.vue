@@ -410,6 +410,9 @@
 
     <!-- 模板变量填写对话框 -->
     <el-dialog v-model="showVariableDialog" :title="t('template.fillVariables')" width="500px" append-to-body>
+      <el-alert type="warning" :closable="false" style="margin-bottom: 16px;">
+        {{ t('template.securityWarning') }}
+      </el-alert>
       <el-form label-width="120px">
         <el-form-item v-for="v in templateVariables" :key="v" :label="v">
           <el-input v-model="templateVarValues[v]"></el-input>
@@ -423,6 +426,9 @@
 
     <!-- 保存为模板对话框 -->
     <el-dialog v-model="showSaveTemplateDialog" :title="t('template.saveAsTemplate')" width="500px">
+      <el-alert type="warning" :closable="false" style="margin-bottom: 16px;">
+        {{ t('template.saveAsTemplateWarning') }}
+      </el-alert>
       <el-form label-width="100px">
         <el-form-item :label="t('template.saveAsTemplateName')">
           <el-input v-model="saveTemplateForm.name" :placeholder="t('template.templateNamePlaceholder')"></el-input>
