@@ -259,43 +259,78 @@ export default {
       }
     }
   },
+  watch: {
+    $route() {
+      this.loadForm()
+    }
+  },
   created() {
     this.formRules.name[0].message = this.t('template.templateNamePlaceholder')
     this.formRules.category[0].message = this.t('template.selectCategory')
     this.formRules.command[0].message = this.t('message.pleaseEnterCommand')
-
-    const id = this.$route.params.id
-    if (id) {
-      templateService.detail(id, (data) => {
-        if (data) {
-          this.form = {
-            id: data.id,
-            name: data.name,
-            description: data.description || '',
-            category: data.category,
-            protocol: data.protocol,
-            command: data.command,
-            http_method: data.http_method || 1,
-            http_body: data.http_body || '',
-            http_headers: data.http_headers || '',
-            success_pattern: data.success_pattern || '',
-            tag: data.tag || '',
-            spec: data.spec || '',
-            timeout: data.timeout || 300,
-            multi: data.multi ?? 1,
-            retry_times: data.retry_times || 0,
-            retry_interval: data.retry_interval || 0,
-            timezone: data.timezone || '',
-            notify_status: data.notify_status || 0,
-            notify_type: data.notify_type || 0,
-            notify_keyword: data.notify_keyword || '',
-            log_retention_days: data.log_retention_days || 0
-          }
-        }
-      })
-    }
+    this.loadForm()
   },
   methods: {
+    loadForm() {
+      // 重置表单
+      this.form = {
+        id: '',
+        name: '',
+        description: '',
+        category: 'custom',
+        protocol: 2,
+        command: '',
+        http_method: 1,
+        http_body: '',
+        http_headers: '',
+        success_pattern: '',
+        tag: '',
+        spec: '',
+        timeout: 300,
+        multi: 1,
+        retry_times: 0,
+        retry_interval: 0,
+        timezone: '',
+        notify_status: 0,
+        notify_type: 0,
+        notify_keyword: '',
+        log_retention_days: 0
+      }
+      if (this.$refs.form) {
+        this.$refs.form.clearValidate()
+      }
+
+      const id = this.$route.params.id
+      if (id) {
+        templateService.detail(id, (data) => {
+          if (data) {
+            this.form = {
+              id: data.id,
+              name: data.name,
+              description: data.description || '',
+              category: data.category,
+              protocol: data.protocol,
+              command: data.command,
+              http_method: data.http_method || 1,
+              http_body: data.http_body || '',
+              http_headers: data.http_headers || '',
+              success_pattern: data.success_pattern || '',
+              tag: data.tag || '',
+              spec: data.spec || '',
+              timeout: data.timeout || 300,
+              multi: data.multi ?? 1,
+              retry_times: data.retry_times || 0,
+              retry_interval: data.retry_interval || 0,
+              timezone: data.timezone || '',
+              notify_status: data.notify_status || 0,
+              notify_type: data.notify_type || 0,
+              notify_keyword: data.notify_keyword || '',
+              log_retention_days: data.log_retention_days || 0
+            }
+          }
+        })
+      }
+    },
     submit() {
       this.$refs.form.validate().then((valid) => {
         if (!valid) return false
