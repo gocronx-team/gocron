@@ -92,7 +92,7 @@ func (t *TaskTemplate) List(params CommonMap) ([]TaskTemplate, error) {
 	query := Db.Model(&TaskTemplate{})
 	t.parseWhere(query, params)
 
-	err := query.Order("is_builtin DESC, usage_count DESC, id DESC").
+	err := query.Order("is_builtin DESC, updated_at DESC, id DESC").
 		Limit(t.PageSize).Offset(t.pageLimitOffset()).
 		Find(&list).Error
 	return list, err
