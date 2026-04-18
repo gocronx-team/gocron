@@ -106,7 +106,7 @@
 
 <script>
 import { useI18n } from 'vue-i18n'
-import { ElMessageBox } from 'element-plus'
+import { useNotify } from '@/composables/useNotify'
 import userService from '../../api/user'
 import { useUserStore } from '../../stores/user'
 import { availableLanguages } from '@/const/lang'
@@ -163,19 +163,13 @@ export default {
         }
       })
     },
-    remove(item) {
-      ElMessageBox.confirm(this.t('message.confirmDeleteUser'), this.t('common.tip'), {
-        confirmButtonText: this.t('common.confirm'),
-        cancelButtonText: this.t('common.cancel'),
-        type: 'warning',
-        center: true
-      })
-        .then(() => {
-          userService.remove(item.id, () => {
-            this.refresh()
-          })
+    async remove(item) {
+      const notify = useNotify()
+      if (await notify.confirm(this.t('message.confirmDeleteUser'), this.t('common.tip'))) {
+        userService.remove(item.id, () => {
+          this.refresh()
         })
-        .catch(() => {})
+      }
     },
     toEdit(item) {
       let path = ''

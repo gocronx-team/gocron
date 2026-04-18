@@ -80,7 +80,7 @@
 import { useI18n } from 'vue-i18n'
 import templateService from '../../api/template'
 import { useUserStore } from '../../stores/user'
-import { ElMessageBox } from 'element-plus'
+import { useNotify } from '@/composables/useNotify'
 
 export default {
   name: 'template-list',
@@ -158,21 +158,14 @@ export default {
         query: { template_id: row.id }
       })
     },
-    remove(row) {
-      ElMessageBox.confirm(
-        this.t('template.confirmDelete', { name: row.name }),
-        this.t('common.tip'),
-        {
-          confirmButtonText: this.t('common.confirm'),
-          cancelButtonText: this.t('common.cancel'),
-          type: 'warning'
-        }
-      ).then(() => {
+    async remove(row) {
+      const notify = useNotify()
+      if (await notify.confirm(this.t('template.confirmDelete', { name: row.name }), this.t('common.tip'))) {
         templateService.remove(row.id, () => {
           this.$message.success(this.t('message.deleteSuccess'))
           this.search()
         })
-      }).catch(() => {})
+      }
     }
   }
 }

@@ -1,39 +1,31 @@
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { useNotify } from './useNotify'
 import { useI18n } from 'vue-i18n'
 
 export function useMessage() {
   const { t } = useI18n()
-  
+  const notify = useNotify()
+
   const success = (message) => {
-    ElMessage.success(message)
+    notify.success(message)
   }
-  
+
   const error = (message) => {
-    ElMessage.error(message)
+    notify.error(message)
   }
-  
+
   const warning = (message) => {
-    ElMessage.warning(message)
+    notify.warning(message)
   }
-  
+
   const info = (message) => {
-    ElMessage.info(message)
+    notify.info(message)
   }
-  
+
   const confirm = (message, title, options = {}) => {
-    return ElMessageBox.confirm(
-      message,
-      title || t('common.tip'),
-      {
-        confirmButtonText: t('common.confirm'),
-        cancelButtonText: t('common.cancel'),
-        type: 'warning',
-        center: true,
-        ...options
-      }
-    )
+    // options ignored in facade; use notify.confirm for consistent behavior
+    return notify.confirm(message, title || t('common.tip'))
   }
-  
+
   return {
     success,
     error,
