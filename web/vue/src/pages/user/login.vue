@@ -1,150 +1,74 @@
-<template>
-  <div class="login-container">
-    <div class="login-box">
-      <div class="language-switcher">
-        <LanguageSwitcher />
-      </div>
-      <h2 class="login-title">
-        {{ t('login.title') }}
-      </h2>
-      <el-alert
-        v-if="errorMessage"
-        :title="errorMessage"
-        type="error"
-        :closable="false"
-        style="margin-bottom: 20px;"
-      />
-      <el-form
-        ref="formRef"
-        :model="form"
-        label-width="100px"
-        :rules="formRules"
-      >
-        <el-form-item
-          :label="t('login.username')"
-          prop="username"
-        >
-          <el-input
-            v-model.trim="form.username"
-            :placeholder="t('login.usernamePlaceholder')"
-            size="large"
-          />
-        </el-form-item>
-        <el-form-item
-          :label="t('login.password')"
-          prop="password"
-        >
-          <el-input
-            v-model.trim="form.password"
-            type="password"
-            :placeholder="t('login.passwordPlaceholder')"
-            size="large"
-            @keyup.enter="submit"
-          />
-        </el-form-item>
-        <el-form-item
-          v-if="require2FA"
-          :label="t('login.verifyCode')"
-          prop="twoFactorCode"
-        >
-          <el-input
-            v-model.trim="form.twoFactorCode"
-            :placeholder="t('login.verifyCodePlaceholder')"
-            maxlength="6"
-            size="large"
-            @keyup.enter="submit"
-          />
-        </el-form-item>
-        <el-form-item>
-          <el-button
-            type="primary"
-            :loading="loading"
-            class="login-button"
-            size="large"
-            @click="submit"
-          >
-            {{ t('login.login') }}
-          </el-button>
-        </el-form-item>
-      </el-form>
-    </div>
-  </div>
-</template>
-
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useUserStore } from '../../stores/user'
-import { useLoading } from '../../composables/useLoading'
-import userService from '../../api/user'
-import LanguageSwitcher from '../../components/common/LanguageSwitcher.vue'
+import { toTypedSchema } from '@vee-validate/zod'
+import { z } from 'zod'
+import { AlertCircle, Loader2 } from 'lucide-vue-next'
 
-const { t, locale } = useI18n()
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useNotify } from '@/composables/useNotify'
+import { useUserStore } from '@/stores/user'
+import { useLoading } from '@/composables/useLoading'
+import userService from '@/api/user'
+import LanguageSwitcher from '@/components/common/LanguageSwitcher.vue'
 
+const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 const { loading, withLoading } = useLoading()
+const notify = useNotify()
 
 const require2FA = ref(false)
-const formRef = ref()
 const errorMessage = ref('')
 
-const form = reactive({
-  username: '',
-  password: '',
-  twoFactorCode: ''
-})
+// Schema is computed so t() can pick up locale changes reactively
+const validationSchema = computed(() =>
+  toTypedSchema(
+    z.object({
+      username: z.string().min(1, t('login.usernameRequired')),
+      password: z.string().min(1, t('login.passwordRequired')),
+      verifyCode: require2FA.value
+        ? z.string().min(1, t('login.verifyCodeRequired'))
+        : z.string().optional()
+    })
+  )
+)
 
-const formRules = computed(() => ({
-  username: [{ required: true, message: t('login.usernameRequired'), trigger: 'blur' }],
-  password: [{ required: true, message: t('login.passwordRequired'), trigger: 'blur' }],
-  twoFactorCode: [{ required: true, message: t('login.verifyCodeRequired'), trigger: 'blur' }]
-}))
-
-const submit = async () => {
-  if (!formRef.value) return
-  
+async function onSubmit(values) {
   errorMessage.value = ''
-  
-  await formRef.value.validate(async (valid) => {
-    if (!valid) return
-    
-    if (require2FA.value && !form.twoFactorCode) {
-      errorMessage.value = t('login.verifyCodeRequired')
-      return
-    }
-    
-    await withLoading(async () => {
-      const params = {
-        username: form.username,
-        password: form.password,
-        two_factor_code: form.twoFactorCode || undefined
-      }
-      
+
+  await withLoading(async () => {
+    await new Promise((resolve) => {
       userService.login(
-        params.username, 
-        params.password, 
-        params.two_factor_code, 
+        values.username,
+        values.password,
+        values.verifyCode || undefined,
         (data) => {
           if (data.require_2fa) {
             require2FA.value = true
             errorMessage.value = ''
+            resolve()
             return
           }
-          
+
           userStore.setUser({
             token: data.token,
             uid: data.uid,
             username: data.username,
             isAdmin: data.is_admin
           })
-          
+
           router.push(route.query.redirect || '/')
+          resolve()
         },
-        (code, message) => {
-          errorMessage.value = message || '登录失败'
+        (_code, message) => {
+          errorMessage.value = message || t('login.login') + ' ' + 'failed'
+          resolve()
         }
       )
     })
@@ -152,78 +76,103 @@ const submit = async () => {
 }
 </script>
 
+<template>
+  <div
+    class="tw-min-h-screen tw-flex tw-items-center tw-justify-center tw-bg-muted/30 tw-p-4"
+  >
+    <!-- Language switcher fixed to top-left -->
+    <div class="tw-fixed tw-top-4 tw-left-4 tw-z-10">
+      <LanguageSwitcher />
+    </div>
 
-<style scoped>
-.login-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  position: relative;
-  overflow: hidden;
-}
+    <Card class="tw-w-full tw-max-w-sm">
+      <CardHeader class="tw-pb-4">
+        <CardTitle class="tw-text-center tw-text-2xl tw-font-semibold">
+          {{ t('login.title') }}
+        </CardTitle>
+      </CardHeader>
 
-.login-container::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  right: -10%;
-  width: 600px;
-  height: 600px;
-  background: rgba(99, 102, 241, 0.1);
-  border-radius: 50%;
-  filter: blur(80px);
-}
+      <CardContent>
+        <!-- Error alert -->
+        <div
+          v-if="errorMessage"
+          class="tw-flex tw-items-start tw-gap-2 tw-rounded-md tw-border tw-border-destructive/50 tw-bg-destructive/10 tw-px-3 tw-py-2 tw-text-sm tw-text-destructive tw-mb-4"
+        >
+          <AlertCircle class="tw-size-4 tw-mt-0.5 tw-shrink-0" />
+          <span>{{ errorMessage }}</span>
+        </div>
 
-.login-container::after {
-  content: '';
-  position: absolute;
-  bottom: -30%;
-  left: -10%;
-  width: 500px;
-  height: 500px;
-  background: rgba(168, 85, 247, 0.08);
-  border-radius: 50%;
-  filter: blur(80px);
-}
+        <Form
+          :validation-schema="validationSchema"
+          class="tw-space-y-4"
+          @submit="onSubmit"
+        >
+          <!-- Username -->
+          <FormField v-slot="{ componentField }" name="username">
+            <FormItem>
+              <FormLabel>{{ t('login.username') }}</FormLabel>
+              <FormControl>
+                <Input
+                  v-bind="componentField"
+                  :placeholder="t('login.usernamePlaceholder')"
+                  autocomplete="username"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
 
-.login-box {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  padding: 48px 40px;
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-  width: 100%;
-  max-width: 420px;
-  position: relative;
-  z-index: 1;
-  border: 1px solid rgba(255, 255, 255, 0.8);
-}
+          <!-- Password -->
+          <FormField v-slot="{ componentField }" name="password">
+            <FormItem>
+              <FormLabel>{{ t('login.password') }}</FormLabel>
+              <FormControl>
+                <Input
+                  v-bind="componentField"
+                  type="password"
+                  :placeholder="t('login.passwordPlaceholder')"
+                  autocomplete="current-password"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
 
-.language-switcher {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-}
+          <!-- 2FA code (conditionally shown) -->
+          <FormField
+            v-if="require2FA"
+            v-slot="{ componentField }"
+            name="verifyCode"
+          >
+            <FormItem>
+              <FormLabel>{{ t('login.verifyCode') }}</FormLabel>
+              <FormControl>
+                <Input
+                  v-bind="componentField"
+                  :placeholder="t('login.verifyCodePlaceholder')"
+                  maxlength="6"
+                  autocomplete="one-time-code"
+                  inputmode="numeric"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
 
-.login-title {
-  text-align: center;
-  margin: 0 0 32px 0;
-  font-size: 26px;
-  color: #1f2937;
-  font-weight: 600;
-  letter-spacing: -0.5px;
-}
-
-.el-button--large {
-  height: 40px;
-  line-height: 40px;
-  padding: 0 15px;
-}
-
-.login-button {
-  width: calc(100% + 60px);
-  margin-left: -60px;
-}
-</style>
+          <!-- Submit button -->
+          <Button
+            type="submit"
+            class="tw-w-full"
+            :disabled="loading"
+          >
+            <Loader2
+              v-if="loading"
+              class="tw-size-4 tw-animate-spin"
+            />
+            {{ t('login.login') }}
+          </Button>
+        </Form>
+      </CardContent>
+    </Card>
+  </div>
+</template>
