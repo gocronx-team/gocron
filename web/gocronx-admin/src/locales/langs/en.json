@@ -48,11 +48,20 @@
   "setting": {
     "menuType": {
       "title": "Menu Layout",
-      "list": ["Vertical", "Horizontal", "Mixed", "Dual"]
+      "list": [
+        "Vertical",
+        "Horizontal",
+        "Mixed",
+        "Dual"
+      ]
     },
     "theme": {
       "title": "Theme Style",
-      "list": ["Light", "Dark", "System"]
+      "list": [
+        "Light",
+        "Dark",
+        "System"
+      ]
     },
     "menu": {
       "title": "Menu Style"
@@ -62,11 +71,17 @@
     },
     "box": {
       "title": "Box Style",
-      "list": ["Border", "Shadow"]
+      "list": [
+        "Border",
+        "Shadow"
+      ]
     },
     "container": {
       "title": "Container Width",
-      "list": ["Full", "Boxed"]
+      "list": [
+        "Full",
+        "Boxed"
+      ]
     },
     "basics": {
       "title": "Basic Config",
@@ -112,8 +127,14 @@
   "notice": {
     "title": "Notice",
     "btnRead": "Mark as read",
-    "bar": ["Notice", "Message", "Todo"],
-    "text": ["No"],
+    "bar": [
+      "Notice",
+      "Message",
+      "Todo"
+    ],
+    "text": [
+      "No"
+    ],
     "viewAll": "View all"
   },
   "worktab": {
@@ -204,10 +225,10 @@
     "evening": "Good evening!"
   },
   "exceptionPage": {
-    "gohome": "Go Home",
     "403": "Sorry, you do not have permission to access this page",
     "404": "Sorry, the page you are trying to access does not exist",
-    "500": "Sorry, there was an error on the server"
+    "500": "Sorry, there was an error on the server",
+    "gohome": "Go Home"
   },
   "menus": {
     "login": {
@@ -224,42 +245,7 @@
     },
     "dashboard": {
       "title": "Dashboard",
-      "console": "Console",
-      "analysis": "Analysis",
-      "ecommerce": "Ecommerce"
-    },
-    "widgets": {
-      "title": "Components",
-      "icon": "Icon",
-      "imageCrop": "Image Crop",
-      "excel": "Excel Import Export",
-      "video": "Video Player",
-      "countTo": "Count To",
-      "wangEditor": "Wang Editor",
-      "watermark": "Watermark",
-      "contextMenu": "Context Menu",
-      "qrcode": "QR Code",
-      "drag": "Drag",
-      "textScroll": "Text Scroll",
-      "fireworks": "Fireworks",
-      "elementUI": "Component Overview"
-    },
-    "template": {
-      "title": "Template Center",
-      "chat": "Chat",
-      "cards": "Cards",
-      "banners": "Banners",
-      "charts": "Charts",
-      "map": "Map",
-      "calendar": "Calendar",
-      "pricing": "Pricing"
-    },
-    "article": {
-      "title": "Article",
-      "articleList": "Article List",
-      "articleDetail": "Article Detail",
-      "comment": "Comment",
-      "articlePublish": "Article Publish"
+      "console": "Console"
     },
     "result": {
       "title": "Result Page",
@@ -272,50 +258,12 @@
       "notFound": "404",
       "serverError": "500"
     },
-    "examples": {
-      "title": "Feature Examples",
-      "tabs": "Tabs",
-      "tablesBasic": "Basic Tables",
-      "tables": "Advanced Tables",
-      "tablesTree": "Tree Table Layout",
-      "forms": "Forms",
-      "searchBar": "Search Form",
-      "socketChat": "Socket Connection",
-      "permission": {
-        "title": "Frontend Permission",
-        "switchRole": "Toggle Auth",
-        "buttonAuth": "Button Authority",
-        "pageVisibility": "Super Admin Visibility"
-      }
-    },
     "system": {
       "title": "System Settings",
       "user": "User Manage",
       "role": "Role Manage",
       "userCenter": "User Center",
-      "menu": "Menu Manage",
-      "nested": "Nested Menu",
-      "menu1": "Menu 1",
-      "menu2": "Menu 2",
-      "menu21": "Menu 2-1",
-      "menu3": "Menu 3",
-      "menu31": "Menu 3-1",
-      "menu32": "Menu 3-2",
-      "menu321": "Menu 3-2-1"
-    },
-    "safeguard": {
-      "title": "Safeguard",
-      "server": "Server"
-    },
-    "plan": {
-      "title": "Version Plan",
-      "log": "Change Log"
-    },
-    "help": {
-      "title": "Help Center",
-      "document": "Document",
-      "liteVersion": "Lite Version",
-      "oldVersion": "v2.6.1 Version"
+      "menu": "Menu Manage"
     }
   },
   "table": {

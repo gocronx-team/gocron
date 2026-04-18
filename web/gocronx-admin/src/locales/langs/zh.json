@@ -48,11 +48,20 @@
   "setting": {
     "menuType": {
       "title": "菜单布局",
-      "list": ["垂直", "水平", "混合", "双列"]
+      "list": [
+        "垂直",
+        "水平",
+        "混合",
+        "双列"
+      ]
     },
     "theme": {
       "title": "主题风格",
-      "list": ["浅色", "深色", "系统"]
+      "list": [
+        "浅色",
+        "深色",
+        "系统"
+      ]
     },
     "menu": {
       "title": "菜单风格"
@@ -62,11 +71,17 @@
     },
     "box": {
       "title": "盒子样式",
-      "list": ["边框", "阴影"]
+      "list": [
+        "边框",
+        "阴影"
+      ]
     },
     "container": {
       "title": "容器宽度",
-      "list": ["铺满", "定宽"]
+      "list": [
+        "铺满",
+        "定宽"
+      ]
     },
     "basics": {
       "title": "基础配置",
@@ -112,8 +127,14 @@
   "notice": {
     "title": "通知",
     "btnRead": "标为已读",
-    "bar": ["通知", "消息", "代办"],
-    "text": ["暂无"],
+    "bar": [
+      "通知",
+      "消息",
+      "代办"
+    ],
+    "text": [
+      "暂无"
+    ],
     "viewAll": "查看全部"
   },
   "worktab": {
@@ -204,10 +225,10 @@
     "evening": "晚上好！"
   },
   "exceptionPage": {
-    "gohome": "返回首页",
     "403": "抱歉，您无权访问该页面",
     "404": "抱歉，您访问的页面不存在",
-    "500": "抱歉，服务器出错了"
+    "500": "抱歉，服务器出错了",
+    "gohome": "返回首页"
   },
   "menus": {
     "login": {
@@ -224,42 +245,7 @@
     },
     "dashboard": {
       "title": "仪表盘",
-      "console": "工作台",
-      "analysis": "分析页",
-      "ecommerce": "电子商务"
-    },
-    "widgets": {
-      "title": "组件中心",
-      "icon": "图标",
-      "imageCrop": "图像裁剪",
-      "excel": "Excel 导入导出",
-      "video": "视频播放器",
-      "countTo": "数字滚动",
-      "wangEditor": "富文本编辑器",
-      "watermark": "水印",
-      "contextMenu": "右键菜单",
-      "qrcode": "二维码",
-      "drag": "拖拽",
-      "textScroll": "文字滚动",
-      "fireworks": "礼花",
-      "elementUI": "组件总览"
-    },
-    "template": {
-      "title": "模板中心",
-      "chat": "聊天",
-      "cards": "卡片",
-      "banners": "横幅",
-      "charts": "图表",
-      "map": "地图",
-      "calendar": "日历",
-      "pricing": "定价"
-    },
-    "article": {
-      "title": "文章管理",
-      "articleList": "文章列表",
-      "articleDetail": "文章详情",
-      "comment": "留言管理",
-      "articlePublish": "文章发布"
+      "console": "工作台"
     },
     "result": {
       "title": "结果页面",
@@ -272,50 +258,12 @@
       "notFound": "404",
       "serverError": "500"
     },
-    "examples": {
-      "title": "功能示例",
-      "tabs": "标签页",
-      "tablesBasic": "基础表格",
-      "tables": "高级表格",
-      "tablesTree": "左右布局表格",
-      "forms": "表单",
-      "searchBar": "搜索表单",
-      "socketChat": "Socket 连接",
-      "permission": {
-        "title": "前端权限",
-        "switchRole": "切换权限",
-        "buttonAuth": "按钮权限演示",
-        "pageVisibility": "超级管理员可见"
-      }
-    },
     "system": {
       "title": "系统管理",
       "user": "用户管理",
       "role": "角色管理",
       "userCenter": "个人中心",
-      "menu": "菜单管理",
-      "nested": "嵌套菜单",
-      "menu1": "菜单1",
-      "menu2": "菜单2",
-      "menu21": "菜单2-1",
-      "menu3": "菜单3",
-      "menu31": "菜单3-1",
-      "menu32": "菜单3-2",
-      "menu321": "菜单3-2-1"
-    },
-    "safeguard": {
-      "title": "运维管理",
-      "server": "服务器管理"
-    },
-    "plan": {
-      "title": "版本计划",
-      "log": "更新日志"
-    },
-    "help": {
-      "title": "帮助中心",
-      "document": "官方文档",
-      "liteVersion": "精简版本",
-      "oldVersion": "v2.6.1 版本"
+      "menu": "菜单管理"
     }
   },
   "table": {
