@@ -1,146 +1,113 @@
 <template>
-  <el-main>
-    <div class="form-container">
-      <el-form
-        ref="form"
-        :model="form"
-        :rules="formRules"
-        label-width="180px"
-        label-position="left"
-        class="password-form"
-      >
-        <el-form-item
-          :label="t('user.newPassword')"
-          prop="new_password"
-        >
-          <el-input
-            v-model="form.new_password"
-            type="password"
-            :placeholder="t('user.passwordPlaceholder')"
-          />
-        </el-form-item>
-        <el-form-item
-          :label="t('user.confirmNewPassword')"
-          prop="confirm_new_password"
-        >
-          <el-input
-            v-model="form.confirm_new_password"
-            type="password"
-            :placeholder="t('user.passwordPlaceholder')"
-          />
-        </el-form-item>
-        <el-form-item>
-          <div class="button-group">
-            <el-button
-              type="primary"
-              @click="submit()"
-            >
-              {{ t('common.save') }}
-            </el-button>
-            <el-button @click="cancel">
-              {{ t('common.cancel') }}
-            </el-button>
-          </div>
-        </el-form-item>
-      </el-form>
+  <div class="tw-p-6">
+    <div class="tw-max-w-lg tw-mx-auto">
+      <Card>
+        <CardHeader>
+          <CardTitle>{{ t('user.changePassword') }}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form class="tw-space-y-5" @submit.prevent="onSubmit">
+            <FormField v-slot="{ componentField }" name="new_password">
+              <FormItem>
+                <FormLabel>{{ t('user.newPassword') }}</FormLabel>
+                <FormControl>
+                  <Input
+                    v-bind="componentField"
+                    type="password"
+                    :placeholder="t('user.passwordPlaceholder')"
+                    autocomplete="new-password"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+
+            <FormField v-slot="{ componentField }" name="confirm_new_password">
+              <FormItem>
+                <FormLabel>{{ t('user.confirmNewPassword') }}</FormLabel>
+                <FormControl>
+                  <Input
+                    v-bind="componentField"
+                    type="password"
+                    :placeholder="t('user.passwordPlaceholder')"
+                    autocomplete="new-password"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+
+            <div class="tw-flex tw-justify-center tw-gap-3 tw-pt-2">
+              <Button type="submit">
+                {{ t('common.save') }}
+              </Button>
+              <Button type="button" variant="outline" @click="cancel">
+                {{ t('common.cancel') }}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
-  </el-main>
+  </div>
 </template>
 
-<script>
+<script setup>
 import { useI18n } from 'vue-i18n'
-import userService from '../../api/user'
-export default {
-  name: 'UserEditPassword',
-  setup() {
-    const { t } = useI18n()
-    return { t }
-  },
-  data: function () {
-    return {
-      form: {
-        id: '',
-        new_password: '',
-        confirm_new_password: ''
-      },
-      formRules: {}
+import { useRouter, useRoute } from 'vue-router'
+import { z } from 'zod'
+import { useForm } from 'vee-validate'
+import { toTypedSchema } from '@vee-validate/zod'
+
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card'
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from '@/components/ui/form'
+
+import userService from '@/api/user'
+
+const { t } = useI18n()
+const router = useRouter()
+const route = useRoute()
+
+const userId = route.params.id
+
+const schema = toTypedSchema(
+  z.object({
+    new_password: z.string().min(6, t('user.newPasswordRequired')),
+    confirm_new_password: z.string().min(1, t('user.confirmPasswordRequired'))
+  }).refine(
+    data => data.new_password === data.confirm_new_password,
+    {
+      message: t('user.passwordMismatch'),
+      path: ['confirm_new_password']
     }
-  },
-  computed: {
-    computedFormRules() {
-      return {
-        new_password: [
-          {required: true, message: this.t('user.newPasswordRequired'), trigger: 'blur'}
-        ],
-        confirm_new_password: [
-          {required: true, message: this.t('user.confirmPasswordRequired'), trigger: 'blur'}
-        ]
-      }
+  )
+)
+
+const { handleSubmit } = useForm({ validationSchema: schema })
+
+const onSubmit = handleSubmit(values => {
+  userService.editPassword(
+    { id: userId, new_password: values.new_password, confirm_new_password: values.confirm_new_password },
+    () => {
+      router.push('/user')
     }
-  },
-  watch: {
-    computedFormRules: {
-      handler(newVal) {
-        this.formRules = newVal
-      },
-      immediate: true
-    }
-  },
-  created () {
-    const id = this.$route.params.id
-    if (!id) {
-      return
-    }
-    this.form.id = id
-  },
-  methods: {
-    submit () {
-      this.$refs['form'].validate((valid) => {
-        if (!valid) {
-          return false
-        }
-        this.save()
-      })
-    },
-    save () {
-      userService.editPassword(this.form, () => {
-        this.$router.push('/user')
-      })
-    },
-    cancel () {
-      this.$router.push('/user')
-    }
-  }
+  )
+})
+
+function cancel() {
+  router.push('/user')
 }
 </script>
-
-<style scoped>
-.form-container {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-.password-form {
-  background: white;
-  padding: 30px;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-}
-
-.password-form :deep(.el-form-item:last-child) {
-  margin-bottom: 0;
-}
-
-.password-form :deep(.el-form-item:last-child .el-form-item__content) {
-  margin-left: 0 !important;
-}
-
-.button-group {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 20px;
-  width: 100%;
-}
-</style>

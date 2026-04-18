@@ -238,7 +238,8 @@ export default {
     passwordRequired: '请输入密码',
     confirmPasswordRequired: '请再次输入密码',
     oldPasswordRequired: '请输入旧密码',
-    newPasswordRequired: '请输入新密码'
+    newPasswordRequired: '请输入新密码',
+    passwordMismatch: '两次密码输入不一致'
   },
   system: {
     manage: '系统管理',

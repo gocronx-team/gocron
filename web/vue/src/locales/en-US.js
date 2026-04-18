@@ -240,7 +240,8 @@ export default {
     passwordRequired: 'Please enter password',
     confirmPasswordRequired: 'Please enter password again',
     oldPasswordRequired: 'Please enter old password',
-    newPasswordRequired: 'Please enter new password'
+    newPasswordRequired: 'Please enter new password',
+    passwordMismatch: 'Passwords do not match'
   },
   system: {
     manage: 'System Management',
