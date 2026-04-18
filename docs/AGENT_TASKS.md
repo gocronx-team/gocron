@@ -14,6 +14,86 @@
 
 ---
 
+## 📚 shadcn-vue 参考资源总览
+
+**Agent 开工前必读这些链接**，多数 UI 结构可以直接照抄，只需接业务逻辑：
+
+### 核心站点
+- 📖 文档：https://www.shadcn-vue.com/docs/components/accordion
+- 🧩 Blocks（整块 UI）：https://www.shadcn-vue.com/blocks
+- 🎨 Examples（完整示例应用）：https://www.shadcn-vue.com/examples
+- 🎨 Theme Customizer：https://www.shadcn-vue.com/themes
+- 📊 Charts：https://www.shadcn-vue.com/docs/charts
+- 💻 源码仓库：https://github.com/unovue/shadcn-vue
+
+### Ticket → 参考来源映射
+
+| Ticket | 参考源 | 照抄程度 | 备注 |
+|--------|--------|---------|------|
+| TICKET-PHASE-0 | [Vite installation guide](https://www.shadcn-vue.com/docs/installation/vite) | — | 完整安装步骤照抄 |
+| TICKET-PHASE-1-UI-PRIMITIVES | CLI 批量 `add` | — | 无需思考 |
+| TICKET-PHASE-1-NOTIFY-FACADE | [Sonner docs](https://www.shadcn-vue.com/docs/components/sonner) | 低 | 自己封装 facade |
+| TICKET-PHASE-1-DATA-TABLE | [Data Table docs](https://www.shadcn-vue.com/docs/components/data-table) | ⭐⭐⭐⭐⭐ | 官方文档即完整教程 |
+| TICKET-PHASE-1-DARK-MODE | [Dark Mode / Vite guide](https://www.shadcn-vue.com/docs/dark-mode/vite) | ⭐⭐⭐⭐ | 直接抄实现 |
+| TICKET-PHASE-1-DEMO-PAGE | [Components overview](https://www.shadcn-vue.com/docs/components) | ⭐⭐ | 拼几个组件即可 |
+| TICKET-CRON-PREVIEW | [Badge](https://www.shadcn-vue.com/docs/components/badge) + [Card](https://www.shadcn-vue.com/docs/components/card) | ⭐⭐ | 小改造 |
+| TICKET-LOGIN | [Blocks → Login](https://www.shadcn-vue.com/blocks) 选 `login-01/02/03` 之一 | ⭐⭐⭐⭐⭐ | 整块拿，改文案即可 |
+| TICKET-INSTALL | [Blocks → Login](https://www.shadcn-vue.com/blocks) + [Form docs](https://www.shadcn-vue.com/docs/components/form) | ⭐⭐⭐ | 多步表单自拼 |
+| TICKET-EDIT-MY-PASSWORD | [Form docs](https://www.shadcn-vue.com/docs/components/form) | ⭐⭐⭐ | Card + Form 最小实现 |
+| TICKET-EDIT-PASSWORD | 同上 | ⭐⭐⭐ | 同上 |
+| TICKET-TWOFACTOR | [Card](https://www.shadcn-vue.com/docs/components/card) + [Input OTP](https://www.shadcn-vue.com/docs/components/pin-input) | ⭐⭐⭐ | Pin Input 正好用于 2FA |
+| TICKET-LOGIN-LOG | [Examples → Tasks](https://www.shadcn-vue.com/examples/tasks) 的 data-table 结构 | ⭐⭐⭐⭐ | 照抄表格+筛选 |
+| TICKET-AUDIT-LOG | [Examples → Tasks](https://www.shadcn-vue.com/examples/tasks) + [Sheet](https://www.shadcn-vue.com/docs/components/sheet) | ⭐⭐⭐⭐ | Sheet 展示详情 |
+| TICKET-STATISTICS | [Examples → Dashboard](https://www.shadcn-vue.com/examples/dashboard) + [Charts](https://www.shadcn-vue.com/docs/charts) | ⭐⭐⭐⭐ | KPI Card + Chart |
+| TICKET-USER-LIST | [Examples → Tasks](https://www.shadcn-vue.com/examples/tasks) | ⭐⭐⭐⭐ | 数据换成用户 |
+| TICKET-USER-EDIT | [Form docs](https://www.shadcn-vue.com/docs/components/form) + [Dialog](https://www.shadcn-vue.com/docs/components/dialog) | ⭐⭐⭐ | Dialog 里放 Form |
+| TICKET-HOST-LIST | [Examples → Tasks](https://www.shadcn-vue.com/examples/tasks) | ⭐⭐⭐⭐ | 同用户列表 |
+| TICKET-HOST-EDIT | [Form docs](https://www.shadcn-vue.com/docs/components/form) | ⭐⭐⭐ | 纯 Form |
+| TICKET-NOTIFICATION-* | [Tabs](https://www.shadcn-vue.com/docs/components/tabs) + [Form](https://www.shadcn-vue.com/docs/components/form) | ⭐⭐⭐ | Tabs 切换通知类型 |
+| TICKET-LOG-RETENTION | [Form docs](https://www.shadcn-vue.com/docs/components/form) + [Switch](https://www.shadcn-vue.com/docs/components/switch) | ⭐⭐⭐ | 小配置页 |
+| TICKET-TASK-LIST | **[Examples → Tasks](https://www.shadcn-vue.com/examples/tasks) 1:1 照抄** | ⭐⭐⭐⭐⭐ | 官方示例就是任务 dashboard |
+| TICKET-TASK-EDIT | [Examples → Forms](https://www.shadcn-vue.com/examples/forms) + [Accordion](https://www.shadcn-vue.com/docs/components/accordion) 分段 | ⭐⭐⭐ | 最复杂，需要自己组合 |
+| TICKET-TASK-LOG | [Examples → Tasks](https://www.shadcn-vue.com/examples/tasks) 的 data-table | ⭐⭐⭐⭐ | 同审计日志 |
+| TICKET-TEMPLATE-LIST | [Examples → Tasks](https://www.shadcn-vue.com/examples/tasks) | ⭐⭐⭐⭐ | 同任务列表 |
+| TICKET-TEMPLATE-EDIT | TICKET-TASK-EDIT 合入后照抄 | ⭐⭐⭐⭐ | 相同结构 |
+| TICKET-TASK-SIDEBAR | [Blocks → Sidebar](https://www.shadcn-vue.com/blocks) 选一个 | ⭐⭐⭐⭐ | 整块拿 |
+| TICKET-SHELL | [Blocks → Sidebar](https://www.shadcn-vue.com/blocks) 选 `sidebar-02`/`sidebar-07` | ⭐⭐⭐⭐⭐ | 整个外壳套用 |
+| TICKET-REMOVE-ELEMENT-PLUS | — | — | 纯清理 |
+
+**⭐⭐⭐⭐⭐ = 几乎全抄；⭐ = 只借思路需要自己写**
+
+### 通用快捷命令
+
+安装 block（整块 UI）：
+```bash
+pnpm dlx shadcn-vue@latest add login-02      # 某个具体 block
+pnpm dlx shadcn-vue@latest add sidebar-07    # sidebar 方案
+```
+
+安装单组件：
+```bash
+pnpm dlx shadcn-vue@latest add button input dialog select
+```
+
+更新已有组件：
+```bash
+pnpm dlx shadcn-vue@latest add -o button     # 覆盖重装
+```
+
+### Agent 的标准开工姿势
+
+```
+1. 打开 ticket，看到 "参考源" 链接
+2. 浏览器打开链接，审读该 block/example 的 UI 结构
+3. 如果是 block，直接 pnpm dlx shadcn-vue add <block-name> 拉下来
+4. Read 老版本 Vue 文件（Element Plus 版），列出所有业务逻辑
+5. 把老业务逻辑（API 调用 / i18n / 跳转 / 状态）移植到新 UI 骨架
+6. 本地测试完整行为
+7. Commit + PR
+```
+
+---
+
 ## Phase 0 — Foundation（必须最先做，串行）
 
 ### TICKET-PHASE-0 — Tailwind + shadcn-vue 基础设施
