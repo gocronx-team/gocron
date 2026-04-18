@@ -35,9 +35,9 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
       )
     "
   >
-    <CheckboxIndicator class=""tw-grid tw-place-content-center tw-text-current"">
+    <CheckboxIndicator class="tw-grid tw-place-content-center tw-text-current">
       <slot>
-        <Check class=""tw-h-4 tw-w-4"" />
+        <Check class="tw-h-4 tw-w-4" />
       </slot>
     </CheckboxIndicator>
   </CheckboxRoot>

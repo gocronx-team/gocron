@@ -1,14 +1,14 @@
 <script setup>
-import { reactiveOmit } from "@vueuse/core";
+import { reactiveOmit } from '@vueuse/core'
 import {
   CircleCheckIcon,
   InfoIcon,
   Loader2Icon,
   OctagonXIcon,
   TriangleAlertIcon,
-  XIcon,
-} from "lucide-vue-next";
-import { Toaster as Sonner } from "vue-sonner";
+  XIcon
+} from 'lucide-vue-next'
+import { Toaster as Sonner } from 'vue-sonner'
 
 const props = defineProps({
   id: { type: String, required: false },
@@ -31,46 +31,46 @@ const props = defineProps({
   dir: { type: String, required: false },
   swipeDirections: { type: Array, required: false },
   icons: { type: Object, required: false },
-  containerAriaLabel: { type: String, required: false },
-});
-const delegatedProps = reactiveOmit(props, "toastOptions");
+  containerAriaLabel: { type: String, required: false }
+})
+const delegatedProps = reactiveOmit(props, 'toastOptions')
 </script>
 
 <template>
   <Sonner
-    class=""tw-toaster tw-group""
+    class="tw-toaster tw-group"
     :toast-options="{
       classes: {
         toast:
-          'group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg',
-        description: 'group-[.toast]:text-muted-foreground',
+          'group toast group-[.toaster]:tw-bg-background group-[.toaster]:tw-text-foreground group-[.toaster]:tw-border-border group-[.toaster]:tw-shadow-lg',
+        description: 'group-[.toast]:tw-text-muted-foreground',
         actionButton:
-          'group-[.toast]:bg-primary group-[.toast]:text-primary-foreground',
+          'group-[.toast]:tw-bg-primary group-[.toast]:tw-text-primary-foreground',
         cancelButton:
-          'group-[.toast]:bg-muted group-[.toast]:text-muted-foreground',
-      },
+          'group-[.toast]:tw-bg-muted group-[.toast]:tw-text-muted-foreground'
+      }
     }"
     v-bind="delegatedProps"
   >
     <template #success-icon>
-      <CircleCheckIcon class=""tw-size-4"" />
+      <CircleCheckIcon class="tw-size-4" />
     </template>
     <template #info-icon>
-      <InfoIcon class=""tw-size-4"" />
+      <InfoIcon class="tw-size-4" />
     </template>
     <template #warning-icon>
-      <TriangleAlertIcon class=""tw-size-4"" />
+      <TriangleAlertIcon class="tw-size-4" />
     </template>
     <template #error-icon>
-      <OctagonXIcon class=""tw-size-4"" />
+      <OctagonXIcon class="tw-size-4" />
     </template>
     <template #loading-icon>
       <div>
-        <Loader2Icon class=""tw-size-4 tw-animate-spin"" />
+        <Loader2Icon class="tw-size-4 tw-animate-spin" />
       </div>
     </template>
     <template #close-icon>
-      <XIcon class=""tw-size-4"" />
+      <XIcon class="tw-size-4" />
     </template>
   </Sonner>
 </template>

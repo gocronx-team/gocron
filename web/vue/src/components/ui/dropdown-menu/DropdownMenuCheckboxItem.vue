@@ -33,9 +33,9 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
       )
     "
   >
-    <span class=""tw-absolute tw-left-2 tw-flex tw-h-3.5 tw-w-3.5 tw-items-center tw-justify-center"">
+    <span class="tw-absolute tw-left-2 tw-flex tw-h-3.5 tw-w-3.5 tw-items-center tw-justify-center">
       <DropdownMenuItemIndicator>
-        <Check class=""tw-w-4 tw-h-4"" />
+        <Check class="tw-w-4 tw-h-4" />
       </DropdownMenuItemIndicator>
     </span>
     <slot />

@@ -11,7 +11,7 @@ const props = defineProps({
 </script>
 
 <template>
-  <AvatarImage v-bind="props" class=""tw-h-full tw-w-full tw-object-cover"">
+  <AvatarImage v-bind="props" class="tw-h-full tw-w-full tw-object-cover">
     <slot />
   </AvatarImage>
 </template>

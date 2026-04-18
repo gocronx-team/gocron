@@ -144,6 +144,13 @@ const routes = [
     component: () => import('../pages/statistics/index.vue'),
     meta: { noNeedAdmin: true }
   },
+  // shadcn-vue 组件演示（迁移期内部参考）
+  {
+    path: '/demo-shadcn',
+    name: 'demo-shadcn',
+    component: () => import('../pages/demo/shadcn.vue'),
+    meta: { noLogin: true, noNeedAdmin: true }
+  },
   {
     path: '/:pathMatch(.*)*',
     component: () => import('../components/common/notFound.vue'),

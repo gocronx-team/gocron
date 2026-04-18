@@ -32,7 +32,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
 <template>
   <AlertDialogPortal>
     <AlertDialogOverlay
-      class=""tw-fixed tw-inset-0 tw-z-50 tw-bg-black/80 data-[state=open]:tw-animate-in data-[state=closed]:tw-animate-out data-[state=closed]:tw-fade-out-0 data-[state=open]:tw-fade-in-0""
+      class="tw-fixed tw-inset-0 tw-z-50 tw-bg-black/80 data-[state=open]:tw-animate-in data-[state=closed]:tw-animate-out data-[state=closed]:tw-fade-out-0 data-[state=open]:tw-fade-in-0"
     />
     <AlertDialogContent
       v-bind="forwarded"

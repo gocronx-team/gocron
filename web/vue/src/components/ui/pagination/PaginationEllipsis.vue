@@ -20,8 +20,8 @@ const delegatedProps = reactiveOmit(props, "class");
     :class="cn('tw-flex tw-size-9 tw-items-center tw-justify-center', props.class)"
   >
     <slot>
-      <MoreHorizontal class=""tw-size-4"" />
-      <span class=""tw-sr-only"">More pages</span>
+      <MoreHorizontal class="tw-size-4" />
+      <span class="tw-sr-only">More pages</span>
     </slot>
   </PaginationEllipsis>
 </template>

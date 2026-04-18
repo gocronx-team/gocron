@@ -34,7 +34,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
 <template>
   <DialogPortal>
     <DialogOverlay
-      class=""tw-fixed tw-inset-0 tw-z-50 tw-grid tw-place-items-center tw-overflow-y-auto tw-bg-black/80 data-[state=open]:tw-animate-in data-[state=closed]:tw-animate-out data-[state=closed]:tw-fade-out-0 data-[state=open]:tw-fade-in-0""
+      class="tw-fixed tw-inset-0 tw-z-50 tw-grid tw-place-items-center tw-overflow-y-auto tw-bg-black/80 data-[state=open]:tw-animate-in data-[state=closed]:tw-animate-out data-[state=closed]:tw-fade-out-0 data-[state=open]:tw-fade-in-0"
     >
       <DialogContent
         :class="
@@ -60,10 +60,10 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
         <slot />
 
         <DialogClose
-          class=""tw-absolute tw-top-3 tw-right-3 tw-p-0.5 tw-transition-colors tw-rounded-md hover:tw-bg-secondary""
+          class="tw-absolute tw-top-3 tw-right-3 tw-p-0.5 tw-transition-colors tw-rounded-md hover:tw-bg-secondary"
         >
-          <X class=""tw-w-4 tw-h-4"" />
-          <span class=""tw-sr-only"">Close</span>
+          <X class="tw-w-4 tw-h-4" />
+          <span class="tw-sr-only">Close</span>
         </DialogClose>
       </DialogContent>
     </DialogOverlay>

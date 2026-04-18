@@ -33,9 +33,9 @@ const forwardedProps = useForwardProps(delegatedProps);
       )
     "
   >
-    <span class=""tw-absolute tw-left-2 tw-flex tw-h-3.5 tw-w-3.5 tw-items-center tw-justify-center"">
+    <span class="tw-absolute tw-left-2 tw-flex tw-h-3.5 tw-w-3.5 tw-items-center tw-justify-center">
       <SelectItemIndicator>
-        <Check class=""tw-h-4 tw-w-4"" />
+        <Check class="tw-h-4 tw-w-4" />
       </SelectItemIndicator>
     </span>
 

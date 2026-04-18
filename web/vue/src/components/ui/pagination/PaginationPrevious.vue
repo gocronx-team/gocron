@@ -30,7 +30,7 @@ const forwarded = useForwardProps(delegatedProps);
   >
     <slot>
       <ChevronLeftIcon />
-      <span class=""tw-hidden sm:tw-block"">Previous</span>
+      <span class="tw-hidden sm:tw-block">Previous</span>
     </slot>
   </PaginationPrev>
 </template>

@@ -30,7 +30,7 @@ const forwarded = useForwardProps(delegatedProps);
   >
     <slot>
       <ChevronLeftIcon />
-      <span class=""tw-hidden sm:tw-block"">First</span>
+      <span class="tw-hidden sm:tw-block">First</span>
     </slot>
   </PaginationFirst>
 </template>

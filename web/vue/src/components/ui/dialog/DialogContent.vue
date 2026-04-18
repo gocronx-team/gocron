@@ -34,7 +34,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
 <template>
   <DialogPortal>
     <DialogOverlay
-      class=""tw-fixed tw-inset-0 tw-z-50 tw-bg-black/80 data-[state=open]:tw-animate-in data-[state=closed]:tw-animate-out data-[state=closed]:tw-fade-out-0 data-[state=open]:tw-fade-in-0""
+      class="tw-fixed tw-inset-0 tw-z-50 tw-bg-black/80 data-[state=open]:tw-animate-in data-[state=closed]:tw-animate-out data-[state=closed]:tw-fade-out-0 data-[state=open]:tw-fade-in-0"
     />
     <DialogContent
       v-bind="forwarded"
@@ -48,10 +48,10 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
       <slot />
 
       <DialogClose
-        class=""tw-absolute tw-right-4 tw-top-4 tw-rounded-sm tw-opacity-70 tw-ring-offset-background tw-transition-opacity hover:tw-opacity-100 focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-ring focus:tw-ring-offset-2 disabled:tw-pointer-events-none data-[state=open]:tw-bg-accent data-[state=open]:tw-text-muted-foreground""
+        class="tw-absolute tw-right-4 tw-top-4 tw-rounded-sm tw-opacity-70 tw-ring-offset-background tw-transition-opacity hover:tw-opacity-100 focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-ring focus:tw-ring-offset-2 disabled:tw-pointer-events-none data-[state=open]:tw-bg-accent data-[state=open]:tw-text-muted-foreground"
       >
-        <X class=""tw-w-4 tw-h-4"" />
-        <span class=""tw-sr-only"">Close</span>
+        <X class="tw-w-4 tw-h-4" />
+        <span class="tw-sr-only">Close</span>
       </DialogClose>
     </DialogContent>
   </DialogPortal>
