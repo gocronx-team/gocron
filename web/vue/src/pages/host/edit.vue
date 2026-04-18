@@ -1,160 +1,185 @@
 <template>
-  <el-main>
-    <el-form
-      ref="form"
-      :model="form"
-      :rules="formRules"
-      label-width="auto"
-      style="width: 500px;"
-    >
-      <el-form-item>
-        <el-input
-          v-model="form.id"
-          type="hidden"
-        />
-      </el-form-item>
-      <el-form-item
-        :label="t('host.alias')"
-        prop="alias"
-      >
-        <el-input v-model="form.alias" />
-      </el-form-item>
-      <el-form-item
-        :label="t('host.name')"
-        prop="name"
-      >
-        <el-input v-model="form.name" />
-      </el-form-item>
-      <el-form-item
-        :label="t('host.port')"
-        prop="port"
-      >
-        <el-input v-model.number="form.port" />
-      </el-form-item>
-      <el-form-item :label="t('host.remark')">
-        <el-input
-          v-model="form.remark"
-          type="textarea"
-          :rows="5"
-        />
-      </el-form-item>
-      <el-form-item>
-        <el-button
-          type="primary"
-          @click="submit()"
-        >
-          {{ t('common.save') }}
-        </el-button>
-        <el-button @click="cancel">
-          {{ t('common.cancel') }}
-        </el-button>
-      </el-form-item>
-    </el-form>
-  </el-main>
+  <div class="tw-p-6">
+    <div class="tw-max-w-lg tw-mx-auto">
+      <Card>
+        <CardHeader>
+          <CardTitle>{{ isEdit ? t('host.list') : t('host.createNew') }}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form class="tw-space-y-5" @submit.prevent="onSubmit">
+            <FormField v-slot="{ componentField }" name="alias">
+              <FormItem>
+                <FormLabel>{{ t('host.alias') }}</FormLabel>
+                <FormControl>
+                  <Input
+                    v-bind="componentField"
+                    :placeholder="t('host.aliasPlaceholder')"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+
+            <FormField v-slot="{ componentField }" name="name">
+              <FormItem>
+                <FormLabel>{{ t('host.name') }}</FormLabel>
+                <FormControl>
+                  <Input
+                    v-bind="componentField"
+                    :placeholder="t('host.namePlaceholder')"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+
+            <FormField v-slot="{ componentField }" name="port">
+              <FormItem>
+                <FormLabel>{{ t('host.port') }}</FormLabel>
+                <FormControl>
+                  <Input
+                    v-bind="componentField"
+                    type="number"
+                    :placeholder="t('host.portPlaceholder')"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+
+            <FormField v-slot="{ componentField }" name="remark">
+              <FormItem>
+                <FormLabel>{{ t('host.remark') }}</FormLabel>
+                <FormControl>
+                  <textarea
+                    v-bind="componentField"
+                    rows="5"
+                    class="tw-flex tw-min-h-[80px] tw-w-full tw-rounded-md tw-border tw-border-input tw-bg-background tw-px-3 tw-py-2 tw-text-sm tw-ring-offset-background placeholder:tw-text-muted-foreground focus-visible:tw-outline-none focus-visible:tw-ring-2 focus-visible:tw-ring-ring focus-visible:tw-ring-offset-2 disabled:tw-cursor-not-allowed disabled:tw-opacity-50"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+
+            <div class="tw-flex tw-justify-center tw-gap-3 tw-pt-2">
+              <Button type="submit">
+                {{ t('common.save') }}
+              </Button>
+              <Button type="button" variant="outline" @click="cancel">
+                {{ t('common.cancel') }}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  </div>
 </template>
 
-<script>
+<script setup>
+import { computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import hostService from '../../api/host'
-export default {
-  name: 'Edit',
-  setup() {
-    const { t, locale } = useI18n()
-    return { t, locale }
-  },
-  data: function () {
-    return {
-      form: {
-        id: '',
-        name: '',
-        port: 5921,
-        alias: '',
-        remark: ''
-      },
-      formRules: {}
-    }
-  },
-  computed: {
-    computedFormRules() {
-      return {
-        name: [
-          {required: true, message: this.t('host.nameRequired'), trigger: 'blur'}
-        ],
-        port: [
-          {required: true, message: this.t('host.portRequired'), trigger: 'blur'},
-          {type: 'number', message: this.t('host.portInvalid')}
-        ],
-        alias: [
-          {required: true, message: this.t('host.aliasRequired'), trigger: 'blur'}
-        ]
-      }
-    }
-  },
-  watch: {
-    computedFormRules: {
-      handler(newVal) {
-        this.formRules = newVal
-      },
-      immediate: true
-    },
-    '$route': {
-      handler() {
-        this.loadForm()
-      },
-      deep: true
-    }
-  },
-  created () {
-    this.loadForm()
-  },
-  methods: {
-    loadForm() {
-      this.resetForm()
-      const id = this.$route.params.id
-      if (!id) {
-        return
-      }
-      hostService.detail(id, (data) => {
-      if (!data) {
-        this.$message.error(this.t('message.dataNotFound'))
-        this.cancel()
-        return
-      }
-      this.form.id = data.id
-      this.form.name = data.name
-      this.form.port = data.port
-      this.form.alias = data.alias
-      this.form.remark = data.remark
-    })
-    },
-    resetForm() {
-      this.form = {
-        id: '',
-        name: '',
-        port: 5921,
-        alias: '',
-        remark: ''
-      }
-      if (this.$refs.form) {
-        this.$refs.form.clearValidate()
-      }
-    },
-    submit () {
-      this.$refs['form'].validate((valid) => {
-        if (!valid) {
-          return false
-        }
-        this.save()
-      })
-    },
-    save () {
-      hostService.update(this.form, () => {
-        this.$router.push('/host')
-      })
-    },
-    cancel () {
-      this.$router.push('/host')
-    }
+import { useRouter, useRoute } from 'vue-router'
+import { z } from 'zod'
+import { useForm } from 'vee-validate'
+import { toTypedSchema } from '@vee-validate/zod'
+
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card'
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from '@/components/ui/form'
+
+import hostService from '@/api/host'
+import { useNotify } from '@/composables/useNotify'
+
+const { t } = useI18n()
+const router = useRouter()
+const route = useRoute()
+const notify = useNotify()
+
+const isEdit = computed(() => !!route.params.id)
+
+const schema = toTypedSchema(
+  z.object({
+    alias: z.string().min(1, t('host.aliasRequired')),
+    name: z.string().min(1, t('host.nameRequired')),
+    port: z.coerce
+      .number({ invalid_type_error: t('host.portInvalid') })
+      .min(1, t('host.portInvalid'))
+      .max(65535, t('host.portInvalid')),
+    remark: z.string().optional()
+  })
+)
+
+const { handleSubmit, setValues, resetForm } = useForm({
+  validationSchema: schema,
+  initialValues: {
+    alias: '',
+    name: '',
+    port: 5921,
+    remark: ''
   }
+})
+
+function loadForm() {
+  resetForm({
+    values: {
+      alias: '',
+      name: '',
+      port: 5921,
+      remark: ''
+    }
+  })
+  const id = route.params.id
+  if (!id) {
+    return
+  }
+  hostService.detail(id, (data) => {
+    if (!data) {
+      notify.error(t('message.dataNotFound'))
+      router.push('/host')
+      return
+    }
+    setValues({
+      alias: data.alias,
+      name: data.name,
+      port: data.port,
+      remark: data.remark || ''
+    })
+  })
+}
+
+loadForm()
+
+watch(
+  () => route.params.id,
+  () => {
+    loadForm()
+  }
+)
+
+const onSubmit = handleSubmit((values) => {
+  const payload = {
+    id: route.params.id || '',
+    ...values
+  }
+  hostService.update(payload, () => {
+    router.push('/host')
+  })
+})
+
+function cancel() {
+  router.push('/host')
 }
 </script>
