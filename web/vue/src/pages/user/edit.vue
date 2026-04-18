@@ -1,214 +1,240 @@
 <template>
-  <el-main>
-    <div class="form-container">
-      <el-form
-        ref="form"
-        :model="form"
-        :rules="formRules"
-        label-width="140px"
-        label-position="left"
-        class="user-form"
-      >
-        <el-form-item>
-          <el-input
-            v-model="form.id"
-            type="hidden"
-          />
-        </el-form-item>
-        <el-form-item
-          :label="t('user.username')"
-          prop="name"
-        >
-          <el-input v-model="form.name" />
-        </el-form-item>
-        <el-form-item
-          :label="t('user.email')"
-          prop="email"
-        >
-          <el-input v-model="form.email" />
-        </el-form-item>
-        <template v-if="!form.id">
-          <el-form-item
-            :label="t('user.password')"
-            prop="password"
-          >
-            <el-input
-              v-model="form.password"
-              type="password"
-              :placeholder="t('user.passwordPlaceholder')"
-            />
-          </el-form-item>
-          <el-form-item
-            :label="t('user.confirmPassword')"
-            prop="confirm_password"
-          >
-            <el-input
-              v-model="form.confirm_password"
-              type="password"
-              :placeholder="t('user.passwordPlaceholder')"
-            />
-          </el-form-item>
-        </template>
-        <el-form-item
-          :label="t('user.role')"
-          prop="is_admin"
-          required
-        >
-          <el-radio-group v-model="form.is_admin">
-            <el-radio :label="0">
-              {{ t('user.normalUser') }}
-            </el-radio>
-            <el-radio :label="1">
-              {{ t('user.admin') }}
-            </el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item
-          :label="t('common.status')"
-          prop="status"
-          required
-        >
-          <el-radio-group v-model="form.status">
-            <el-radio :label="1">
-              {{ t('common.enabled') }}
-            </el-radio>
-            <el-radio :label="0">
-              {{ t('common.disabled') }}
-            </el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item>
-          <div class="button-group">
-            <el-button
-              type="primary"
-              @click="submit()"
-            >
-              {{ t('common.save') }}
-            </el-button>
-            <el-button @click="cancel">
-              {{ t('common.cancel') }}
-            </el-button>
-          </div>
-        </el-form-item>
-      </el-form>
+  <div class="tw-p-6">
+    <div class="tw-max-w-lg tw-mx-auto">
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            {{ isEditMode ? t('common.edit') : t('common.add') }}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form class="tw-space-y-5" @submit.prevent="onSubmit">
+            <FormField v-slot="{ componentField }" name="name">
+              <FormItem>
+                <FormLabel>{{ t('user.username') }}</FormLabel>
+                <FormControl>
+                  <Input v-bind="componentField" autocomplete="username" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+
+            <FormField v-slot="{ componentField }" name="email">
+              <FormItem>
+                <FormLabel>{{ t('user.email') }}</FormLabel>
+                <FormControl>
+                  <Input
+                    v-bind="componentField"
+                    type="email"
+                    autocomplete="email"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+
+            <template v-if="!isEditMode">
+              <FormField v-slot="{ componentField }" name="password">
+                <FormItem>
+                  <FormLabel>{{ t('user.password') }}</FormLabel>
+                  <FormControl>
+                    <Input
+                      v-bind="componentField"
+                      type="password"
+                      :placeholder="t('user.passwordPlaceholder')"
+                      autocomplete="new-password"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              </FormField>
+
+              <FormField v-slot="{ componentField }" name="confirm_password">
+                <FormItem>
+                  <FormLabel>{{ t('user.confirmPassword') }}</FormLabel>
+                  <FormControl>
+                    <Input
+                      v-bind="componentField"
+                      type="password"
+                      :placeholder="t('user.passwordPlaceholder')"
+                      autocomplete="new-password"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              </FormField>
+            </template>
+
+            <!-- Role: is_admin as Switch (true = admin, false = normal) -->
+            <FormField v-slot="{ value, handleChange }" name="is_admin">
+              <FormItem>
+                <div class="tw-flex tw-items-center tw-justify-between tw-rounded-lg tw-border tw-p-3">
+                  <div class="tw-space-y-0.5">
+                    <FormLabel class="tw-text-base">{{ t('user.role') }}</FormLabel>
+                    <p class="tw-text-sm tw-text-muted-foreground">
+                      {{ value ? t('user.admin') : t('user.normalUser') }}
+                    </p>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      :model-value="value"
+                      @update:model-value="handleChange"
+                    />
+                  </FormControl>
+                </div>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+
+            <!-- Status: as Switch (true = enabled, false = disabled) -->
+            <FormField v-slot="{ value, handleChange }" name="status">
+              <FormItem>
+                <div class="tw-flex tw-items-center tw-justify-between tw-rounded-lg tw-border tw-p-3">
+                  <div class="tw-space-y-0.5">
+                    <FormLabel class="tw-text-base">{{ t('common.status') }}</FormLabel>
+                    <p class="tw-text-sm tw-text-muted-foreground">
+                      {{ value ? t('common.enabled') : t('common.disabled') }}
+                    </p>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      :model-value="value"
+                      @update:model-value="handleChange"
+                    />
+                  </FormControl>
+                </div>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+
+            <div class="tw-flex tw-justify-center tw-gap-3 tw-pt-2">
+              <Button type="submit">
+                {{ t('common.save') }}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                @click="cancel"
+              >
+                {{ t('common.cancel') }}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
-  </el-main>
+  </div>
 </template>
 
-<script>
+<script setup>
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import userService from '../../api/user'
-export default {
-  name: 'UserEdit',
-  setup() {
-    const { t, locale } = useI18n()
-    return { t, locale }
-  },
-  data: function () {
-    return {
-      form: {
-        id: '',
-        name: '',
-        email: '',
-        is_admin: 0,
-        password: '',
-        confirm_password: '',
-        status: 1
-      },
-      formRules: {}
-    }
-  },
-  computed: {
-    computedFormRules() {
-      return {
-        name: [
-          {required: true, message: this.t('user.usernameRequired'), trigger: 'blur'}
-        ],
-        email: [
-          {type: 'email', required: true, message: this.t('user.emailRequired'), trigger: 'blur'}
-        ],
-        password: [
-          {required: true, message: this.t('user.passwordRequired'), trigger: 'blur'}
-        ],
-        confirm_password: [
-          {required: true, message: this.t('user.confirmPasswordRequired'), trigger: 'blur'}
-        ]
-      }
-    }
-  },
-  watch: {
-    computedFormRules: {
-      handler(newVal) {
-        this.formRules = newVal
-      },
-      immediate: true
-    }
-  },
-  created () {
-    const id = this.$route.params.id
-    if (!id) {
-      return
-    }
-    userService.detail(id, (data) => {
-      if (!data) {
-        this.$message.error(this.t('message.dataNotFound'))
-        return
-      }
-      this.form.id = data.id
-      this.form.name = data.name
-      this.form.email = data.email
-      this.form.is_admin = data.is_admin
-      this.form.status = data.status
-    })
-  },
-  methods: {
-    submit () {
-      this.$refs['form'].validate((valid) => {
-        if (!valid) {
-          return false
+import { useRouter, useRoute } from 'vue-router'
+import { z } from 'zod'
+import { useForm } from 'vee-validate'
+import { toTypedSchema } from '@vee-validate/zod'
+
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Switch } from '@/components/ui/switch'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card'
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from '@/components/ui/form'
+
+import userService from '@/api/user'
+
+const { t } = useI18n()
+const router = useRouter()
+const route = useRoute()
+
+const userId = ref(route.params.id || '')
+const isEditMode = computed(() => !!userId.value)
+
+// Build schema as a computed so it reacts to isEditMode
+const validationSchema = computed(() =>
+  toTypedSchema(
+    z
+      .object({
+        name: z.string().min(1, t('user.usernameRequired')),
+        email: z.string().email(t('user.emailRequired')),
+        password: isEditMode.value
+          ? z.string().optional()
+          : z.string().min(1, t('user.passwordRequired')),
+        confirm_password: isEditMode.value
+          ? z.string().optional()
+          : z.string().min(1, t('user.confirmPasswordRequired')),
+        is_admin: z.boolean(),
+        status: z.boolean()
+      })
+      .refine(
+        data => {
+          if (isEditMode.value) return true
+          return data.password === data.confirm_password
+        },
+        {
+          message: t('user.passwordMismatch'),
+          path: ['confirm_password']
         }
-        this.save()
-      })
-    },
-    save () {
-      userService.update(this.form, () => {
-        this.$router.push('/user')
-      })
-    },
-    cancel () {
-      this.$router.push('/user')
-    }
+      )
+  )
+)
+
+const { handleSubmit, setValues } = useForm({
+  validationSchema,
+  initialValues: {
+    name: '',
+    email: '',
+    password: '',
+    confirm_password: '',
+    is_admin: false,
+    status: true
   }
+})
+
+onMounted(() => {
+  if (!userId.value) return
+
+  userService.detail(userId.value, data => {
+    if (!data) return
+    setValues({
+      name: data.name,
+      email: data.email,
+      is_admin: data.is_admin === 1,
+      status: data.status === 1
+    })
+  })
+})
+
+const onSubmit = handleSubmit(values => {
+  const payload = {
+    id: userId.value || undefined,
+    name: values.name,
+    email: values.email,
+    is_admin: values.is_admin ? 1 : 0,
+    status: values.status ? 1 : 0
+  }
+
+  if (!isEditMode.value) {
+    payload.password = values.password
+    payload.confirm_password = values.confirm_password
+  }
+
+  userService.update(payload, () => {
+    router.push('/user')
+  })
+})
+
+function cancel() {
+  router.push('/user')
 }
 </script>
-
-<style scoped>
-.form-container {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-.user-form {
-  background: white;
-  padding: 30px;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-}
-
-.user-form :deep(.el-form-item:last-child) {
-  margin-bottom: 0;
-}
-
-.user-form :deep(.el-form-item:last-child .el-form-item__content) {
-  margin-left: 0 !important;
-}
-
-.button-group {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 20px;
-  width: 100%;
-}
-</style>
