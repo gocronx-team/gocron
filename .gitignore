@@ -44,3 +44,4 @@ build-errors.log
 .gocache
 .gstack/
 .design-review/
+.claude/worktrees/
