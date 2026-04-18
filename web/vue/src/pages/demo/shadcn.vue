@@ -261,9 +261,11 @@ const columns = [
           :total="total"
           :page="page"
           :page-size="pageSize"
+          row-clickable
           @update:page="(v) => (page = v)"
           @update:page-size="(v) => (pageSize = v)"
           @update:selected="(v) => (selected = v)"
+          @row-click="(row) => notify.info(`Clicked row #${row.id}`)"
         />
       </CardContent>
     </Card>

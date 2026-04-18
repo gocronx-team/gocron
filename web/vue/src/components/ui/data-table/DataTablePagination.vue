@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
@@ -10,6 +11,8 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select'
+
+const { t } = useI18n()
 
 const props = defineProps({
   page: { type: Number, required: true },
@@ -37,11 +40,12 @@ function changeSize(v) {
     class="tw-flex tw-items-center tw-justify-between tw-gap-4 tw-flex-wrap"
   >
     <div class="tw-text-sm tw-text-muted-foreground">
-      Total {{ total }} · Page {{ page }} / {{ totalPages }}
+      {{ t('common.total') }} {{ total }} &middot;
+      {{ t('common.pageOf', { current: page, total: totalPages }) }}
     </div>
     <div class="tw-flex tw-items-center tw-gap-4">
       <div class="tw-flex tw-items-center tw-gap-2">
-        <span class="tw-text-sm tw-text-muted-foreground">Rows per page</span>
+        <span class="tw-text-sm tw-text-muted-foreground">{{ t('common.rowsPerPage') }}</span>
         <Select :model-value="String(pageSize)" @update:model-value="changeSize">
           <SelectTrigger class="tw-h-8 tw-w-[70px]">
             <SelectValue />
