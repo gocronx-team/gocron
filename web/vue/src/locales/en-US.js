@@ -74,7 +74,10 @@ export default {
     no: 'No',
     total: 'Total',
     items: 'items',
-    date: 'Date'
+    date: 'Date',
+    noData: 'No data',
+    rowsPerPage: 'Rows per page',
+    pageOf: 'Page {current} of {total}'
   },
   nav: {
     taskManage: 'Tasks',

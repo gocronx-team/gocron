@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   getCoreRowModel,
   getSortedRowModel,
@@ -19,6 +20,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import DataTablePagination from './DataTablePagination.vue'
 
+const { t } = useI18n()
+
 /**
  * 通用 DataTable，API 参考老 el-table 常用能力。
  *
@@ -31,13 +34,21 @@ import DataTablePagination from './DataTablePagination.vue'
  *   pageSize     — 每页行数
  *   pageSizes    — 分页 size 可选值，默认 [10, 20, 50, 100]
  *   selectable   — 开启多选（首列加 checkbox）
- *   emptyText    — 无数据提示
+ *   emptyText    — 无数据提示，不传时默认显示 t('common.noData')
  *   rowKey       — 行唯一键字段名，用于 :key 和选择追踪，默认 'id'
+ *   rowClickable — 开启行点击（添加 pointer cursor + hover 效果），默认 false
  *
  * emits:
  *   update:page       — 切页
  *   update:pageSize   — 改每页数量
  *   update:selected   — 选择变化，payload: row[]
+ *   row-click         — 行点击，payload: row.original（仅 rowClickable=true 时触发）
+ *
+ * 列宽说明（size prop）：
+ *   TanStack 列定义中 `size` 字段默认为 150。
+ *   DataTable 的实现：只有当 size !== 150 时才会设置 style.width，
+ *   因此"不指定 size"和"指定 size=150"的视觉效果完全相同（都由表格自动布局）。
+ *   若希望某列固定宽度，请设置一个不等于 150 的值，例如 size: 80。
  */
 const props = defineProps({
   columns: { type: Array, required: true },
@@ -48,12 +59,13 @@ const props = defineProps({
   pageSize: { type: Number, default: 20 },
   pageSizes: { type: Array, default: () => [10, 20, 50, 100] },
   selectable: { type: Boolean, default: false },
-  emptyText: { type: String, default: '' },
+  emptyText: { type: String, default: null },
   rowKey: { type: String, default: 'id' },
+  rowClickable: { type: Boolean, default: false },
   class: { type: String, default: '' }
 })
 
-const emit = defineEmits(['update:page', 'update:pageSize', 'update:selected'])
+const emit = defineEmits(['update:page', 'update:pageSize', 'update:selected', 'row-click'])
 
 const sorting = ref([])
 const rowSelection = ref({})
@@ -119,6 +131,11 @@ function handlePageSizeChange(newSize) {
   emit('update:pageSize', newSize)
 }
 
+function handleRowClick(row) {
+  if (!props.rowClickable) return
+  emit('row-click', row.original)
+}
+
 defineExpose({ table })
 </script>
 
@@ -156,6 +173,8 @@ defineExpose({ table })
               v-for="row in table.getRowModel().rows"
               :key="row.id"
               :data-state="row.getIsSelected() ? 'selected' : undefined"
+              :class="rowClickable ? 'tw-cursor-pointer hover:tw-bg-accent/50' : ''"
+              @click="handleRowClick(row)"
             >
               <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
                 <FlexRender
@@ -171,7 +190,7 @@ defineExpose({ table })
               :colspan="columnCount"
               class="tw-h-24 tw-text-center tw-text-muted-foreground"
             >
-              {{ emptyText || 'No data' }}
+              {{ emptyText || t('common.noData') }}
             </TableCell>
           </TableRow>
         </TableBody>

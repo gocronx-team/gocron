@@ -74,7 +74,10 @@ export default {
     no: '否',
     total: '共',
     items: '条',
-    date: '日期'
+    date: '日期',
+    noData: '暂无数据',
+    rowsPerPage: '每页',
+    pageOf: '第 {current}/{total} 页'
   },
   nav: {
     taskManage: '任务管理',
