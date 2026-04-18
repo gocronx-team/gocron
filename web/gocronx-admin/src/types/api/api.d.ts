@@ -62,24 +62,37 @@ declare namespace Api {
 
   /** 认证类型 */
   namespace Auth {
-    /** 登录参数 */
+    /** 登录参数 - gocron /api/user/login (form body) */
     interface LoginParams {
-      userName: string
+      username: string
       password: string
+      two_factor_code?: string
     }
 
-    /** 登录响应 */
+    /** 登录响应 data 字段 - gocron success */
     interface LoginResponse {
       token: string
-      refreshToken: string
+      uid: number
+      username: string
+      is_admin: number // 0 or 1
     }
 
-    /** 用户信息 */
+    /** 2FA 中间步骤响应 data 字段 */
+    interface Login2FARequired {
+      require_2fa: true
+    }
+
+    /** 用户信息 - derived from JWT claims stored at login */
     interface UserInfo {
-      buttons: string[]
-      roles: string[]
+      /** gocron user id */
       userId: number
       userName: string
+      /** is_admin: 1 = admin, 0 = regular user */
+      isAdmin: number
+      /** roles list derived from is_admin for template permission system */
+      roles: string[]
+      /** not used by gocron, kept for template compatibility */
+      buttons: string[]
       email: string
       avatar?: string
     }

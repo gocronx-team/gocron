@@ -10,7 +10,10 @@
         <div class="form">
           <h3 class="title">{{ $t('login.title') }}</h3>
           <p class="sub-title">{{ $t('login.subTitle') }}</p>
+
+          <!-- Step 1: username + password -->
           <ElForm
+            v-if="!require2FA"
             ref="formRef"
             :model="formData"
             :rules="rules"
@@ -18,23 +21,12 @@
             @keyup.enter="handleSubmit"
             style="margin-top: 25px"
           >
-            <ElFormItem prop="account">
-              <ElSelect v-model="formData.account" @change="setupAccount">
-                <ElOption
-                  v-for="account in accounts"
-                  :key="account.key"
-                  :label="account.label"
-                  :value="account.key"
-                >
-                  <span>{{ account.label }}</span>
-                </ElOption>
-              </ElSelect>
-            </ElFormItem>
             <ElFormItem prop="username">
               <ElInput
                 class="custom-height"
                 :placeholder="$t('login.placeholder.username')"
                 v-model.trim="formData.username"
+                autocomplete="username"
               />
             </ElFormItem>
             <ElFormItem prop="password">
@@ -43,44 +35,46 @@
                 :placeholder="$t('login.placeholder.password')"
                 v-model.trim="formData.password"
                 type="password"
-                autocomplete="off"
+                autocomplete="current-password"
                 show-password
               />
             </ElFormItem>
 
-            <!-- 推拽验证 -->
-            <div class="relative pb-5 mt-6">
-              <div
-                class="relative z-[2] overflow-hidden select-none rounded-lg border border-transparent tad-300"
-                :class="{ '!border-[#FF4E4F]': !isPassing && isClickPass }"
+            <div style="margin-top: 30px">
+              <ElButton
+                class="w-full custom-height"
+                type="primary"
+                @click="handleSubmit"
+                :loading="loading"
+                v-ripple
               >
-                <ArtDragVerify
-                  ref="dragVerify"
-                  v-model:value="isPassing"
-                  :text="$t('login.sliderText')"
-                  textColor="var(--art-gray-700)"
-                  :successText="$t('login.sliderSuccessText')"
-                  progressBarBg="var(--main-color)"
-                  :background="isDark ? '#26272F' : '#F1F1F4'"
-                  handlerBg="var(--default-box-color)"
-                />
-              </div>
-              <p
-                class="absolute top-0 z-[1] px-px mt-2 text-xs text-[#f56c6c] tad-300"
-                :class="{ 'translate-y-10': !isPassing && isClickPass }"
-              >
-                {{ $t('login.placeholder.slider') }}
-              </p>
+                {{ $t('login.btnText') }}
+              </ElButton>
             </div>
+          </ElForm>
 
-            <div class="flex-cb mt-2 text-sm">
-              <ElCheckbox v-model="formData.rememberPassword">{{
-                $t('login.rememberPwd')
-              }}</ElCheckbox>
-              <RouterLink class="text-theme" :to="{ name: 'ForgetPassword' }">{{
-                $t('login.forgetPwd')
-              }}</RouterLink>
-            </div>
+          <!-- Step 2: 2FA code -->
+          <ElForm
+            v-else
+            ref="form2FARef"
+            :model="formData"
+            :rules="rules2FA"
+            :key="'2fa-' + formKey"
+            @keyup.enter="handleSubmit"
+            style="margin-top: 25px"
+          >
+            <p class="sub-title" style="margin-bottom: 16px">
+              {{ $t('login.placeholder.twoFactorCode') }}
+            </p>
+            <ElFormItem prop="two_factor_code">
+              <ElInput
+                class="custom-height"
+                :placeholder="$t('login.placeholder.twoFactorCode')"
+                v-model.trim="formData.two_factor_code"
+                maxlength="6"
+                autocomplete="one-time-code"
+              />
+            </ElFormItem>
 
             <div style="margin-top: 30px">
               <ElButton
@@ -94,11 +88,15 @@
               </ElButton>
             </div>
 
-            <div class="mt-5 text-sm text-gray-600">
-              <span>{{ $t('login.noAccount') }}</span>
-              <RouterLink class="text-theme" :to="{ name: 'Register' }">{{
-                $t('login.register')
-              }}</RouterLink>
+            <div class="mt-4">
+              <ElButton
+                class="w-full"
+                @click="cancelTwoFactor"
+                :disabled="loading"
+                link
+              >
+                {{ $t('common.cancel') }}
+              </ElButton>
             </div>
           </ElForm>
         </div>
@@ -114,12 +112,9 @@
   import { HttpError } from '@/utils/http/error'
   import { fetchLogin } from '@/api/auth'
   import { ElNotification, type FormInstance, type FormRules } from 'element-plus'
-  import { useSettingStore } from '@/store/modules/setting'
 
   defineOptions({ name: 'Login' })
 
-  const settingStore = useSettingStore()
-  const { isDark } = storeToRefs(settingStore)
   const { t, locale } = useI18n()
   const formKey = ref(0)
 
@@ -128,56 +123,21 @@
     formKey.value++
   })
 
-  type AccountKey = 'super' | 'admin' | 'user'
-
-  export interface Account {
-    key: AccountKey
-    label: string
-    userName: string
-    password: string
-    roles: string[]
-  }
-
-  const accounts = computed<Account[]>(() => [
-    {
-      key: 'super',
-      label: t('login.roles.super'),
-      userName: 'Super',
-      password: '123456',
-      roles: ['R_SUPER']
-    },
-    {
-      key: 'admin',
-      label: t('login.roles.admin'),
-      userName: 'Admin',
-      password: '123456',
-      roles: ['R_ADMIN']
-    },
-    {
-      key: 'user',
-      label: t('login.roles.user'),
-      userName: 'User',
-      password: '123456',
-      roles: ['R_USER']
-    }
-  ])
-
-  const dragVerify = ref()
-
   const userStore = useUserStore()
   const router = useRouter()
   const route = useRoute()
-  const isPassing = ref(false)
-  const isClickPass = ref(false)
 
   const systemName = AppConfig.systemInfo.name
   const formRef = ref<FormInstance>()
+  const form2FARef = ref<FormInstance>()
+
+  // 是否处于 2FA 第二步
+  const require2FA = ref(false)
 
   const formData = reactive({
-    account: '',
     username: '',
     password: '',
-    rememberPassword: true
+    two_factor_code: ''
   })
 
   const rules = computed<FormRules>(() => ({
@@ -185,53 +145,73 @@
     password: [{ required: true, message: t('login.placeholder.password'), trigger: 'blur' }]
   }))
 
+  const rules2FA = computed<FormRules>(() => ({
+    two_factor_code: [
+      { required: true, message: t('login.placeholder.twoFactorCode'), trigger: 'blur' },
+      { len: 6, message: t('login.placeholder.twoFactorCode'), trigger: 'blur' }
+    ]
+  }))
+
   const loading = ref(false)
 
-  onMounted(() => {
-    setupAccount('super')
-  })
-
-  // 设置账号
-  const setupAccount = (key: AccountKey) => {
-    const selectedAccount = accounts.value.find((account: Account) => account.key === key)
-    formData.account = key
-    formData.username = selectedAccount?.userName ?? ''
-    formData.password = selectedAccount?.password ?? ''
+  // 取消 2FA，回到第一步
+  const cancelTwoFactor = () => {
+    require2FA.value = false
+    formData.two_factor_code = ''
   }
 
   // 登录
   const handleSubmit = async () => {
-    if (!formRef.value) return
+    // validate current step's form
+    const activeForm = require2FA.value ? form2FARef.value : formRef.value
+    if (!activeForm) return
 
     try {
-      // 表单验证
-      const valid = await formRef.value.validate()
+      const valid = await activeForm.validate()
       if (!valid) return
-
-      // 拖拽验证
-      if (!isPassing.value) {
-        isClickPass.value = true
-        return
-      }
 
       loading.value = true
 
-      // 登录请求
-      const { username, password } = formData
+      const params: Api.Auth.LoginParams = {
+        username: formData.username,
+        password: formData.password
+      }
+      if (require2FA.value && formData.two_factor_code) {
+        params.two_factor_code = formData.two_factor_code
+      }
 
-      const { token, refreshToken } = await fetchLogin({
-        userName: username,
-        password
-      })
+      // fetchLogin returns either LoginResponse or Login2FARequired
+      const result = await fetchLogin(params) as any
 
-      // 验证token
-      if (!token) {
+      // Check for 2FA intermediate step:
+      // gocron returns { code:0, message:"2fa_code_required", data:{ require_2fa: true } }
+      // The HTTP interceptor lets code=0 through; the 'data' field here is the parsed data.
+      if (result && (result as any).require_2fa === true) {
+        require2FA.value = true
+        loading.value = false
+        return
+      }
+
+      // Normal login success — result is LoginResponse { token, uid, username, is_admin }
+      const loginData = result as Api.Auth.LoginResponse
+      if (!loginData.token) {
         throw new Error('Login failed - no token received')
       }
 
-      // 存储 token 和登录状态
-      userStore.setToken(token, refreshToken)
+      // Determine roles from is_admin
+      const roles = loginData.is_admin === 1 ? ['R_SUPER', 'R_ADMIN'] : ['R_USER']
+
+      // Store token (no refresh token in gocron)
+      userStore.setToken(loginData.token)
       userStore.setLoginStatus(true)
+      userStore.setUserInfo({
+        userId: loginData.uid,
+        userName: loginData.username,
+        isAdmin: loginData.is_admin,
+        roles,
+        buttons: [],
+        email: ''
+      })
 
       // 登录成功处理
       showLoginSuccessNotice()
@@ -240,23 +220,17 @@
       const redirect = route.query.redirect as string
       router.push(redirect || '/')
     } catch (error) {
-      // 处理 HttpError
       if (error instanceof HttpError) {
-        // console.log(error.code)
-      } else {
-        // 处理非 HttpError
-        // ElMessage.error('登录失败，请稍后重试')
-        console.error('[Login] Unexpected error:', error)
+        // HTTP errors (non-zero code) are already shown by the error interceptor
+        // unless showErrorMessage: false — since we set that in fetchLogin, show manually
+        ElMessage.error(error.message)
+      } else if (error instanceof Error) {
+        ElMessage.error(error.message)
+        console.error('[Login] Error:', error)
       }
     } finally {
       loading.value = false
-      resetDragVerify()
     }
-  }
-
-  // 重置拖拽验证
-  const resetDragVerify = () => {
-    dragVerify.value.reset()
   }
 
   // 登录成功提示
@@ -278,7 +252,5 @@
 </style>
 
 <style lang="scss" scoped>
-  :deep(.el-select__wrapper) {
-    height: 40px !important;
-  }
+  /* no account-select overrides needed */
 </style>

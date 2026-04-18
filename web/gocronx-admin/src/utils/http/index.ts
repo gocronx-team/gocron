@@ -65,7 +65,8 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.request.use(
   (request: InternalAxiosRequestConfig) => {
     const { accessToken } = useUserStore()
-    if (accessToken) request.headers.set('Authorization', accessToken)
+    // gocron uses Auth-Token header (not Authorization: Bearer)
+    if (accessToken) request.headers.set('Auth-Token', accessToken)
 
     if (request.data && !(request.data instanceof FormData) && !request.headers['Content-Type']) {
       request.headers.set('Content-Type', 'application/json')
@@ -83,8 +84,15 @@ axiosInstance.interceptors.request.use(
 /** 响应拦截器 */
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse<BaseResponse>) => {
-    const { code, msg } = response.data
-    if (code === ApiStatus.success) return response
+    const respData = response.data as any
+    // gocron backend returns { code: 0, message: "...", data: {...} }
+    // Normalise to { code, msg } so the rest of the pipeline is consistent
+    const code: number = respData.code
+    const msg: string = respData.msg || respData.message || ''
+
+    // gocron success code is 0; template default was 200 — accept both
+    if (code === 0 || code === ApiStatus.success) return response
+
     if (code === ApiStatus.unauthorized) handleUnauthorizedError(msg)
     throw createHttpError(msg || $t('httpMsg.requestFailed'), code)
   },
@@ -177,9 +185,10 @@ async function request<T = any>(config: ExtendedAxiosRequestConfig): Promise<T> 
   try {
     const res = await axiosInstance.request<BaseResponse<T>>(config)
 
-    // 显示成功消息
-    if (config.showSuccessMessage && res.data.msg) {
-      showSuccess(res.data.msg)
+    // 显示成功消息 (gocron uses "message", template default uses "msg")
+    const successMsg = (res.data as any).msg || (res.data as any).message
+    if (config.showSuccessMessage && successMsg) {
+      showSuccess(successMsg)
     }
 
     return res.data.data as T

@@ -177,19 +177,20 @@
     try {
       switching.value = true
 
-      // 模拟登录请求
-      const { token, refreshToken } = await fetchLogin({
-        userName: account.userName,
+      // 模拟登录请求 (example only — gocron uses username/password form fields)
+      const result = await fetchLogin({
+        username: account.userName,
         password: account.password
-      })
+      } as any)
+      const loginResult = result as any
 
       // 验证token
-      if (!token) {
+      if (!loginResult?.token) {
         throw new Error('Login failed - no token received')
       }
 
       // 存储token和用户信息
-      userStore.setToken(token, refreshToken)
+      userStore.setToken(loginResult.token)
       const userInfo = await fetchGetUserInfo()
       userStore.setUserInfo(userInfo)
 

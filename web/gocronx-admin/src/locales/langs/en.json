@@ -142,7 +142,8 @@
     "placeholder": {
       "username": "Please enter your account",
       "password": "Please enter your password",
-      "slider": "Please slide to verify"
+      "slider": "Please slide to verify",
+      "twoFactorCode": "Please enter your 6-digit authenticator code"
     },
     "sliderText": "Please slide to verify",
     "sliderSuccessText": "Verification successful",
