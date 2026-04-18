@@ -1,331 +1,417 @@
-<template>
-  <el-main>
-    <el-form :inline="true">
-      <el-form-item :label="t('audit.module')">
-        <el-select
-          v-model.trim="searchParams.module"
-          style="width: 150px"
-        >
-          <el-option
-            :label="t('message.all')"
-            value=""
-          />
-          <el-option
-            v-for="item in moduleList"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item :label="t('audit.action')">
-        <el-select
-          v-model.trim="searchParams.action"
-          style="width: 160px"
-        >
-          <el-option
-            :label="t('message.all')"
-            value=""
-          />
-          <el-option
-            v-for="item in actionList"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item :label="t('user.username')">
-        <el-input v-model.trim="searchParams.username" />
-      </el-form-item>
-      <el-form-item :label="t('common.date')">
-        <el-date-picker
-          v-model="dateRange"
-          type="daterange"
-          value-format="YYYY-MM-DD"
-          :range-separator="'-'"
-          :start-placeholder="t('common.date')"
-          :end-placeholder="t('common.date')"
-          style="width: 240px"
-        />
-      </el-form-item>
-      <el-form-item>
-        <el-button
-          type="primary"
-          @click="search()"
-        >
-          {{ t('common.search') }}
-        </el-button>
-      </el-form-item>
-    </el-form>
-    <el-pagination
-      v-model:current-page="searchParams.page"
-      v-model:page-size="searchParams.page_size"
-      background
-      layout="prev, pager, next, sizes, total"
-      :total="logTotal"
-      @size-change="changePageSize"
-      @current-change="changePage"
-    />
-    <el-table
-      ref="table"
-      :data="logs"
-      border
-      style="width: 100%"
-    >
-      <el-table-column
-        :label="t('system.loginTime')"
-        width="180"
-        align="center"
-      >
-        <template #default="scope">
-          {{ $filters.formatTime(scope.row.created) }}
-        </template>
-      </el-table-column>
-      <el-table-column
-        prop="username"
-        :label="t('user.username')"
-        align="center"
-      />
-      <el-table-column
-        :label="t('audit.module')"
-        width="100"
-        align="center"
-      >
-        <template #default="scope">
-          <el-tag
-            :type="moduleTagType(scope.row.module)"
-            size="small"
-          >
-            {{ moduleLabel(scope.row.module) }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column
-        :label="t('audit.action')"
-        width="120"
-        align="center"
-      >
-        <template #default="scope">
-          <el-tag
-            :type="actionTagType(scope.row.action)"
-            size="small"
-          >
-            {{ actionLabel(scope.row.action) }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column
-        :label="t('audit.target')"
-        align="center"
-      >
-        <template #default="scope">
-          {{ scope.row.target_name || scope.row.target_id }}
-        </template>
-      </el-table-column>
-      <el-table-column
-        prop="ip"
-        :label="t('system.loginIp')"
-        align="center"
-      />
-      <el-table-column
-        :label="t('audit.detail')"
-        width="120"
-        align="center"
-      >
-        <template #default="scope">
-          <el-button
-            v-if="scope.row.detail"
-            type="info"
-            size="small"
-            @click="showDetail(scope.row)"
-          >
-            {{ t('taskLog.viewOutput') }}
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-    <el-dialog
-      v-model="dialogVisible"
-      :title="t('audit.detail')"
-      width="600px"
-      align-center
-    >
-      <el-table
-        :data="detailRows"
-        border
-        size="small"
-        :show-header="true"
-      >
-        <el-table-column
-          prop="field"
-          label="Field"
-          width="160"
-        />
-        <el-table-column
-          prop="old"
-          label="Before"
-        />
-        <el-table-column
-          label=""
-          width="40"
-          align="center"
-        >
-          <template #default>
-            &rarr;
-          </template>
-        </el-table-column>
-        <el-table-column
-          prop="new"
-          label="After"
-        />
-      </el-table>
-    </el-dialog>
-  </el-main>
-</template>
-
-<script>
+<script setup>
+import { h, ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import auditService from '../../api/audit'
+import dayjs from 'dayjs'
+import { RefreshCw, Eye } from 'lucide-vue-next'
 
-export default {
-  name: 'AuditLog',
-  setup() {
-    const { t } = useI18n()
-    return { t }
-  },
-  data() {
-    return {
-      logs: [],
-      logTotal: 0,
-      searchParams: {
-        page_size: 20,
-        page: 1,
-        module: '',
-        action: '',
-        username: '',
-        start_date: '',
-        end_date: ''
-      },
-      dateRange: [],
-      dialogVisible: false,
-      detailRows: [],
-      moduleList: [],
-      actionList: []
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog'
+import { Badge } from '@/components/ui/badge'
+import { DataTable } from '@/components/ui/data-table'
+import { useNotify } from '@/composables/useNotify'
+
+import auditService from '@/api/audit'
+
+const { t } = useI18n()
+const notify = useNotify()
+
+// ── State ─────────────────────────────────────────────────────────────────────
+const list = ref([])
+const total = ref(0)
+const page = ref(1)
+const pageSize = ref(20)
+const loading = ref(false)
+
+const filterModule = ref('')
+const filterAction = ref('')
+const filterUsername = ref('')
+const filterStartDate = ref('')
+const filterEndDate = ref('')
+
+// ── Detail dialog ─────────────────────────────────────────────────────────────
+const detailOpen = ref(false)
+const detailRows = ref([])
+
+// ── Module / Action options ───────────────────────────────────────────────────
+const moduleOptions = computed(() => [
+  { value: '', label: t('message.all') },
+  { value: 'task', label: t('audit.module_task') },
+  { value: 'host', label: t('audit.module_host') },
+  { value: 'user', label: t('audit.module_user') },
+  { value: 'system', label: t('audit.module_system') }
+])
+
+const actionOptions = computed(() => [
+  { value: '', label: t('message.all') },
+  { value: 'create', label: t('audit.action_create') },
+  { value: 'update', label: t('audit.action_update') },
+  { value: 'delete', label: t('audit.action_delete') },
+  { value: 'enable', label: t('audit.action_enable') },
+  { value: 'disable', label: t('audit.action_disable') },
+  { value: 'run', label: t('audit.action_run') },
+  { value: 'batch-enable', label: t('audit.action_batch_enable') },
+  { value: 'batch-disable', label: t('audit.action_batch_disable') },
+  { value: 'batch-remove', label: t('audit.action_batch_remove') },
+  { value: 'change-password', label: t('audit.action_change_password') },
+  { value: 'reset-password', label: t('audit.action_reset_password') }
+])
+
+// ── Badge helpers ─────────────────────────────────────────────────────────────
+function moduleVariant(module) {
+  const map = {
+    task: 'secondary',
+    host: 'default',
+    user: 'outline',
+    system: 'destructive'
+  }
+  return map[module] || 'secondary'
+}
+
+function moduleLabel(module) {
+  const found = moduleOptions.value.find(o => o.value === module)
+  return found ? found.label : module
+}
+
+function actionVariant(action) {
+  const map = {
+    create: 'default',
+    enable: 'default',
+    'batch-enable': 'default',
+    update: 'secondary',
+    'change-password': 'secondary',
+    'reset-password': 'secondary',
+    delete: 'destructive',
+    'batch-remove': 'destructive',
+    disable: 'outline',
+    'batch-disable': 'outline'
+  }
+  return map[action] || 'outline'
+}
+
+function actionLabel(action) {
+  const found = actionOptions.value.find(o => o.value === action)
+  return found ? found.label : action
+}
+
+// ── Columns ───────────────────────────────────────────────────────────────────
+const columns = computed(() => [
+  {
+    accessorKey: 'created',
+    header: t('system.loginTime'),
+    size: 180,
+    cell: ({ row }) => {
+      const val = row.getValue('created')
+      if (!val) return h('span', { class: 'tw-text-muted-foreground' }, '-')
+      return h('span', dayjs(val).format('YYYY-MM-DD HH:mm:ss'))
     }
   },
-  computed: {
-    computedModuleList() {
-      return [
-        { value: 'task', label: this.t('audit.module_task') },
-        { value: 'host', label: this.t('audit.module_host') },
-        { value: 'user', label: this.t('audit.module_user') },
-        { value: 'system', label: this.t('audit.module_system') }
-      ]
-    },
-    computedActionList() {
-      return [
-        { value: 'create', label: this.t('audit.action_create') },
-        { value: 'update', label: this.t('audit.action_update') },
-        { value: 'delete', label: this.t('audit.action_delete') },
-        { value: 'enable', label: this.t('audit.action_enable') },
-        { value: 'disable', label: this.t('audit.action_disable') },
-        { value: 'run', label: this.t('audit.action_run') },
-        { value: 'batch-enable', label: this.t('audit.action_batch_enable') },
-        { value: 'batch-disable', label: this.t('audit.action_batch_disable') },
-        { value: 'batch-remove', label: this.t('audit.action_batch_remove') },
-        { value: 'change-password', label: this.t('audit.action_change_password') },
-        { value: 'reset-password', label: this.t('audit.action_reset_password') }
-      ]
+  {
+    accessorKey: 'username',
+    header: t('user.username')
+  },
+  {
+    accessorKey: 'module',
+    header: t('audit.module'),
+    size: 110,
+    cell: ({ row }) => {
+      const mod = row.getValue('module')
+      return h(
+        Badge,
+        { variant: moduleVariant(mod), class: 'tw-whitespace-nowrap' },
+        () => moduleLabel(mod)
+      )
     }
   },
-  watch: {
-    computedModuleList: {
-      handler(newVal) {
-        this.moduleList = newVal
-      },
-      immediate: true
-    },
-    computedActionList: {
-      handler(newVal) {
-        this.actionList = newVal
-      },
-      immediate: true
+  {
+    accessorKey: 'action',
+    header: t('audit.action'),
+    size: 130,
+    cell: ({ row }) => {
+      const act = row.getValue('action')
+      return h(
+        Badge,
+        { variant: actionVariant(act), class: 'tw-whitespace-nowrap' },
+        () => actionLabel(act)
+      )
     }
   },
-  created() {
-    this.search()
+  {
+    id: 'target',
+    header: t('audit.target'),
+    cell: ({ row }) => {
+      const r = row.original
+      return h('span', r.target_name || r.target_id || '-')
+    }
   },
-  methods: {
-    changePage(page) {
-      this.searchParams.page = page
-      this.search()
-    },
-    changePageSize(pageSize) {
-      this.searchParams.page_size = pageSize
-      this.search()
-    },
-    search() {
-      if (this.dateRange && this.dateRange.length === 2) {
-        this.searchParams.start_date = this.dateRange[0]
-        this.searchParams.end_date = this.dateRange[1]
-      } else {
-        this.searchParams.start_date = ''
-        this.searchParams.end_date = ''
-      }
-      auditService.list(this.searchParams, data => {
-        this.logs = data.data
-        this.logTotal = data.total
-      })
-    },
-    moduleLabel(module) {
-      const found = this.moduleList.find(item => item.value === module)
-      return found ? found.label : module
-    },
-    moduleTagType(module) {
-      const types = {
-        task: '',
-        host: 'success',
-        user: 'warning',
-        system: 'danger'
-      }
-      return types[module] || 'info'
-    },
-    actionLabel(action) {
-      const found = this.actionList.find(item => item.value === action)
-      return found ? found.label : action
-    },
-    actionTagType(action) {
-      const types = {
-        create: 'success',
-        update: 'warning',
-        delete: 'danger',
-        enable: 'success',
-        disable: 'info',
-        run: '',
-        'batch-enable': 'success',
-        'batch-disable': 'info',
-        'batch-remove': 'danger',
-        'change-password': 'warning',
-        'reset-password': 'warning'
-      }
-      return types[action] || 'info'
-    },
-    showDetail(row) {
-      this.detailRows = (row.detail || '').split('\n').filter(Boolean).map(line => {
-        const parts = line.split(' → ')
-        const fieldAndOld = (parts[0] || '').split(': ')
-        return {
-          field: fieldAndOld[0] || '',
-          old: fieldAndOld.slice(1).join(': ') || '',
-          new: parts.slice(1).join(' → ') || ''
-        }
-      })
-      this.dialogVisible = true
+  {
+    accessorKey: 'ip',
+    header: t('system.loginIp'),
+    size: 140
+  },
+  {
+    id: 'detail',
+    header: t('audit.detail'),
+    size: 110,
+    cell: ({ row }) => {
+      if (!row.original.detail) return null
+      return h(
+        Button,
+        {
+          variant: 'ghost',
+          size: 'sm',
+          class: 'tw-h-7 tw-px-2',
+          onClick: () => openDetail(row.original)
+        },
+        () => [
+          h(Eye, { class: 'tw-size-3.5 tw-mr-1' }),
+          t('taskLog.viewOutput')
+        ]
+      )
     }
   }
+])
+
+// ── Detail dialog logic ───────────────────────────────────────────────────────
+function openDetail(row) {
+  detailRows.value = (row.detail || '')
+    .split('\n')
+    .filter(Boolean)
+    .map(line => {
+      const parts = line.split(' \u2192 ')
+      const fieldAndOld = (parts[0] || '').split(': ')
+      return {
+        field: fieldAndOld[0] || '',
+        old: fieldAndOld.slice(1).join(': ') || '',
+        newVal: parts.slice(1).join(' \u2192 ') || ''
+      }
+    })
+  detailOpen.value = true
 }
+
+// ── Data fetching ─────────────────────────────────────────────────────────────
+function loadData() {
+  loading.value = true
+  const params = {
+    page: page.value,
+    page_size: pageSize.value,
+    module: filterModule.value,
+    action: filterAction.value,
+    username: filterUsername.value,
+    start_date: filterStartDate.value,
+    end_date: filterEndDate.value
+  }
+  auditService.list(params, (data) => {
+    list.value = data.data ?? []
+    total.value = data.total ?? 0
+    loading.value = false
+  })
+}
+
+function search() {
+  page.value = 1
+  loadData()
+}
+
+function reset() {
+  filterModule.value = ''
+  filterAction.value = ''
+  filterUsername.value = ''
+  filterStartDate.value = ''
+  filterEndDate.value = ''
+  page.value = 1
+  loadData()
+}
+
+function onPageChange(newPage) {
+  page.value = newPage
+  loadData()
+}
+
+function onPageSizeChange(newSize) {
+  pageSize.value = newSize
+  page.value = 1
+  loadData()
+}
+
+onMounted(() => {
+  loadData()
+})
 </script>
 
-<style scoped>
-</style>
+<template>
+  <div class="tw-p-6 tw-space-y-4">
+    <Card>
+      <CardHeader class="tw-pb-3">
+        <div class="tw-flex tw-items-center tw-justify-between">
+          <CardTitle>{{ t('audit.log') }}</CardTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            :disabled="loading"
+            @click="loadData"
+          >
+            <RefreshCw
+              class="tw-size-4 tw-mr-2"
+              :class="{ 'tw-animate-spin': loading }"
+            />
+            {{ t('common.refresh') }}
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent class="tw-space-y-4">
+        <!-- Filters -->
+        <div class="tw-flex tw-flex-wrap tw-gap-2 tw-items-center">
+          <!-- Module filter -->
+          <Select v-model="filterModule">
+            <SelectTrigger class="tw-w-36">
+              <SelectValue :placeholder="t('audit.module')" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem
+                v-for="opt in moduleOptions"
+                :key="opt.value"
+                :value="opt.value"
+              >
+                {{ opt.label }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+
+          <!-- Action filter -->
+          <Select v-model="filterAction">
+            <SelectTrigger class="tw-w-44">
+              <SelectValue :placeholder="t('audit.action')" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem
+                v-for="opt in actionOptions"
+                :key="opt.value"
+                :value="opt.value"
+              >
+                {{ opt.label }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+
+          <!-- Username filter -->
+          <Input
+            v-model="filterUsername"
+            :placeholder="t('user.username')"
+            class="tw-w-36"
+            @keyup.enter="search"
+          />
+
+          <!-- Date range: start -->
+          <Input
+            v-model="filterStartDate"
+            type="date"
+            class="tw-w-36"
+            :title="t('common.date')"
+          />
+          <span class="tw-text-muted-foreground tw-text-sm">-</span>
+          <!-- Date range: end -->
+          <Input
+            v-model="filterEndDate"
+            type="date"
+            class="tw-w-36"
+            :title="t('common.date')"
+          />
+
+          <Button @click="search">
+            {{ t('common.search') }}
+          </Button>
+          <Button variant="outline" @click="reset">
+            {{ t('common.reset') }}
+          </Button>
+        </div>
+
+        <!-- Data table -->
+        <DataTable
+          :columns="columns"
+          :data="list"
+          :loading="loading"
+          :total="total"
+          :page="page"
+          :page-size="pageSize"
+          @update:page="onPageChange"
+          @update:page-size="onPageSizeChange"
+        />
+      </CardContent>
+    </Card>
+
+    <!-- Detail Dialog -->
+    <Dialog v-model:open="detailOpen">
+      <DialogContent class="tw-max-w-2xl tw-overflow-y-auto tw-max-h-[80vh]">
+        <DialogHeader>
+          <DialogTitle>{{ t('audit.detail') }}</DialogTitle>
+        </DialogHeader>
+
+        <div class="tw-overflow-x-auto">
+          <table class="tw-w-full tw-text-sm tw-border-collapse">
+            <thead>
+              <tr class="tw-border-b tw-border-border tw-bg-muted/50">
+                <th class="tw-text-left tw-px-3 tw-py-2 tw-font-medium tw-w-36">
+                  Field
+                </th>
+                <th class="tw-text-left tw-px-3 tw-py-2 tw-font-medium">
+                  Before
+                </th>
+                <th class="tw-w-8 tw-text-center tw-px-1 tw-py-2 tw-font-medium" />
+                <th class="tw-text-left tw-px-3 tw-py-2 tw-font-medium">
+                  After
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="(row, idx) in detailRows"
+                :key="idx"
+                class="tw-border-b tw-border-border last:tw-border-0 hover:tw-bg-muted/30"
+              >
+                <td class="tw-px-3 tw-py-2 tw-font-medium tw-text-muted-foreground tw-break-all">
+                  {{ row.field }}
+                </td>
+                <td class="tw-px-3 tw-py-2 tw-break-all">
+                  {{ row.old }}
+                </td>
+                <td class="tw-text-center tw-px-1 tw-py-2 tw-text-muted-foreground">
+                  &rarr;
+                </td>
+                <td class="tw-px-3 tw-py-2 tw-break-all">
+                  {{ row.newVal }}
+                </td>
+              </tr>
+              <tr v-if="detailRows.length === 0">
+                <td
+                  colspan="4"
+                  class="tw-px-3 tw-py-4 tw-text-center tw-text-muted-foreground"
+                >
+                  No detail available
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </DialogContent>
+    </Dialog>
+  </div>
+</template>
