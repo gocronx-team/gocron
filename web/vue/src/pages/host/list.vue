@@ -246,7 +246,7 @@
 
 <script>
 import { useI18n } from 'vue-i18n'
-import { ElMessageBox } from 'element-plus'
+import { useNotify } from '@/composables/useNotify'
 import { Loading } from '@element-plus/icons-vue'
 import hostService from '../../api/host'
 import agentService from '../../api/agent'
@@ -310,15 +310,11 @@ export default {
         }
       })
     },
-    remove (item) {
-      ElMessageBox.confirm(this.t('message.confirmDeleteNode'), this.t('common.tip'), {
-        confirmButtonText: this.t('common.confirm'),
-        cancelButtonText: this.t('common.cancel'),
-        type: 'warning',
-        center: true
-      }).then(() => {
+    async remove (item) {
+      const notify = useNotify()
+      if (await notify.confirm(this.t('message.confirmDeleteNode'), this.t('common.tip'))) {
         hostService.remove(item.id, () => this.refresh())
-      }).catch(() => {})
+      }
     },
     ping (item) {
       if (!item.id || item.id <= 0) {

@@ -127,10 +127,11 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ElMessage } from 'element-plus'
+import { useNotify } from '@/composables/useNotify'
 import userApi from '@/api/user'
 
 const { t } = useI18n()
+const notify = useNotify()
 
 const twoFactorEnabled = ref(false)
 const loading = ref(false)
@@ -163,13 +164,13 @@ const setup2FA = () => {
 
 const enable2FA = () => {
   if (!verifyCode.value || verifyCode.value.length !== 6) {
-    ElMessage.warning(t('twoFactor.verifyCodeLength'))
+    notify.warning(t('twoFactor.verifyCodeLength'))
     return
   }
 
   loading.value = true
   userApi.enable2FA(secret.value, verifyCode.value, () => {
-    ElMessage.success(t('twoFactor.enableSuccess'))
+    notify.success(t('twoFactor.enableSuccess'))
     setupDialogVisible.value = false
     twoFactorEnabled.value = true
     verifyCode.value = ''
@@ -184,19 +185,19 @@ const showDisableDialog = () => {
 
 const disable2FA = () => {
   if (!disableCode.value || disableCode.value.length !== 6) {
-    ElMessage.warning(t('twoFactor.verifyCodeLength'))
+    notify.warning(t('twoFactor.verifyCodeLength'))
     return
   }
 
   loading.value = true
   userApi.disable2FA(disableCode.value, () => {
-    ElMessage.success(t('twoFactor.disableSuccess'))
+    notify.success(t('twoFactor.disableSuccess'))
     disableDialogVisible.value = false
     twoFactorEnabled.value = false
     disableCode.value = ''
     loading.value = false
   }, (code, msg) => {
-    ElMessage.error(msg || t('twoFactor.disableFailed'))
+    notify.error(msg || t('twoFactor.disableFailed'))
     loading.value = false
   })
 }
@@ -208,7 +209,7 @@ const copySecret = () => {
   input.select()
   document.execCommand('copy')
   document.body.removeChild(input)
-  ElMessage.success(t('twoFactor.secretCopied'))
+  notify.success(t('twoFactor.secretCopied'))
 }
 </script>
 

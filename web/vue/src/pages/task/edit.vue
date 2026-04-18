@@ -469,7 +469,7 @@ import taskService from '../../api/task'
 import templateService from '../../api/template'
 import notificationService from '../../api/notification'
 import { validateCronSpec, getCronExamples, extractTimezone } from '../../utils/cronValidator'
-import { ElMessageBox } from 'element-plus'
+import { useNotify } from '@/composables/useNotify'
 import MonacoEditor from '../../components/common/MonacoEditor.vue'
 import CronInput from '../../components/common/CronInput.vue'
 import CronPreview from '../../components/common/CronPreview.vue'
@@ -1116,22 +1116,15 @@ export default {
         this.saveTemplateForm = { name: '', description: '', category: 'custom' }
       })
     },
-    rollbackVersion (row) {
-      ElMessageBox.confirm(
-        this.t('task.versionRollbackConfirm', { version: row.version }),
-        this.t('common.tip'),
-        {
-          confirmButtonText: this.t('common.confirm'),
-          cancelButtonText: this.t('common.cancel'),
-          type: 'warning'
-        }
-      ).then(() => {
+    async rollbackVersion (row) {
+      const notify = useNotify()
+      if (await notify.confirm(this.t('task.versionRollbackConfirm', { version: row.version }), this.t('common.tip'))) {
         taskService.versionRollback(this.form.id, row.id, () => {
           this.$message.success(this.t('task.versionRollbackSuccess'))
           this.showVersionDrawer = false
           this.initializeForm()
         })
-      }).catch(() => {})
+      }
     }
   }
 }

@@ -364,7 +364,7 @@
 import { useI18n } from 'vue-i18n'
 import taskService from '../../api/task'
 import { useUserStore } from '../../stores/user'
-import { ElMessageBox } from 'element-plus'
+import { useNotify } from '@/composables/useNotify'
 
 export default {
   name: 'TaskList',
@@ -507,36 +507,21 @@ export default {
         }
       })
     },
-    runTask (item) {
-      ElMessageBox.confirm(
-        this.t('message.confirmRunTask', { name: item.name }),
-        this.t('message.manualRunTask'),
-        {
-          confirmButtonText: this.t('message.confirmExecute'),
-          cancelButtonText: this.t('common.cancel'),
-          type: 'warning',
-          center: true
-        }
-      ).then(() => {
+    async runTask (item) {
+      const notify = useNotify()
+      if (await notify.confirm(this.t('message.confirmRunTask', { name: item.name }), this.t('message.manualRunTask'))) {
         taskService.run(item.id, () => {
           this.$message.success(this.t('message.taskStarted'))
         })
-      }).catch(() => {})
+      }
     },
-    remove (item) {
-      ElMessageBox.confirm(
-        this.t('message.confirmDeleteTask', { name: item.name }),
-        this.t('message.confirmDeleteTitle'),
-        {
-          confirmButtonText: this.t('common.confirm'),
-          cancelButtonText: this.t('common.cancel'),
-          type: 'warning'
-        }
-      ).then(() => {
+    async remove (item) {
+      const notify = useNotify()
+      if (await notify.confirm(this.t('message.confirmDeleteTask', { name: item.name }), this.t('message.confirmDeleteTitle'))) {
         taskService.remove(item.id, () => {
           this.refresh()
         })
-      }).catch(() => {})
+      }
     },
     jumpToLog (item) {
       this.$router.push(`/task/log?task_id=${item.id}`)
@@ -558,71 +543,50 @@ export default {
     handleSelectionChange (selection) {
       this.selectedTasks = selection.filter(task => task.level === 1)
     },
-    batchEnable () {
+    async batchEnable () {
       if (this.selectedTasks.length === 0) {
         this.$message.warning(this.t('message.pleaseSelectTask', { action: this.t('task.enable') }))
         return
       }
-      ElMessageBox.confirm(
-        this.t('message.confirmBatchEnable', { count: this.selectedTasks.length }),
-        this.t('message.batchEnable'),
-        {
-          confirmButtonText: this.t('common.confirm'),
-          cancelButtonText: this.t('common.cancel'),
-          type: 'warning'
-        }
-      ).then(() => {
+      const notify = useNotify()
+      if (await notify.confirm(this.t('message.confirmBatchEnable', { count: this.selectedTasks.length }), this.t('message.batchEnable'))) {
         const ids = this.selectedTasks.map(task => task.id)
         taskService.batchEnable(ids, () => {
           this.$message.success(this.t('message.batchEnableSuccess'))
           this.selectedTasks = []
           this.search()
         })
-      }).catch(() => {})
+      }
     },
-    batchDisable () {
+    async batchDisable () {
       if (this.selectedTasks.length === 0) {
         this.$message.warning(this.t('message.pleaseSelectTask', { action: this.t('task.disable') }))
         return
       }
-      ElMessageBox.confirm(
-        this.t('message.confirmBatchDisable', { count: this.selectedTasks.length }),
-        this.t('message.batchDisable'),
-        {
-          confirmButtonText: this.t('common.confirm'),
-          cancelButtonText: this.t('common.cancel'),
-          type: 'warning'
-        }
-      ).then(() => {
+      const notify = useNotify()
+      if (await notify.confirm(this.t('message.confirmBatchDisable', { count: this.selectedTasks.length }), this.t('message.batchDisable'))) {
         const ids = this.selectedTasks.map(task => task.id)
         taskService.batchDisable(ids, () => {
           this.$message.success(this.t('message.batchDisableSuccess'))
           this.selectedTasks = []
           this.search()
         })
-      }).catch(() => {})
+      }
     },
-    batchRemove () {
+    async batchRemove () {
       if (this.selectedTasks.length === 0) {
         this.$message.warning(this.t('message.pleaseSelectTask', { action: this.t('common.delete') }))
         return
       }
-      ElMessageBox.confirm(
-        this.t('message.confirmBatchDelete', { count: this.selectedTasks.length }),
-        this.t('message.batchDelete'),
-        {
-          confirmButtonText: this.t('message.confirmDeleteButton'),
-          cancelButtonText: this.t('common.cancel'),
-          type: 'error'
-        }
-      ).then(() => {
+      const notify = useNotify()
+      if (await notify.confirm(this.t('message.confirmBatchDelete', { count: this.selectedTasks.length }), this.t('message.batchDelete'))) {
         const ids = this.selectedTasks.map(task => task.id)
         taskService.batchRemove(ids, () => {
           this.$message.success(this.t('message.batchDeleteSuccess'))
           this.selectedTasks = []
           this.search()
         })
-      }).catch(() => {})
+      }
     }
   }
 }

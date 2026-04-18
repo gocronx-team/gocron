@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { ElMessage } from 'element-plus'
+import { useNotify } from '../composables/useNotify'
 import router from '../router/index'
 import { useUserStore } from '../stores/user'
 import qs from 'qs'
@@ -46,9 +46,8 @@ axios.interceptors.request.use(
   },
   error => {
     NProgress.done()
-    ElMessage.error({
-      message: t('loadFailed')
-    })
+    const notify = useNotify()
+    notify.error(t('loadFailed'))
 
     return Promise.reject(error)
   }
@@ -67,11 +66,10 @@ axios.interceptors.response.use(
   },
   error => {
     NProgress.done()
+    const notify = useNotify()
     // 处理超时
     if (error.code === 'ECONNABORTED' && error.message.includes('timeout')) {
-      ElMessage.error({
-        message: t('requestTimeout')
-      })
+      notify.error(t('requestTimeout'))
       return Promise.reject(error)
     }
 
@@ -79,18 +77,14 @@ axios.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       const userStore = useUserStore()
       userStore.token = ''
-      ElMessage.warning({
-        message: t('authExpired')
-      })
+      notify.warning(t('authExpired'))
       setTimeout(() => {
         window.location.href = '/'
       }, 500)
       return Promise.reject(error)
     }
 
-    ElMessage.error({
-      message: t('loadFailed')
-    })
+    notify.error(t('loadFailed'))
 
     return Promise.reject(error)
   }
@@ -103,6 +97,7 @@ function handle(promise, next, errorCallback) {
 }
 
 function checkResponseCode(code, msg) {
+  const notify = useNotify()
   switch (code) {
     // 应用未安装
     case APP_NOT_INSTALL_CODE:
@@ -112,9 +107,7 @@ function checkResponseCode(code, msg) {
     case AUTH_ERROR_CODE: {
       const userStore = useUserStore()
       userStore.token = ''
-      ElMessage.warning({
-        message: t('authExpired')
-      })
+      notify.warning(t('authExpired'))
       setTimeout(() => {
         window.location.href = '/'
       }, 500)
@@ -122,9 +115,7 @@ function checkResponseCode(code, msg) {
     }
   }
   if (code !== SUCCESS_CODE) {
-    ElMessage.error({
-      message: msg
-    })
+    notify.error(msg)
     return false
   }
 
@@ -155,9 +146,8 @@ function failureCallback(error) {
   if (error.code === 'ECONNABORTED') {
     return
   }
-  ElMessage.error({
-    message: t('requestFailed') + ' - ' + error.message
-  })
+  const notify = useNotify()
+  notify.error(t('requestFailed') + ' - ' + error.message)
 }
 
 export default {

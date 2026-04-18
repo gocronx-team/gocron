@@ -263,7 +263,7 @@
 
 <script>
 import { useI18n } from 'vue-i18n'
-import { ElMessageBox } from 'element-plus'
+import { useNotify } from '@/composables/useNotify'
 import taskLogService from '../../api/taskLog'
 import { useUserStore } from '../../stores/user'
 import { availableLanguages } from '@/const/index'
@@ -365,40 +365,24 @@ export default {
         }
       })
     },
-    clearTaskLog() {
+    async clearTaskLog() {
       const taskId = this.searchParams.task_id
-      ElMessageBox.confirm(
-        this.t('task.confirmClearTaskLog', { taskId }),
-        this.t('common.tip'),
-        {
-          confirmButtonText: this.t('common.confirm'),
-          cancelButtonText: this.t('common.cancel'),
-          type: 'warning',
-          center: true
-        }
-      )
-        .then(() => {
-          taskLogService.clearByTaskId(taskId, () => {
-            this.searchParams.page = 1
-            this.search()
-          })
+      const notify = useNotify()
+      if (await notify.confirm(this.t('task.confirmClearTaskLog', { taskId }), this.t('common.tip'))) {
+        taskLogService.clearByTaskId(taskId, () => {
+          this.searchParams.page = 1
+          this.search()
         })
-        .catch(() => {})
+      }
     },
-    clearLog() {
-      ElMessageBox.confirm(this.t('message.confirmClearLog'), this.t('common.tip'), {
-        confirmButtonText: this.t('common.confirm'),
-        cancelButtonText: this.t('common.cancel'),
-        type: 'warning',
-        center: true
-      })
-        .then(() => {
-          taskLogService.clear(() => {
-            this.searchParams.page = 1
-            this.search()
-          })
+    async clearLog() {
+      const notify = useNotify()
+      if (await notify.confirm(this.t('message.confirmClearLog'), this.t('common.tip'))) {
+        taskLogService.clear(() => {
+          this.searchParams.page = 1
+          this.search()
         })
-        .catch(() => {})
+      }
     },
     stopTask(item) {
       taskLogService.stop(item.id, item.task_id, () => {

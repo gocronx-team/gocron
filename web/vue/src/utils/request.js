@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { ElMessage } from 'element-plus'
+import { useNotify } from '../composables/useNotify'
 import router from '../router'
 import { useUserStore } from '../stores/user'
 
@@ -25,7 +25,7 @@ request.interceptors.request.use(
     if (userStore.token) {
       config.headers['Auth-Token'] = userStore.token
     }
-    
+
     // 取消重复请求
     const requestKey = `${config.method}_${config.url}`
     if (pendingRequests.has(requestKey)) {
@@ -35,11 +35,12 @@ request.interceptors.request.use(
     const controller = new AbortController()
     config.signal = controller.signal
     pendingRequests.set(requestKey, controller)
-    
+
     return config
   },
   error => {
-    ElMessage.error('请求失败')
+    const notify = useNotify()
+    notify.error('请求失败')
     return Promise.reject(error)
   }
 )
@@ -49,26 +50,27 @@ request.interceptors.response.use(
     // 清除已完成的请求
     const requestKey = `${response.config.method}_${response.config.url}`
     pendingRequests.delete(requestKey)
-    
+
     const { code, message, data } = response.data
-    
+
     if (code === APP_NOT_INSTALL_CODE) {
       router.push('/install')
       return Promise.reject(new Error(message))
     }
-    
+
     if (code === AUTH_ERROR_CODE) {
       const userStore = useUserStore()
       userStore.logout()
       router.push('/user/login')
       return Promise.reject(new Error(message))
     }
-    
+
     if (code !== SUCCESS_CODE) {
-      ElMessage.error(message || '请求失败')
+      const notify = useNotify()
+      notify.error(message || '请求失败')
       return Promise.reject(new Error(message))
     }
-    
+
     return data
   },
   error => {
@@ -77,19 +79,20 @@ request.interceptors.response.use(
       const requestKey = `${error.config.method}_${error.config.url}`
       pendingRequests.delete(requestKey)
     }
-    
+
     // 忽略取消的请求
     if (axios.isCancel(error)) {
       return Promise.reject(error)
     }
-    
+
+    const notify = useNotify()
     // 网络错误或超时
     if (error.code === 'ECONNABORTED') {
-      ElMessage.error('请求超时，请稍后重试')
+      notify.error('请求超时，请稍后重试')
     } else if (!error.response) {
-      ElMessage.error('网络连接失败，请检查网络')
+      notify.error('网络连接失败，请检查网络')
     } else {
-      ElMessage.error(error.message || '请求失败')
+      notify.error(error.message || '请求失败')
     }
     return Promise.reject(error)
   }
