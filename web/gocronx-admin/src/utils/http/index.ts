@@ -48,8 +48,13 @@ const axiosInstance = axios.create({
   validateStatus: (status) => status >= 200 && status < 300,
   transformResponse: [
     (data, headers) => {
-      const contentType = headers['content-type']
-      if (contentType?.includes('application/json')) {
+      // gocron backend uses c.String() which sets Content-Type: text/plain,
+      // but the body is still JSON. So we try JSON.parse on any string body
+      // that starts with { or [ regardless of Content-Type.
+      if (typeof data !== 'string') return data
+      const contentType = headers['content-type'] || ''
+      const looksJson = data.trimStart().startsWith('{') || data.trimStart().startsWith('[')
+      if (contentType.includes('application/json') || looksJson) {
         try {
           return JSON.parse(data)
         } catch {
