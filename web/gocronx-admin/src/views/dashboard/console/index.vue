@@ -40,19 +40,19 @@
         <span class="section-title">{{ t('dashboard.last7Days') }}</span>
       </div>
       <ElTable :data="tableRows" border size="small" style="width: 100%">
-        <ElTableColumn prop="date" :label="t('dashboard.colDate')" width="140" align="center" />
-        <ElTableColumn prop="total" :label="t('dashboard.colTotal')" width="100" align="center" />
-        <ElTableColumn prop="success" :label="t('dashboard.colSuccess')" width="100" align="center">
+        <ElTableColumn prop="date" :label="t('dashboard.colDate')" min-width="110" align="center" />
+        <ElTableColumn prop="total" :label="t('dashboard.colTotal')" min-width="80" align="center" />
+        <ElTableColumn prop="success" :label="t('dashboard.colSuccess')" min-width="80" align="center">
           <template #default="{ row }">
             <ElTag type="success" size="small">{{ row.success }}</ElTag>
           </template>
         </ElTableColumn>
-        <ElTableColumn prop="failed" :label="t('dashboard.colFailed')" width="100" align="center">
+        <ElTableColumn prop="failed" :label="t('dashboard.colFailed')" min-width="80" align="center">
           <template #default="{ row }">
             <ElTag type="danger" size="small">{{ row.failed }}</ElTag>
           </template>
         </ElTableColumn>
-        <ElTableColumn :label="t('dashboard.colSuccessRate')" align="center">
+        <ElTableColumn :label="t('dashboard.colSuccessRate')" min-width="140" align="center">
           <template #default="{ row }">
             <ElProgress
               :percentage="calcRate(row)"
