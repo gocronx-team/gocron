@@ -22,7 +22,6 @@
       "userCenter": "User center",
       "docs": "Document",
       "github": "Github",
-      "lockScreen": "Lock screen",
       "logout": "Log out"
     },
     "guide": {
@@ -147,18 +146,6 @@
     "success": {
       "title": "Login successful",
       "message": "Welcome back"
-    }
-  },
-  "lockScreen": {
-    "pwdError": "Password error",
-    "lock": {
-      "inputPlaceholder": "Please input lock screen password",
-      "btnText": "Lock"
-    },
-    "unlock": {
-      "inputPlaceholder": "Please input unlock password",
-      "btnText": "Unlock",
-      "backBtnText": "Back to login"
     }
   },
   "greeting": {

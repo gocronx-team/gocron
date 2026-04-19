@@ -22,7 +22,6 @@
       "userCenter": "个人中心",
       "docs": "使用文档",
       "github": "Github",
-      "lockScreen": "锁定屏幕",
       "logout": "退出登录"
     },
     "guide": {
@@ -147,18 +146,6 @@
     "success": {
       "title": "登录成功",
       "message": "欢迎回来"
-    }
-  },
-  "lockScreen": {
-    "pwdError": "密码错误",
-    "lock": {
-      "inputPlaceholder": "请输入锁屏密码",
-      "btnText": "锁定"
-    },
-    "unlock": {
-      "inputPlaceholder": "请输入解锁密码",
-      "btnText": "解锁",
-      "backBtnText": "返回登录"
     }
   },
   "greeting": {

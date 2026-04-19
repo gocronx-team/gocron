@@ -36,7 +36,6 @@
  * - openSetting: 打开设置面板
  * - openSearchDialog: 打开搜索对话框
  * - openChat: 打开聊天窗口
- * - openLockScreen: 打开锁屏
  *
  * @module utils/sys/mittBus
  * @author GoCronX Team
@@ -53,8 +52,6 @@ type Events = {
   openSearchDialog: void
   // 打开聊天窗口事件 - 无参数
   openChat: void
-  // 打开锁屏事件 - 无参数
-  openLockScreen: void
 }
 
 // 创建类型安全的事件总线实例

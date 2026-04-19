@@ -38,14 +38,6 @@ export const globalComponentsConfig: GlobalComponentConfig[] = [
     enabled: true
   },
   {
-    name: '锁屏',
-    key: 'screen-lock',
-    component: defineAsyncComponent(
-      () => import('@/components/core/layouts/art-screen-lock/index.vue')
-    ),
-    enabled: true
-  },
-  {
     name: '水印效果',
     key: 'watermark',
     component: defineAsyncComponent(

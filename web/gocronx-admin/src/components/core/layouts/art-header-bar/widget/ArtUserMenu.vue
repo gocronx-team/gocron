@@ -12,19 +12,22 @@
     popper-style="padding: 5px 16px;"
   >
     <template #reference>
-      <img
-        class="size-8.5 mr-5 c-p rounded-full max-sm:w-6.5 max-sm:h-6.5 max-sm:mr-[16px]"
-        src="@imgs/user/avatar.webp"
-        alt="avatar"
-      />
+      <div
+        class="user-avatar size-8.5 mr-5 c-p rounded-full max-sm:w-6.5 max-sm:h-6.5 max-sm:mr-[16px]"
+        :style="{ background: avatarColor }"
+      >
+        <span class="avatar-initial">{{ avatarInitial }}</span>
+      </div>
     </template>
     <template #default>
       <div class="pt-3">
         <div class="flex-c pb-1 px-0">
-          <img
-            class="w-10 h-10 mr-3 ml-0 overflow-hidden rounded-full float-left"
-            src="@imgs/user/avatar.webp"
-          />
+          <div
+            class="user-avatar w-10 h-10 mr-3 ml-0 rounded-full"
+            :style="{ background: avatarColor }"
+          >
+            <span class="avatar-initial text-base">{{ avatarInitial }}</span>
+          </div>
           <div class="w-[calc(100%-60px)] h-full">
             <span class="block text-sm font-medium text-g-800 truncate">{{
               userInfo.userName
@@ -45,10 +48,6 @@
             <ArtSvgIcon icon="ri:github-line" />
             <span>{{ $t('topBar.user.github') }}</span>
           </li>
-          <li class="btn-item" @click="lockScreen()">
-            <ArtSvgIcon icon="ri:lock-line" />
-            <span>{{ $t('topBar.user.lockScreen') }}</span>
-          </li>
           <div class="w-full h-px my-2 bg-g-300/80"></div>
           <div class="log-out c-p" @click="loginOut">
             {{ $t('topBar.user.logout') }}
@@ -65,7 +64,6 @@
   import { ElMessageBox } from 'element-plus'
   import { useUserStore } from '@/store/modules/user'
   import { WEB_LINKS } from '@/utils/constants'
-  import { mittBus } from '@/utils/sys'
 
   defineOptions({ name: 'ArtUserMenu' })
 
@@ -75,6 +73,22 @@
 
   const { getUserInfo: userInfo } = storeToRefs(userStore)
   const userMenuPopover = ref()
+
+  // Deterministic avatar: first letter of username on a color hashed from the name.
+  const avatarPalette = [
+    '#409EFF', '#67C23A', '#E6A23C', '#F56C6C',
+    '#9B59B6', '#1ABC9C', '#34495E', '#E67E22'
+  ]
+  const avatarInitial = computed(() => {
+    const n = userInfo.value?.userName || ''
+    return n ? n.charAt(0).toUpperCase() : '?'
+  })
+  const avatarColor = computed(() => {
+    const n = userInfo.value?.userName || ''
+    let hash = 0
+    for (let i = 0; i < n.length; i++) hash = (hash * 31 + n.charCodeAt(i)) & 0xffffffff
+    return avatarPalette[Math.abs(hash) % avatarPalette.length]
+  })
 
   /**
    * 页面跳转
@@ -97,13 +111,6 @@
    */
   const toGithub = (): void => {
     window.open(WEB_LINKS.GITHUB)
-  }
-
-  /**
-   * 打开锁屏功能
-   */
-  const lockScreen = (): void => {
-    mittBus.emit('openLockScreen')
   }
 
   /**
@@ -164,5 +171,20 @@
     transition-all
     duration-200
     hover:shadow-xl;
+  }
+
+  .user-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 600;
+    line-height: 1;
+    user-select: none;
+    flex-shrink: 0;
+  }
+
+  .avatar-initial {
+    font-size: 14px;
   }
 </style>
