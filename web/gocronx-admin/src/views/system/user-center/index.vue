@@ -104,39 +104,49 @@
         </div>
 
         <div class="art-card-sm my-5">
-          <h1 class="p-4 text-xl font-normal border-b border-g-300">更改密码</h1>
+          <h1 class="p-4 text-xl font-normal border-b border-g-300">{{ t('changePassword.title') }}</h1>
 
-          <ElForm :model="pwdForm" class="box-border p-5" label-width="86px" label-position="top">
-            <ElFormItem label="当前密码" prop="password">
+          <ElForm
+            :model="pwdForm"
+            :rules="pwdRules"
+            ref="pwdFormRef"
+            class="box-border p-5"
+            label-width="86px"
+            label-position="top"
+          >
+            <ElFormItem :label="t('changePassword.oldPassword')" prop="old_password">
               <ElInput
-                v-model="pwdForm.password"
+                v-model="pwdForm.old_password"
                 type="password"
-                :disabled="!isEditPwd"
                 show-password
               />
             </ElFormItem>
 
-            <ElFormItem label="新密码" prop="newPassword">
+            <ElFormItem :label="t('changePassword.newPassword')" prop="new_password">
               <ElInput
-                v-model="pwdForm.newPassword"
+                v-model="pwdForm.new_password"
                 type="password"
-                :disabled="!isEditPwd"
                 show-password
               />
             </ElFormItem>
 
-            <ElFormItem label="确认新密码" prop="confirmPassword">
+            <ElFormItem :label="t('changePassword.confirmNewPassword')" prop="confirm_new_password">
               <ElInput
-                v-model="pwdForm.confirmPassword"
+                v-model="pwdForm.confirm_new_password"
                 type="password"
-                :disabled="!isEditPwd"
                 show-password
               />
             </ElFormItem>
 
             <div class="flex-c justify-end [&_.el-button]:!w-27.5">
-              <ElButton type="primary" class="w-22.5" v-ripple @click="editPwd">
-                {{ isEditPwd ? '保存' : '编辑' }}
+              <ElButton
+                type="primary"
+                class="w-22.5"
+                v-ripple
+                :loading="pwdSaving"
+                @click="submitPwd"
+              >
+                {{ t('changePassword.save') }}
               </ElButton>
             </div>
           </ElForm>
@@ -147,18 +157,23 @@
 </template>
 
 <script setup lang="ts">
-  import { useUserStore } from '@/store/modules/user'
+  import { ElMessage } from 'element-plus'
   import type { FormInstance, FormRules } from 'element-plus'
+  import { useI18n } from 'vue-i18n'
+  import { useUserStore } from '@/store/modules/user'
+  import { fetchUserEditMyPassword } from '@/api/user'
 
   defineOptions({ name: 'UserCenter' })
 
+  const { t } = useI18n()
   const userStore = useUserStore()
   const userInfo = computed(() => userStore.getUserInfo)
 
   const isEdit = ref(false)
-  const isEditPwd = ref(false)
   const date = ref('')
   const ruleFormRef = ref<FormInstance>()
+  const pwdFormRef = ref<FormInstance>()
+  const pwdSaving = ref(false)
 
   /**
    * 用户信息表单
@@ -177,13 +192,13 @@
    * 密码修改表单
    */
   const pwdForm = reactive({
-    password: '123456',
-    newPassword: '123456',
-    confirmPassword: '123456'
+    old_password: '',
+    new_password: '',
+    confirm_new_password: ''
   })
 
   /**
-   * 表单验证规则
+   * 表单验证规则（用户基本信息）
    */
   const rules = reactive<FormRules>({
     realName: [
@@ -199,6 +214,32 @@
     address: [{ required: true, message: '请输入地址', trigger: 'blur' }],
     sex: [{ required: true, message: '请选择性别', trigger: 'blur' }]
   })
+
+  /**
+   * 密码表单验证规则
+   */
+  const pwdRules = computed<FormRules>(() => ({
+    old_password: [
+      { required: true, message: t('changePassword.oldPasswordRequired'), trigger: 'blur' }
+    ],
+    new_password: [
+      { required: true, message: t('changePassword.newPasswordRequired'), trigger: 'blur' },
+      { min: 8, message: t('changePassword.tooShort'), trigger: 'blur' }
+    ],
+    confirm_new_password: [
+      { required: true, message: t('changePassword.confirmNewPasswordRequired'), trigger: 'blur' },
+      {
+        validator: (_rule: any, value: string, callback: (e?: Error) => void) => {
+          if (value !== pwdForm.new_password) {
+            callback(new Error(t('changePassword.mismatch')))
+          } else {
+            callback()
+          }
+        },
+        trigger: 'blur'
+      }
+    ]
+  }))
 
   /**
    * 性别选项
@@ -239,9 +280,26 @@
   }
 
   /**
-   * 切换密码编辑状态
+   * 提交密码修改
    */
-  const editPwd = () => {
-    isEditPwd.value = !isEditPwd.value
+  const submitPwd = async () => {
+    if (!pwdFormRef.value) return
+    const valid = await pwdFormRef.value.validate().catch(() => false)
+    if (!valid) return
+
+    pwdSaving.value = true
+    try {
+      await fetchUserEditMyPassword({
+        old_password: pwdForm.old_password,
+        new_password: pwdForm.new_password,
+        confirm_new_password: pwdForm.confirm_new_password
+      })
+      ElMessage.success(t('changePassword.saveSuccess'))
+      pwdFormRef.value.resetFields()
+    } catch {
+      // error handled by http interceptor
+    } finally {
+      pwdSaving.value = false
+    }
   }
 </script>

@@ -77,6 +77,16 @@ export const systemRoutes: AppRouteRecord = {
         keepAlive: true,
         roles: ['R_SUPER', 'R_ADMIN']
       }
+    },
+    {
+      path: 'two-factor',
+      name: 'TwoFactor',
+      component: '/system/user-center/two-factor',
+      meta: {
+        title: 'menus.system.twoFactor',
+        isHide: true,
+        keepAlive: false
+      }
     }
   ]
 }
