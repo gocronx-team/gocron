@@ -56,23 +56,6 @@
       </div>
 
       <div class="flex-c gap-2.5">
-        <!-- 搜索 -->
-        <div
-          v-if="shouldShowGlobalSearch"
-          class="flex-cb w-40 h-9 px-2.5 c-p border border-g-400 rounded-custom-sm max-md:!hidden"
-          @click="openSearchDialog"
-        >
-          <div class="flex-c">
-            <ArtSvgIcon icon="ri:search-line" class="text-sm text-g-500" />
-            <span class="ml-1 text-xs font-normal text-g-500">{{ $t('topBar.search.title') }}</span>
-          </div>
-          <div class="flex-c h-5 px-1.5 text-g-500/80 border border-g-400 rounded">
-            <ArtSvgIcon v-if="isWindows" icon="vaadin:ctrl-a" class="text-sm" />
-            <ArtSvgIcon v-else icon="ri:command-fill" class="text-xs" />
-            <span class="ml-0.5 text-xs">k</span>
-          </div>
-        </div>
-
         <!-- 全屏按钮 -->
         <ArtIconButton
           v-if="shouldShowFullscreen"
@@ -170,9 +153,6 @@
 
   defineOptions({ name: 'ArtHeaderBar' })
 
-  // 检测操作系统类型
-  const isWindows = navigator.userAgent.includes('Windows')
-
   const router = useRouter()
   const { locale } = useI18n()
   const { width } = useWindowSize()
@@ -186,7 +166,6 @@
     shouldShowMenuButton,
     shouldShowRefreshButton,
     shouldShowBreadcrumb,
-    shouldShowGlobalSearch,
     shouldShowFullscreen,
     shouldShowLanguage,
     shouldShowSettings,
@@ -274,14 +253,6 @@
       settingStore.hideSettingGuide()
     }
   }
-
-  /**
-   * 打开全局搜索对话框
-   */
-  const openSearchDialog = (): void => {
-    mittBus.emit('openSearchDialog')
-  }
-
 </script>
 
 <style lang="scss" scoped>

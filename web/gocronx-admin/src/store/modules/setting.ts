@@ -36,7 +36,6 @@ import { MenuThemeType } from '@/types/store'
 import AppConfig from '@/config'
 import { SystemThemeEnum, MenuThemeEnum, MenuTypeEnum, ContainerWidthEnum } from '@/enums/appEnum'
 import { setElementThemeColor } from '@/utils/ui'
-import { useCeremony } from '@/hooks/core/useCeremony'
 import { StorageConfig } from '@/utils'
 import { SETTING_DEFAULT_CONFIG } from '@/config/setting'
 
@@ -150,12 +149,9 @@ export const useSettingStore = defineStore(
     })
 
     /**
-     * 是否显示烟花
-     * 根据当前日期和节日日期判断是否显示烟花效果
+     * 是否显示烟花 (deprecated — 节日模块已移除，始终返回 false)
      */
-    const isShowFireworks = computed((): boolean => {
-      return festivalDate.value === useCeremony().currentFestivalData.value?.date ? false : true
-    })
+    const isShowFireworks = computed((): boolean => false)
 
     /**
      * 切换菜单布局

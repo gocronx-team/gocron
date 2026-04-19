@@ -30,14 +30,6 @@ export const globalComponentsConfig: GlobalComponentConfig[] = [
     enabled: true
   },
   {
-    name: '全局搜索',
-    key: 'global-search',
-    component: defineAsyncComponent(
-      () => import('@/components/core/layouts/art-global-search/index.vue')
-    ),
-    enabled: true
-  },
-  {
     name: '水印效果',
     key: 'watermark',
     component: defineAsyncComponent(

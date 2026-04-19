@@ -67,11 +67,6 @@ export function useHeaderBar() {
     return isFeatureEnabled('breadcrumb') && showCrumbs.value
   })
 
-  // 检查全局搜索是否显示
-  const shouldShowGlobalSearch = computed(() => {
-    return isFeatureEnabled('globalSearch')
-  })
-
   // 检查全屏按钮是否显示
   const shouldShowFullscreen = computed(() => {
     return isFeatureEnabled('fullscreen')
@@ -154,7 +149,6 @@ export function useHeaderBar() {
     shouldShowMenuButton, // 是否显示菜单按钮
     shouldShowRefreshButton, // 是否显示刷新按钮
     shouldShowBreadcrumb, // 是否显示面包屑
-    shouldShowGlobalSearch, // 是否显示全局搜索
     shouldShowFullscreen, // 是否显示全屏按钮
     shouldShowLanguage, // 是否显示语言切换
     shouldShowSettings, // 是否显示设置面板
