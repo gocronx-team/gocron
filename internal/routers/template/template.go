@@ -146,7 +146,13 @@ func Store(c *gin.Context) {
 
 	if id == 0 {
 		tmplModel.CreatedBy = user.Username(c)
-		_, err = tmplModel.Create()
+		newId, createErr := tmplModel.Create()
+		if createErr == nil {
+			// 供审计中间件回填 target
+			c.Set("audit_target_id", newId)
+			c.Set("audit_target_name", tmplModel.Name)
+		}
+		err = createErr
 	} else {
 		_, err = tmplModel.UpdateBean(id)
 	}

@@ -443,12 +443,29 @@ func auditLog(c *gin.Context) {
 		return
 	}
 
-	// 获取 targetId：优先从 URL 参数，其次从 POST body
+	// 获取 targetId：优先读取 handler 在 c 上设置的 audit_target_id，
+	// 其次从 URL 参数（:id），最后从 POST body。这样 create 场景下，handler
+	// 在写入成功后用新分配的 id 回填，就不会再出现 targetId=0、target_name 为空。
 	targetId := 0
-	if idStr := c.Param("id"); idStr != "" {
-		targetId, _ = strconv.Atoi(idStr)
-	} else if idStr := c.PostForm("id"); idStr != "" && idStr != "0" {
-		targetId, _ = strconv.Atoi(idStr)
+	if v, ok := c.Get("audit_target_id"); ok {
+		if id, ok := v.(int); ok {
+			targetId = id
+		}
+	}
+	if targetId == 0 {
+		if idStr := c.Param("id"); idStr != "" {
+			targetId, _ = strconv.Atoi(idStr)
+		} else if idStr := c.PostForm("id"); idStr != "" && idStr != "0" {
+			targetId, _ = strconv.Atoi(idStr)
+		}
+	}
+
+	// 同理 targetName：handler 已知名称时直接设到 c，省一次 DB 查询。
+	var targetName string
+	if v, ok := c.Get("audit_target_name"); ok {
+		if n, ok := v.(string); ok {
+			targetName = n
+		}
 	}
 
 	// 读取 handler 设置的审计详情
@@ -456,19 +473,22 @@ func auditLog(c *gin.Context) {
 	detailStr, _ := detail.(string)
 
 	log := &models.AuditLog{
-		Username: username,
-		Ip:       ip,
-		Module:   module,
-		Action:   action,
-		TargetId: targetId,
-		Detail:   detailStr,
+		Username:   username,
+		Ip:         ip,
+		Module:     module,
+		Action:     action,
+		TargetId:   targetId,
+		TargetName: targetName,
+		Detail:     detailStr,
 	}
 
 	// 异步查询对象名称并写入；使用独立 context 避免请求已结束后 goroutine 无界堆积
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		log.TargetName = resolveTargetName(ctx, module, targetId)
+		if log.TargetName == "" {
+			log.TargetName = resolveTargetName(ctx, module, targetId)
+		}
 		if err := models.Db.WithContext(ctx).Create(log).Error; err != nil {
 			logger.Warnf("写入审计日志失败: %v", err)
 		}

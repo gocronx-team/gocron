@@ -204,6 +204,9 @@ func Store(c *gin.Context) {
 			// 立即读取验证
 			verifyTask, _ := taskModel.Detail(id)
 			logger.Infof("[Task Create] After Create - ID: %d, Multi in DB: %d", id, verifyTask.Multi)
+			// 供审计中间件回填 target（create 时 form.id=0，URL 里也没有 :id）
+			c.Set("audit_target_id", id)
+			c.Set("audit_target_name", taskModel.Name)
 		}
 	} else {
 		// 更新前记录旧值用于审计 diff

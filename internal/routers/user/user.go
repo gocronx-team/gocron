@@ -148,11 +148,15 @@ func Store(c *gin.Context) {
 	userModel.Status = form.Status
 
 	if form.Id == 0 {
-		_, err = userModel.Create()
+		var newId int
+		newId, err = userModel.Create()
 		if err != nil {
 			base.RespondError(c, i18n.T(c, "save_failed"), err)
 			return
 		}
+		// 供审计中间件回填 target
+		c.Set("audit_target_id", newId)
+		c.Set("audit_target_name", userModel.Name)
 	} else {
 		_, err = userModel.Update(form.Id, models.CommonMap{
 			"name":     form.Name,

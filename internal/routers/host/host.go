@@ -111,6 +111,15 @@ func Store(c *gin.Context) {
 	} else {
 		isCreate = true
 		id, err = hostModel.Create()
+		if err == nil {
+			// 供审计中间件回填 target（create 时 URL 里没有 :id）
+			name := hostModel.Alias
+			if name == "" {
+				name = hostModel.Name
+			}
+			c.Set("audit_target_id", id)
+			c.Set("audit_target_name", name)
+		}
 	}
 	if err != nil {
 		base.RespondError(c, i18n.T(c, "save_failed"), err)
