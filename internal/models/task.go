@@ -81,10 +81,10 @@ type Task struct {
 	HttpHeaders      string               `json:"http_headers" gorm:"type:text"`
 	SuccessPattern   string               `json:"success_pattern" gorm:"type:varchar(512);not null;default:''"`
 	Timeout          int                  `json:"timeout" gorm:"type:mediumint;not null;default:0"`
-	Multi            int8                 `json:"multi" gorm:"type:tinyint;not null;default:1"`
+	Multi            int8                 `json:"multi" gorm:"type:tinyint;not null;default:0"`
 	RetryTimes       int8                 `json:"retry_times" gorm:"type:tinyint;not null;default:0"`
 	RetryInterval    int16                `json:"retry_interval" gorm:"type:smallint;not null;default:0"`
-	NotifyStatus     int8                 `json:"notify_status" gorm:"type:tinyint;not null;default:1"`
+	NotifyStatus     int8                 `json:"notify_status" gorm:"type:tinyint;not null;default:0"`
 	NotifyType       int8                 `json:"notify_type" gorm:"type:tinyint;not null;default:0"`
 	NotifyReceiverId string               `json:"notify_receiver_id" gorm:"type:varchar(256);not null;default:''"`
 	NotifyKeyword    string               `json:"notify_keyword" gorm:"type:varchar(128);not null;default:''"`
