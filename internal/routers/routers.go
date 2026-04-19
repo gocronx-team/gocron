@@ -292,7 +292,7 @@ func ipAuth(c *gin.Context) {
 		c.Next()
 		return
 	}
-	clientIp := c.ClientIP()
+	clientIp := utils.ClientIP(c)
 	allowIps := strings.Split(allowIpsStr, ",")
 	if utils.InStringSlice(allowIps, clientIp) {
 		c.Next()
@@ -436,7 +436,7 @@ func auditLog(c *gin.Context) {
 
 	path := c.FullPath()
 	username := user.Username(c)
-	ip := c.ClientIP()
+	ip := utils.ClientIP(c)
 
 	module, action := resolveModuleAction(path, c)
 	if module == "" || action == "" {

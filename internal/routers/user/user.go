@@ -327,11 +327,7 @@ func ValidateLogin(c *gin.Context) {
 
 	loginLogModel := new(models.LoginLog)
 	loginLogModel.Username = userModel.Name
-	ip := c.ClientIP()
-	if ip == "::1" {
-		ip = "127.0.0.1"
-	}
-	loginLogModel.Ip = ip
+	loginLogModel.Ip = utils.ClientIP(c)
 	_, err := loginLogModel.Create()
 	if err != nil {
 		logger.Error("记录用户登录日志失败", err)
