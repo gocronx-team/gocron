@@ -56,15 +56,26 @@
             :model="pwdForm"
             :rules="pwdRules"
             ref="pwdFormRef"
-            label-width="120px"
+            label-position="top"
+            class="pwd-form"
             @submit.prevent
           >
             <ElFormItem :label="t('changePassword.oldPassword')" prop="old_password">
-              <ElInput v-model="pwdForm.old_password" type="password" show-password />
+              <ElInput
+                v-model="pwdForm.old_password"
+                type="password"
+                show-password
+                autocomplete="current-password"
+              />
             </ElFormItem>
 
             <ElFormItem :label="t('changePassword.newPassword')" prop="new_password">
-              <ElInput v-model="pwdForm.new_password" type="password" show-password />
+              <ElInput
+                v-model="pwdForm.new_password"
+                type="password"
+                show-password
+                autocomplete="new-password"
+              />
             </ElFormItem>
 
             <ElFormItem :label="t('changePassword.confirmNewPassword')" prop="confirm_new_password">
@@ -72,11 +83,18 @@
                 v-model="pwdForm.confirm_new_password"
                 type="password"
                 show-password
+                autocomplete="new-password"
               />
             </ElFormItem>
 
             <ElFormItem>
-              <ElButton type="primary" :loading="pwdSaving" @click="submitPwd" v-ripple>
+              <ElButton
+                type="primary"
+                :loading="pwdSaving"
+                class="submit-btn"
+                @click="submitPwd"
+                v-ripple
+              >
                 {{ t('changePassword.save') }}
               </ElButton>
             </ElFormItem>
@@ -225,5 +243,24 @@
   .card-title {
     font-size: 15px;
     font-weight: 500;
+  }
+
+  .pwd-form {
+    max-width: 420px;
+  }
+
+  .pwd-form :deep(.el-form-item__label) {
+    padding-bottom: 6px;
+    font-size: 13px;
+    color: var(--el-text-color-regular);
+    line-height: 1.4;
+  }
+
+  .pwd-form :deep(.el-form-item) {
+    margin-bottom: 18px;
+  }
+
+  .submit-btn {
+    min-width: 120px;
   }
 </style>
