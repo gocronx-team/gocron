@@ -55,6 +55,28 @@ export const systemRoutes: AppRouteRecord = {
           { title: '删除', authMark: 'delete' }
         ]
       }
+    },
+    {
+      path: 'login-log',
+      name: 'LoginLog',
+      component: '/system/login-log',
+      meta: {
+        title: 'menus.system.loginLog',
+        icon: 'ri:login-box-line',
+        keepAlive: true,
+        roles: ['R_SUPER', 'R_ADMIN']
+      }
+    },
+    {
+      path: 'audit-log',
+      name: 'AuditLog',
+      component: '/system/audit-log',
+      meta: {
+        title: 'menus.system.auditLog',
+        icon: 'ri:file-shield-line',
+        keepAlive: true,
+        roles: ['R_SUPER', 'R_ADMIN']
+      }
     }
   ]
 }
