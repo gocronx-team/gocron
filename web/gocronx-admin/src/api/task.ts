@@ -164,11 +164,28 @@ export function fetchTaskTags() {
   })
 }
 
+export interface CronRun {
+  iso: string
+  unix: number
+  weekday: number
+}
+
+export interface CronPreviewResult {
+  valid: boolean
+  error?: string
+  timezone?: string
+  now_unix?: number
+  next_runs?: CronRun[]
+  heatmap_cells?: Array<{ hour: number; weekday: number; count: number }>
+}
+
 /**
- * POST /api/task/cron-preview  →  { next_times: string[], heatmap: ... }
+ * POST /api/task/cron-preview  →  CronPreviewResult
+ *
+ * Returns valid=false with error string for unparseable expressions (HTTP 200).
  */
 export function fetchCronPreview(params: { spec: string; timezone?: string; count?: number }) {
-  return request.post<{ next_times: string[] }>({
+  return request.post<CronPreviewResult>({
     url: '/api/task/cron-preview',
     data: params
   })

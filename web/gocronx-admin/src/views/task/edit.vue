@@ -92,28 +92,80 @@
               <ElFormItem :label="t('task.spec')" prop="spec">
                 <ElInput
                   v-model.trim="form.spec"
-                  :placeholder="t('task.specHelp')"
+                  :placeholder="t('template.cronPlaceholder')"
                   clearable
+                  style="font-family: monospace"
                   @change="previewCron"
                   @blur="previewCron"
-                />
+                >
+                  <template #append>
+                    <ElPopover placement="bottom-end" :width="460" trigger="click">
+                      <template #reference>
+                        <ElButton>{{ t('template.cronExample') }}</ElButton>
+                      </template>
+                      <div class="cron-help">
+                        <h4>{{ t('template.cronStandard') }}</h4>
+                        <ul>
+                          <li><code>0 * * * *</code> <span>{{ t('template.cronEveryMinute') }}</span></li>
+                          <li><code>*/20 * * * *</code> <span>{{ t('template.cronEvery20Sec') }}</span></li>
+                          <li><code>30 21 * * *</code> <span>{{ t('template.cronEveryDay2130') }}</span></li>
+                          <li><code>0 23 * * 6</code> <span>{{ t('template.cronEverySat23') }}</span></li>
+                        </ul>
+                        <h4>{{ t('template.cronShortcut') }}</h4>
+                        <ul>
+                          <li><code>@reboot</code> <span>{{ t('template.cronReboot') }}</span></li>
+                          <li><code>@yearly</code> <span>{{ t('template.cronYearly') }}</span></li>
+                          <li><code>@monthly</code> <span>{{ t('template.cronMonthly') }}</span></li>
+                          <li><code>@weekly</code> <span>{{ t('template.cronWeekly') }}</span></li>
+                          <li><code>@daily</code> <span>{{ t('template.cronDaily') }}</span></li>
+                          <li><code>@hourly</code> <span>{{ t('template.cronHourly') }}</span></li>
+                          <li><code>@every 30s</code> <span>{{ t('template.cronEvery30s') }}</span></li>
+                          <li><code>@every 1m20s</code> <span>{{ t('template.cronEvery1m20s') }}</span></li>
+                        </ul>
+                      </div>
+                    </ElPopover>
+                  </template>
+                </ElInput>
               </ElFormItem>
             </ElCol>
           </ElRow>
 
-          <!-- cron preview -->
-          <ElRow v-if="form.level === 1 && nextRuns.length > 0" :gutter="24">
-            <ElCol :span="24">
+          <!-- cron preview (rich panel: empty / error / next-runs) -->
+          <ElRow v-if="form.level === 1" :gutter="24">
+            <ElCol :span="20">
               <ElFormItem label=" ">
-                <div class="cron-preview">
-                  <span class="cron-preview-label">{{ t('task.specNextRuns') }}:</span>
-                  <ElTag
-                    v-for="(t_, i) in nextRuns"
-                    :key="i"
-                    size="small"
-                    type="info"
-                    class="mr-1"
-                  >{{ t_ }}</ElTag>
+                <div
+                  class="cron-preview"
+                  :class="{ 'is-invalid': !!previewError, 'is-empty': !form.spec.trim() }"
+                >
+                  <div v-if="!form.spec.trim()" class="preview-state muted">
+                    <ElIcon><InfoFilled /></ElIcon>
+                    <span>{{ t('template.previewWaiting') }}</span>
+                  </div>
+                  <div v-else-if="previewError" class="preview-state error">
+                    <ElIcon><WarningFilled /></ElIcon>
+                    <span>{{ previewError }}</span>
+                  </div>
+                  <div v-else-if="nextRuns.length === 0" class="preview-state muted">
+                    <ElIcon><InfoFilled /></ElIcon>
+                    <span>{{ t('template.previewNoRuns') }}</span>
+                  </div>
+                  <div v-else>
+                    <div class="preview-title">
+                      <ElIcon><Clock /></ElIcon>
+                      <span>{{ t('template.previewNextRuns', { count: nextRuns.length }) }}</span>
+                      <ElTag v-if="previewTz" size="small" type="info" class="tz-tag">
+                        {{ previewTz }}
+                      </ElTag>
+                    </div>
+                    <ul class="run-list">
+                      <li v-for="(run, idx) in nextRuns" :key="run.unix">
+                        <span class="idx">#{{ idx + 1 }}</span>
+                        <span class="ts">{{ formatRun(run) }}</span>
+                        <span class="rel">{{ relativeTime(run.unix) }}</span>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
               </ElFormItem>
             </ElCol>
@@ -448,8 +500,15 @@
   import { ref, reactive, computed, watch, onMounted } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useRoute, useRouter } from 'vue-router'
+  import { Clock, InfoFilled, WarningFilled } from '@element-plus/icons-vue'
   import type { FormInstance, FormRules } from 'element-plus'
-  import { fetchTaskDetail, fetchTaskStore, fetchTaskTags, fetchCronPreview } from '@/api/task'
+  import {
+    fetchTaskDetail,
+    fetchTaskStore,
+    fetchTaskTags,
+    fetchCronPreview,
+    type CronRun
+  } from '@/api/task'
   import { fetchHostList, type HostItem } from '@/api/host'
   import { fetchTemplateList, fetchTemplateDetail } from '@/api/template'
   import { fetchMail, fetchSlack, fetchWebhook } from '@/api/notification'
@@ -507,7 +566,10 @@
   const selectedTemplateId = ref<number | null>(null)
 
   // Cron preview
-  const nextRuns = ref<string[]>([])
+  const nextRuns = ref<CronRun[]>([])
+  const previewError = ref('')
+  const previewTz = ref('')
+  let cronDebounce: ReturnType<typeof setTimeout> | null = null
 
   // ── Computed ──────────────────────────────────────────────────────────────────
 
@@ -676,18 +738,54 @@
 
   // ── Cron preview ──────────────────────────────────────────────────────────────
 
-  async function previewCron() {
-    const spec = form.spec
+  function previewCron() {
+    if (cronDebounce) clearTimeout(cronDebounce)
+    cronDebounce = setTimeout(runPreview, 300)
+  }
+
+  async function runPreview() {
+    const spec = (form.spec || '').trim()
     if (!spec || form.level !== 1) {
       nextRuns.value = []
+      previewError.value = ''
+      previewTz.value = ''
       return
     }
     try {
-      const res = await fetchCronPreview({ spec, count: 5 })
-      nextRuns.value = (res as any)?.next_times ?? []
+      const res: any = await fetchCronPreview({ spec, count: 6 })
+      if (!res || res.valid === false) {
+        previewError.value = res?.error || t('template.previewInvalid')
+        nextRuns.value = []
+        return
+      }
+      previewError.value = ''
+      previewTz.value = res.timezone || ''
+      nextRuns.value = Array.isArray(res.next_runs) ? res.next_runs : []
     } catch {
+      previewError.value = t('template.previewInvalid')
       nextRuns.value = []
     }
+  }
+
+  function formatRun(run: CronRun): string {
+    const d = new Date(run.iso || run.unix * 1000)
+    if (isNaN(d.getTime())) return String(run.iso || '')
+    const pad = (n: number) => String(n).padStart(2, '0')
+    return (
+      `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ` +
+      `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+    )
+  }
+
+  function relativeTime(unix: number): string {
+    const diffSec = unix - Math.floor(Date.now() / 1000)
+    if (diffSec <= 0) return ''
+    if (diffSec < 60) return t('template.inSeconds', { n: diffSec })
+    const diffMin = Math.floor(diffSec / 60)
+    if (diffMin < 60) return t('template.inMinutes', { n: diffMin })
+    const diffH = Math.floor(diffMin / 60)
+    if (diffH < 24) return t('template.inHours', { n: diffH })
+    return t('template.inDays', { n: Math.floor(diffH / 24) })
   }
 
   // ── Event handlers ────────────────────────────────────────────────────────────
@@ -831,6 +929,8 @@
     (val) => {
       if (val !== 1) {
         nextRuns.value = []
+        previewError.value = ''
+        previewTz.value = ''
         formRef.value?.clearValidate('spec')
       }
     }
@@ -840,7 +940,11 @@
   watch(
     () => form.spec,
     () => {
-      if (!form.spec) nextRuns.value = []
+      if (!form.spec) {
+        nextRuns.value = []
+        previewError.value = ''
+        previewTz.value = ''
+      }
     }
   )
 
@@ -900,6 +1004,8 @@
       selectedSlackIds.value = []
       selectedWebhookIds.value = []
       nextRuns.value = []
+      previewError.value = ''
+      previewTz.value = ''
       selectedTemplateId.value = null
       formRef.value?.clearValidate()
     }
@@ -922,17 +1028,109 @@
     color: var(--el-text-color-primary);
   }
 
-  .cron-preview {
+  /* Cron expression help popover */
+  .cron-help h4 {
+    margin: 0 0 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+  }
+  .cron-help ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 12px;
+  }
+  .cron-help li {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
-    gap: 6px;
-    padding: 6px 0;
+    gap: 10px;
+    padding: 3px 0;
+    font-size: 13px;
+    color: var(--el-text-color-regular);
+  }
+  .cron-help code {
+    font-family: monospace;
+    background: var(--el-fill-color-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+    color: var(--el-color-primary);
+    min-width: 110px;
+    display: inline-block;
   }
 
-  .cron-preview-label {
-    font-size: 12px;
+  /* Cron preview box */
+  .cron-preview {
+    border: 1px solid var(--el-border-color-light);
+    border-radius: 6px;
+    padding: 12px 16px;
+    background: var(--el-fill-color-blank);
+    min-height: 60px;
+    width: 100%;
+    transition: border-color 0.2s;
+  }
+  .cron-preview.is-empty {
+    background: var(--el-fill-color-lighter);
+  }
+  .cron-preview.is-invalid {
+    border-color: var(--el-color-danger);
+    background: var(--el-color-danger-light-9);
+  }
+  .preview-state {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+  }
+  .preview-state.muted {
     color: var(--el-text-color-secondary);
-    margin-right: 4px;
+  }
+  .preview-state.error {
+    color: var(--el-color-danger);
+  }
+  .preview-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--el-text-color-primary);
+    margin-bottom: 10px;
+  }
+  .tz-tag {
+    margin-left: 4px;
+    font-weight: normal;
+  }
+  .run-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px 20px;
+  }
+  .run-list li {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  .run-list .idx {
+    color: var(--el-text-color-placeholder);
+    font-size: 11px;
+    min-width: 22px;
+  }
+  .run-list .ts {
+    color: var(--el-text-color-primary);
+  }
+  .run-list .rel {
+    margin-left: auto;
+    color: var(--el-text-color-secondary);
+    font-size: 12px;
+  }
+  @media (max-width: 768px) {
+    .run-list {
+      grid-template-columns: 1fr;
+    }
   }
 </style>
