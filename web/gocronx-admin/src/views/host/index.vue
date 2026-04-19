@@ -47,15 +47,42 @@
           show-icon
         />
 
-        <div style="margin-bottom: 12px">
-          <div class="install-label">{{ t('host.installCmd') }}</div>
-          <pre class="install-pre">{{ agentTokenData.install_cmd }}</pre>
-          <div style="text-align: right; margin-top: 8px">
-            <ElButton type="primary" size="small" @click="copyInstallCmd">
-              {{ t('host.copy') }}
-            </ElButton>
-          </div>
-        </div>
+        <ElTabs v-model="activeRegisterTab" type="card">
+          <ElTabPane label="Linux / macOS" name="unix">
+            <div class="install-label">{{ t('host.bashCommand') }}</div>
+            <pre class="install-pre">{{ agentTokenData.install_cmd }}</pre>
+            <div style="text-align: right; margin-top: 8px">
+              <ElButton type="primary" size="small" @click="copyInstallCmd">
+                {{ t('host.copy') }}
+              </ElButton>
+            </div>
+          </ElTabPane>
+
+          <ElTabPane label="Windows" name="windows">
+            <ElAlert
+              type="warning"
+              :closable="false"
+              :title="t('host.windowsManualInstall')"
+              :description="t('host.windowsManualInstallTip')"
+              show-icon
+              style="margin-bottom: 14px"
+            />
+            <ElSteps direction="vertical" :active="3">
+              <ElStep
+                :title="t('host.windowsStep1')"
+                :description="t('host.windowsStep1Desc')"
+              />
+              <ElStep
+                :title="t('host.windowsStep2')"
+                :description="t('host.windowsStep2Desc')"
+              />
+              <ElStep
+                :title="t('host.windowsStep3')"
+                :description="t('host.windowsStep3Desc')"
+              />
+            </ElSteps>
+          </ElTabPane>
+        </ElTabs>
 
         <ElDivider />
 
@@ -121,6 +148,7 @@
 
   // ── Auto-register dialog state ────────────────────────────────────────────────
   const registerDialogVisible = ref(false)
+  const activeRegisterTab = ref<'unix' | 'windows'>('unix')
   const agentTokenData = ref<AgentTokenResult | null>(null)
   // Token cache: reuse if not yet expired
   const cachedToken = ref<AgentTokenResult | null>(null)
