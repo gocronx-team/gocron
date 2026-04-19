@@ -15,9 +15,6 @@
     "requestConfigError": "Request configuration error"
   },
   "topBar": {
-    "search": {
-      "title": "Search"
-    },
     "user": {
       "userCenter": "User center",
       "docs": "Document",
@@ -36,13 +33,6 @@
     "cancel": "Cancel",
     "confirm": "Confirm",
     "logOutTips": "Do you want to log out?"
-  },
-  "search": {
-    "placeholder": "Search page",
-    "historyTitle": "Search history",
-    "switchKeydown": "Navigate",
-    "selectKeydown": "Select",
-    "exitKeydown": "Close"
   },
   "setting": {
     "menuType": {

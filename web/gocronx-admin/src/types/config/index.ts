@@ -152,8 +152,6 @@ export interface HeaderBarFeatureConfig {
   refreshButton: FeatureConfigItem
   /** 面包屑导航 */
   breadcrumb: FeatureConfigItem
-  /** 全局搜索 */
-  globalSearch: FeatureConfigItem
   /** 全屏功能 */
   fullscreen: FeatureConfigItem
   /** 多语言切换 */

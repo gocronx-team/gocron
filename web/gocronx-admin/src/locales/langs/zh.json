@@ -15,9 +15,6 @@
     "requestConfigError": "请求配置错误"
   },
   "topBar": {
-    "search": {
-      "title": "搜索"
-    },
     "user": {
       "userCenter": "个人中心",
       "docs": "使用文档",
@@ -36,13 +33,6 @@
     "cancel": "取消",
     "confirm": "确定",
     "logOutTips": "您是否要退出登录?"
-  },
-  "search": {
-    "placeholder": "搜索页面",
-    "historyTitle": "搜索历史",
-    "switchKeydown": "切换",
-    "selectKeydown": "选择",
-    "exitKeydown": "关闭"
   },
   "setting": {
     "menuType": {
