@@ -56,7 +56,7 @@
             :model="pwdForm"
             :rules="pwdRules"
             ref="pwdFormRef"
-            label-position="top"
+            label-width="auto"
             class="pwd-form"
             @submit.prevent
           >
@@ -88,15 +88,17 @@
             </ElFormItem>
 
             <ElFormItem>
-              <ElButton
-                type="primary"
-                :loading="pwdSaving"
-                class="submit-btn"
-                @click="submitPwd"
-                v-ripple
-              >
-                {{ t('changePassword.save') }}
-              </ElButton>
+              <div class="form-actions">
+                <ElButton
+                  type="primary"
+                  :loading="pwdSaving"
+                  class="submit-btn"
+                  @click="submitPwd"
+                  v-ripple
+                >
+                  {{ t('changePassword.save') }}
+                </ElButton>
+              </div>
             </ElFormItem>
           </ElForm>
         </ElCard>
@@ -156,6 +158,16 @@
       }
     ]
   }))
+
+  // Re-validate confirm_new_password when new_password changes.
+  watch(
+    () => pwdForm.new_password,
+    () => {
+      if (pwdForm.confirm_new_password) {
+        pwdFormRef.value?.validateField('confirm_new_password').catch(() => {})
+      }
+    }
+  )
 
   async function submitPwd() {
     if (!pwdFormRef.value) return
@@ -246,21 +258,20 @@
   }
 
   .pwd-form {
-    max-width: 420px;
-  }
-
-  .pwd-form :deep(.el-form-item__label) {
-    padding-bottom: 6px;
-    font-size: 13px;
-    color: var(--el-text-color-regular);
-    line-height: 1.4;
+    max-width: 500px;
   }
 
   .pwd-form :deep(.el-form-item) {
     margin-bottom: 18px;
   }
 
+  .form-actions {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
   .submit-btn {
-    min-width: 120px;
+    min-width: 140px;
   }
 </style>

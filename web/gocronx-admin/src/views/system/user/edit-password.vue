@@ -11,8 +11,8 @@
         ref="formRef"
         :model="form"
         :rules="rules"
-        label-width="130px"
-        style="max-width: 560px"
+        label-width="auto"
+        class="pwd-form"
         @submit.prevent
       >
         <!-- new password -->
@@ -21,6 +21,7 @@
             v-model="form.new_password"
             type="password"
             :placeholder="t('user.passwordPlaceholder')"
+            autocomplete="new-password"
             show-password
           />
         </ElFormItem>
@@ -31,18 +32,25 @@
             v-model="form.confirm_new_password"
             type="password"
             :placeholder="t('user.passwordPlaceholder')"
+            autocomplete="new-password"
             show-password
           />
         </ElFormItem>
 
         <!-- actions -->
         <ElFormItem>
-          <ElButton type="primary" :loading="submitting" @click="handleSubmit" v-ripple>
-            {{ t('user.save') }}
-          </ElButton>
-          <ElButton @click="handleCancel">
-            {{ t('user.cancel') }}
-          </ElButton>
+          <div class="form-actions">
+            <ElButton
+              type="primary"
+              :loading="submitting"
+              class="submit-btn"
+              @click="handleSubmit"
+              v-ripple
+            >
+              {{ t('user.save') }}
+            </ElButton>
+            <ElButton @click="handleCancel">{{ t('user.cancel') }}</ElButton>
+          </div>
         </ElFormItem>
       </ElForm>
     </ElCard>
@@ -97,6 +105,17 @@
     ]
   }))
 
+  // Re-validate confirm field when the primary password changes so the form
+  // doesn't stay green after an edit from "matched" state.
+  watch(
+    () => form.new_password,
+    () => {
+      if (form.confirm_new_password) {
+        formRef.value?.validateField('confirm_new_password').catch(() => {})
+      }
+    }
+  )
+
   // ── Submit ────────────────────────────────────────────────────────────────────
 
   async function handleSubmit() {
@@ -130,5 +149,24 @@
   .user-edit-password-page {
     display: flex;
     flex-direction: column;
+  }
+
+  .pwd-form {
+    max-width: 500px;
+  }
+
+  .pwd-form :deep(.el-form-item) {
+    margin-bottom: 18px;
+  }
+
+  .form-actions {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .submit-btn {
+    min-width: 120px;
   }
 </style>
