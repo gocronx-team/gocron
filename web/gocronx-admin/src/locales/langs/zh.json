@@ -344,7 +344,18 @@
     "normalUserLabel": "普通用户",
     "editPasswordTitle": "重置用户密码",
     "newPasswordLabel": "新密码",
-    "resetPasswordSuccess": "密码重置成功"
+    "resetPasswordSuccess": "密码重置成功",
+    "sectionBasic": "基本信息",
+    "sectionCredentials": "凭证",
+    "sectionAccess": "权限",
+    "generatePassword": "生成",
+    "generatedHint": "已生成的密码已复制到剪贴板",
+    "passwordStrength": "密码强度",
+    "strengthWeak": "弱",
+    "strengthMedium": "中",
+    "strengthStrong": "强",
+    "roleUserHint": "只能查看和手动执行任务",
+    "roleAdminHint": "拥有全部权限，包括用户管理"
   },
   "changePassword": {
     "title": "更改密码",

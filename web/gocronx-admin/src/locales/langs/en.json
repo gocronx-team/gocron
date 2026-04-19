@@ -344,7 +344,18 @@
     "normalUserLabel": "Normal User",
     "editPasswordTitle": "Reset User Password",
     "newPasswordLabel": "New Password",
-    "resetPasswordSuccess": "Password reset successfully"
+    "resetPasswordSuccess": "Password reset successfully",
+    "sectionBasic": "Basic Info",
+    "sectionCredentials": "Credentials",
+    "sectionAccess": "Access",
+    "generatePassword": "Generate",
+    "generatedHint": "Generated password copied to clipboard",
+    "passwordStrength": "Strength",
+    "strengthWeak": "Weak",
+    "strengthMedium": "Medium",
+    "strengthStrong": "Strong",
+    "roleUserHint": "Can only view / run tasks",
+    "roleAdminHint": "Full access including user management"
   },
   "changePassword": {
     "title": "Change Password",

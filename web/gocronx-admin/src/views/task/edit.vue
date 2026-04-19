@@ -823,11 +823,11 @@
       if (tpl.multi !== undefined) form.multi = tpl.multi
       if (tpl.retry_times && tpl.retry_times > 0) form.retry_times = tpl.retry_times
       if (tpl.retry_interval && tpl.retry_interval > 0) form.retry_interval = tpl.retry_interval
-      if (tpl.notify_status && tpl.notify_status > 0) {
-        form.notify_status = tpl.notify_status
-        form.notify_type = tpl.notify_type ?? 0
-        if (tpl.notify_keyword) form.notify_keyword = tpl.notify_keyword
-      }
+      // Notify fields are intentionally NOT copied from templates.
+      // Templates don't store notify_receiver_id (receivers are task-level),
+      // so importing notify_status=1 without receivers would leave the form
+      // in an inconsistent state (notify enabled, receiver empty). Users
+      // configure notifications explicitly per task.
       if (tpl.description) form.remark = tpl.description
 
       // Update editor language and clear host_ids if switching to HTTP

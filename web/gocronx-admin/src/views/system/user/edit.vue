@@ -2,7 +2,7 @@
 <!-- Routes: /system/user/edit/0  (create)  or  /system/user/edit/:id  (edit) -->
 <template>
   <div class="user-edit-page art-full-height">
-    <ElCard class="p-2" shadow="never">
+    <ElCard shadow="never">
       <template #header>
         <span class="text-base font-medium">
           {{ isEdit ? t('user.editTitle') : t('user.createTitle') }}
@@ -13,68 +13,119 @@
         ref="formRef"
         :model="form"
         :rules="rules"
-        label-width="130px"
-        style="max-width: 560px"
+        label-width="120px"
+        style="max-width: 720px"
         @submit.prevent
       >
-        <!-- hidden id -->
-        <input type="hidden" :value="form.id" />
+        <!-- ── Basic Info ─────────────────────────────────────────────── -->
+        <ElDivider content-position="left">{{ t('user.sectionBasic') }}</ElDivider>
 
-        <!-- username -->
-        <ElFormItem :label="t('user.name')" prop="name">
-          <ElInput v-model="form.name" :placeholder="t('user.namePlaceholder')" clearable />
-        </ElFormItem>
+        <ElRow :gutter="24">
+          <ElCol :span="12">
+            <ElFormItem :label="t('user.name')" prop="name">
+              <ElInput
+                v-model.trim="form.name"
+                :placeholder="t('user.namePlaceholder')"
+                autocomplete="username"
+                clearable
+              />
+            </ElFormItem>
+          </ElCol>
+          <ElCol :span="12">
+            <ElFormItem :label="t('user.email')" prop="email">
+              <ElInput
+                v-model.trim="form.email"
+                type="email"
+                :placeholder="t('user.emailPlaceholder')"
+                autocomplete="email"
+                clearable
+              />
+            </ElFormItem>
+          </ElCol>
+        </ElRow>
 
-        <!-- email -->
-        <ElFormItem :label="t('user.email')" prop="email">
-          <ElInput v-model="form.email" :placeholder="t('user.emailPlaceholder')" clearable />
-        </ElFormItem>
-
-        <!-- password — required on create, hidden on edit -->
+        <!-- ── Credentials (create only) ──────────────────────────────── -->
         <template v-if="!isEdit">
-          <ElFormItem :label="t('user.password')" prop="password">
-            <ElInput
-              v-model="form.password"
-              type="password"
-              :placeholder="t('user.passwordPlaceholder')"
-              show-password
-            />
-          </ElFormItem>
+          <ElDivider content-position="left">{{ t('user.sectionCredentials') }}</ElDivider>
 
-          <ElFormItem :label="t('user.confirmPassword')" prop="confirm_password">
-            <ElInput
-              v-model="form.confirm_password"
-              type="password"
-              :placeholder="t('user.passwordPlaceholder')"
-              show-password
-            />
-          </ElFormItem>
+          <ElRow :gutter="24">
+            <ElCol :span="12">
+              <ElFormItem :label="t('user.password')" prop="password">
+                <ElInput
+                  v-model="form.password"
+                  type="password"
+                  :placeholder="t('user.passwordPlaceholder')"
+                  autocomplete="new-password"
+                  show-password
+                >
+                  <template #append>
+                    <ElButton :icon="Refresh" @click="generateAndCopyPassword">
+                      {{ t('user.generatePassword') }}
+                    </ElButton>
+                  </template>
+                </ElInput>
+
+                <!-- Strength meter -->
+                <div v-if="form.password" class="pw-strength">
+                  <div class="pw-strength-bar">
+                    <div
+                      class="pw-strength-fill"
+                      :style="{ width: passwordStrength.pct + '%', background: passwordStrength.color }"
+                    />
+                  </div>
+                  <span class="pw-strength-label" :style="{ color: passwordStrength.color }">
+                    {{ t('user.passwordStrength') }}: {{ passwordStrength.label }}
+                  </span>
+                </div>
+              </ElFormItem>
+            </ElCol>
+
+            <ElCol :span="12">
+              <ElFormItem :label="t('user.confirmPassword')" prop="confirm_password">
+                <ElInput
+                  v-model="form.confirm_password"
+                  type="password"
+                  :placeholder="t('user.passwordPlaceholder')"
+                  autocomplete="new-password"
+                  show-password
+                />
+              </ElFormItem>
+            </ElCol>
+          </ElRow>
         </template>
 
-        <!-- role -->
-        <ElFormItem :label="t('user.role')" prop="is_admin">
-          <ElRadioGroup v-model="form.is_admin">
-            <ElRadio :value="0">{{ t('user.normalUserLabel') }}</ElRadio>
-            <ElRadio :value="1">{{ t('user.adminLabel') }}</ElRadio>
-          </ElRadioGroup>
-        </ElFormItem>
+        <!-- ── Access ─────────────────────────────────────────────────── -->
+        <ElDivider content-position="left">{{ t('user.sectionAccess') }}</ElDivider>
 
-        <!-- status -->
-        <ElFormItem :label="t('user.status')" prop="status">
-          <ElRadioGroup v-model="form.status">
-            <ElRadio :value="1">{{ t('user.enabled') }}</ElRadio>
-            <ElRadio :value="0">{{ t('user.disabled') }}</ElRadio>
-          </ElRadioGroup>
-        </ElFormItem>
+        <ElRow :gutter="24">
+          <ElCol :span="12">
+            <ElFormItem :label="t('user.role')" prop="is_admin">
+              <ElRadioGroup v-model="form.is_admin">
+                <ElRadio :value="0">{{ t('user.normalUserLabel') }}</ElRadio>
+                <ElRadio :value="1">{{ t('user.adminLabel') }}</ElRadio>
+              </ElRadioGroup>
+              <div class="role-hint">
+                {{ form.is_admin === 1 ? t('user.roleAdminHint') : t('user.roleUserHint') }}
+              </div>
+            </ElFormItem>
+          </ElCol>
 
-        <!-- actions -->
+          <ElCol :span="12">
+            <ElFormItem :label="t('user.status')" prop="status">
+              <ElRadioGroup v-model="form.status">
+                <ElRadio :value="1">{{ t('user.enabled') }}</ElRadio>
+                <ElRadio :value="0">{{ t('user.disabled') }}</ElRadio>
+              </ElRadioGroup>
+            </ElFormItem>
+          </ElCol>
+        </ElRow>
+
+        <!-- ── Actions ────────────────────────────────────────────────── -->
         <ElFormItem>
           <ElButton type="primary" :loading="submitting" @click="handleSubmit" v-ripple>
             {{ t('user.save') }}
           </ElButton>
-          <ElButton @click="handleCancel">
-            {{ t('user.cancel') }}
-          </ElButton>
+          <ElButton @click="handleCancel">{{ t('user.cancel') }}</ElButton>
         </ElFormItem>
       </ElForm>
     </ElCard>
@@ -84,6 +135,7 @@
 <script setup lang="ts">
   import { useI18n } from 'vue-i18n'
   import { useRoute, useRouter } from 'vue-router'
+  import { Refresh } from '@element-plus/icons-vue'
   import type { FormInstance, FormRules } from 'element-plus'
   import request from '@/utils/http'
   import { fetchUserDetail } from '@/api/user'
@@ -119,6 +171,27 @@
 
   const isEdit = computed(() => routeId.value > 0)
 
+  /**
+   * Password strength scoring.
+   * 0 points: too short
+   * 1-2 points: weak (length only or single class)
+   * 3 points: medium (2-3 classes)
+   * 4+ points: strong (length + 3+ classes)
+   */
+  const passwordStrength = computed(() => {
+    const pwd = form.password
+    let score = 0
+    if (pwd.length >= 8) score++
+    if (pwd.length >= 12) score++
+    if (/[a-z]/.test(pwd) && /[A-Z]/.test(pwd)) score++
+    if (/\d/.test(pwd)) score++
+    if (/[^a-zA-Z0-9]/.test(pwd)) score++
+
+    if (score <= 2) return { label: t('user.strengthWeak'), pct: 33, color: '#F56C6C' }
+    if (score <= 3) return { label: t('user.strengthMedium'), pct: 66, color: '#E6A23C' }
+    return { label: t('user.strengthStrong'), pct: 100, color: '#67C23A' }
+  })
+
   // ── Validation rules ──────────────────────────────────────────────────────────
 
   const rules = computed<FormRules>(() => {
@@ -153,6 +226,40 @@
 
     return base
   })
+
+  // Re-validate confirm when password itself changes; avoids the confusing state
+  // where user changes password but confirm still shows "matched" from before.
+  watch(
+    () => form.password,
+    () => {
+      if (!isEdit.value && form.confirm_password) {
+        formRef.value?.validateField('confirm_password').catch(() => {})
+      }
+    }
+  )
+
+  // ── Password generator ───────────────────────────────────────────────────────
+
+  function generateAndCopyPassword() {
+    const chars = {
+      lower: 'abcdefghijklmnopqrstuvwxyz',
+      upper: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+      digit: '0123456789',
+      symbol: '!@#$%^&*-_=+'
+    }
+    const pick = (s: string) => s[Math.floor(Math.random() * s.length)]
+    // Guarantee at least one from each class, then fill to 14 chars total
+    const out = [pick(chars.lower), pick(chars.upper), pick(chars.digit), pick(chars.symbol)]
+    const pool = chars.lower + chars.upper + chars.digit + chars.symbol
+    while (out.length < 14) out.push(pick(pool))
+    // Shuffle so the forced chars aren't always at the start
+    const pwd = out.sort(() => Math.random() - 0.5).join('')
+
+    form.password = pwd
+    form.confirm_password = pwd
+    navigator.clipboard?.writeText(pwd).catch(() => {})
+    ElMessage.success(t('user.generatedHint'))
+  }
 
   // ── Data loading ──────────────────────────────────────────────────────────────
 
@@ -243,5 +350,39 @@
   .user-edit-page {
     display: flex;
     flex-direction: column;
+  }
+
+  .role-hint {
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+    line-height: 1.5;
+    margin-top: 4px;
+  }
+
+  .pw-strength {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+  }
+
+  .pw-strength-bar {
+    flex: 1;
+    max-width: 200px;
+    height: 6px;
+    background: var(--el-fill-color);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .pw-strength-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.2s, background 0.2s;
+  }
+
+  .pw-strength-label {
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
   }
 </style>
