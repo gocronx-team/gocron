@@ -155,8 +155,10 @@
   async function fetchStatus() {
     statusLoading.value = true
     try {
+      // http wrapper already returns response.data.data, so `res` IS the inner
+      // payload — no extra `.data` to unwrap.
       const res = await get2FAStatus()
-      twoFactorEnabled.value = (res as any)?.data?.enabled ?? false
+      twoFactorEnabled.value = (res as any)?.enabled ?? false
     } finally {
       statusLoading.value = false
     }
@@ -166,9 +168,8 @@
     setupLoading.value = true
     try {
       const res = await setup2FA()
-      const data = (res as any)?.data
-      qrCode.value = data?.qr_code ?? ''
-      secret.value = data?.secret ?? ''
+      qrCode.value = (res as any)?.qr_code ?? ''
+      secret.value = (res as any)?.secret ?? ''
       setupDialogVisible.value = true
     } finally {
       setupLoading.value = false
