@@ -504,6 +504,43 @@
       </ElForm>
     </ElCard>
 
+    <!-- Fill-in template variables dialog (triggered when applied template contains {{var}}) -->
+    <ElDialog
+      v-model="variableDialogVisible"
+      :title="t('template.fillVariables')"
+      width="520px"
+      align-center
+      destroy-on-close
+      append-to-body
+    >
+      <ElAlert
+        type="warning"
+        :closable="false"
+        :title="t('template.securityWarning')"
+        style="margin-bottom: 12px"
+      />
+      <div class="var-hint">{{ t('template.fillVariablesHint') }}</div>
+      <ElForm label-width="140px" @submit.prevent>
+        <ElFormItem
+          v-for="v in templateVariables"
+          :key="v"
+          :label="v"
+        >
+          <ElInput
+            v-model="templateVarValues[v]"
+            :placeholder="t('template.variableValue')"
+            clearable
+          />
+        </ElFormItem>
+      </ElForm>
+      <template #footer>
+        <ElButton @click="variableDialogVisible = false">{{ t('common.cancel') }}</ElButton>
+        <ElButton type="primary" @click="handleApplyVariables" v-ripple>
+          {{ t('template.applyTemplate') }}
+        </ElButton>
+      </template>
+    </ElDialog>
+
     <!-- Save-as-template dialog -->
     <ElDialog
       v-model="saveAsTemplateVisible"
@@ -645,6 +682,12 @@
     description: '',
     category: 'custom'
   })
+
+  // Template-variable fill-in dialog (for {{name}} placeholders in templates)
+  const variableDialogVisible = ref(false)
+  const templateVariables = ref<string[]>([])
+  const templateVarValues = ref<Record<string, string>>({})
+  const pendingTemplate = ref<any>(null)
 
   // Cron preview
   const nextRuns = ref<CronRun[]>([])
@@ -892,35 +935,91 @@
     try {
       const tpl = await fetchTemplateDetail(id)
       if (!tpl) return
-      form.protocol = tpl.protocol
-      form.command = tpl.command || ''
-      form.http_method = tpl.http_method ?? 1
-      form.http_body = tpl.http_body || ''
-      form.http_headers = tpl.http_headers || ''
-      form.success_pattern = tpl.success_pattern || ''
-      if (tpl.spec) form.spec = tpl.spec
-      if (tpl.tag) form.tags = tpl.tag.split(',').filter(Boolean)
-      if (tpl.timeout && tpl.timeout > 0) form.timeout = tpl.timeout
-      if (tpl.multi !== undefined) form.multi = tpl.multi
-      if (tpl.retry_times && tpl.retry_times > 0) form.retry_times = tpl.retry_times
-      if (tpl.retry_interval && tpl.retry_interval > 0) form.retry_interval = tpl.retry_interval
-      // Notify fields are intentionally NOT copied from templates.
-      // Templates don't store notify_receiver_id (receivers are task-level),
-      // so importing notify_status=1 without receivers would leave the form
-      // in an inconsistent state (notify enabled, receiver empty). Users
-      // configure notifications explicitly per task.
-      if (tpl.description) form.remark = tpl.description
 
-      // Update editor language and clear host_ids if switching to HTTP
-      handleProtocolChange(tpl.protocol)
-      if (tpl.spec) previewCron()
+      // Parse {{variable_name}} placeholders from command + http_body + http_headers.
+      // If any found, stash the template and pop the fill-in dialog; otherwise
+      // apply directly.
+      const vars = collectTemplateVariables(tpl)
+      if (vars.length > 0) {
+        pendingTemplate.value = tpl
+        templateVariables.value = vars
+        templateVarValues.value = Object.fromEntries(vars.map((v) => [v, '']))
+        variableDialogVisible.value = true
+        return
+      }
 
+      applyTemplateFields(tpl)
       ElMessage.success(t('task.templateApplied'))
     } catch {
       // error handled by http interceptor
     } finally {
       selectedTemplateId.value = null
     }
+  }
+
+  // Extract unique {{name}} placeholders from the three free-text fields
+  // that actually get baked into task execution.
+  function collectTemplateVariables(tpl: any): string[] {
+    const re = /\{\{(\w+)\}\}/g
+    const set = new Set<string>()
+    for (const field of [tpl.command, tpl.http_body, tpl.http_headers]) {
+      if (!field) continue
+      let m: RegExpExecArray | null
+      while ((m = re.exec(field)) !== null) set.add(m[1])
+    }
+    return Array.from(set)
+  }
+
+  function applyTemplateFields(tpl: any) {
+    form.protocol = tpl.protocol
+    form.command = tpl.command || ''
+    form.http_method = tpl.http_method ?? 1
+    form.http_body = tpl.http_body || ''
+    form.http_headers = tpl.http_headers || ''
+    form.success_pattern = tpl.success_pattern || ''
+    if (tpl.spec) form.spec = tpl.spec
+    if (tpl.tag) form.tags = tpl.tag.split(',').filter(Boolean)
+    if (tpl.timeout && tpl.timeout > 0) form.timeout = tpl.timeout
+    if (tpl.multi !== undefined) form.multi = tpl.multi
+    if (tpl.retry_times && tpl.retry_times > 0) form.retry_times = tpl.retry_times
+    if (tpl.retry_interval && tpl.retry_interval > 0) form.retry_interval = tpl.retry_interval
+    // Notify fields are intentionally NOT copied from templates.
+    // Templates don't store notify_receiver_id (receivers are task-level),
+    // so importing notify_status=1 without receivers would leave the form
+    // in an inconsistent state (notify enabled, receiver empty). Users
+    // configure notifications explicitly per task.
+    if (tpl.description) form.remark = tpl.description
+
+    // Update editor language and clear host_ids if switching to HTTP
+    handleProtocolChange(tpl.protocol)
+    if (tpl.spec) previewCron()
+  }
+
+  function handleApplyVariables() {
+    if (!pendingTemplate.value) {
+      variableDialogVisible.value = false
+      return
+    }
+    // Reject if any variable is empty — partial fills produce broken commands.
+    for (const v of templateVariables.value) {
+      if (!templateVarValues.value[v]) {
+        ElMessage.warning(t('template.variableValueRequired'))
+        return
+      }
+    }
+
+    // Substitute {{name}} → user-entered value in each free-text field.
+    const tpl = { ...pendingTemplate.value }
+    for (const [name, value] of Object.entries(templateVarValues.value)) {
+      const pattern = new RegExp(`\\{\\{${name}\\}\\}`, 'g')
+      tpl.command = (tpl.command || '').replace(pattern, value)
+      tpl.http_body = (tpl.http_body || '').replace(pattern, value)
+      tpl.http_headers = (tpl.http_headers || '').replace(pattern, value)
+    }
+    applyTemplateFields(tpl)
+    variableDialogVisible.value = false
+    pendingTemplate.value = null
+    ElMessage.success(t('task.templateApplied'))
   }
 
   // ── Save as template ─────────────────────────────────────────────────────────
@@ -1143,6 +1242,12 @@
     font-size: 14px;
     font-weight: 500;
     color: var(--el-text-color-primary);
+  }
+
+  .var-hint {
+    font-size: 13px;
+    color: var(--el-text-color-secondary);
+    margin-bottom: 12px;
   }
 
   /* Cron expression help popover */

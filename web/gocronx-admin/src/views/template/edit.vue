@@ -217,6 +217,7 @@
                 style="font-family: monospace"
               />
               <div class="form-help">{{ t('template.templateVarTip') }}</div>
+              <div class="form-help">{{ t('template.varSyntaxTip') }}</div>
             </ElFormItem>
           </ElCol>
         </ElRow>
