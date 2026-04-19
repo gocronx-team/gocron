@@ -78,7 +78,6 @@
         "language": "显示多语言选择",
         "progressBar": "显示顶部进度条",
         "weakMode": "色弱模式",
-        "watermark": "全局水印",
         "menuWidth": "菜单宽度",
         "tabStyle": "标签页风格",
         "pageTransition": "页面切换动画",
@@ -147,12 +146,6 @@
       "title": "登录成功",
       "message": "欢迎回来"
     }
-  },
-  "greeting": {
-    "dawn": "凌晨了！",
-    "morning": "上午好！",
-    "afternoon": "下午好！",
-    "evening": "晚上好！"
   },
   "menus": {
     "login": {

@@ -161,13 +161,6 @@ export function useSettingsConfig() {
         headerBarKey: null // 不依赖headerBar配置
       },
       {
-        key: 'watermarkVisible',
-        label: t('setting.basics.list.watermark'),
-        type: 'switch' as const,
-        handler: 'watermark',
-        headerBarKey: null // 不依赖headerBar配置
-      },
-      {
         key: 'menuOpenWidth',
         label: t('setting.basics.list.menuWidth'),
         type: 'input-number' as const,

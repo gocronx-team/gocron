@@ -89,11 +89,6 @@ export function useSettingsHandlers() {
       }
     ),
 
-    // 水印显示
-    watermark: createToggleHandler(() =>
-      settingStore.setWatermarkVisible(!settingStore.watermarkVisible)
-    ),
-
     // 菜单展开宽度
     menuOpenWidth: createValueHandler<number>((width: number) =>
       settingStore.setMenuOpenWidth(width)

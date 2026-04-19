@@ -78,7 +78,6 @@
         "language": "Show multilingual selection",
         "progressBar": "Show top progress bar",
         "weakMode": "Color Weakness Mode",
-        "watermark": "Global watermark",
         "menuWidth": "Menu width",
         "tabStyle": "Tab style",
         "pageTransition": "Page animation",
@@ -147,12 +146,6 @@
       "title": "Login successful",
       "message": "Welcome back"
     }
-  },
-  "greeting": {
-    "dawn": "Good morning!",
-    "morning": "Good morning!",
-    "afternoon": "Good afternoon!",
-    "evening": "Good evening!"
   },
   "menus": {
     "login": {
