@@ -186,6 +186,21 @@
   .menu-model {
     display: none;
   }
+
+  // Prevent menu labels (esp. English ones) from being silently clipped.
+  // Instead, show ellipsis with a native tooltip on hover so the user can
+  // still read the full title.
+  :deep(.el-menu-item),
+  :deep(.el-sub-menu__title) {
+    .menu-name {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      display: inline-block;
+    }
+  }
 }
 
 @media only screen and (width <= 800px) {

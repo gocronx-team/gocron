@@ -1,32 +1,12 @@
 <template>
   <div class="host-list-page art-full-height">
-    <!-- Filter card -->
-    <ElCard shadow="never" class="mb-3">
-      <ElForm :inline="true" :model="filterForm" @submit.prevent="handleSearch">
-        <ElFormItem label="ID">
-          <ElInput
-            v-model.trim="filterForm.id"
-            clearable
-            style="width: 120px"
-            :placeholder="t('host.idPlaceholder')"
-          />
-        </ElFormItem>
-
-        <ElFormItem :label="t('host.name')">
-          <ElInput
-            v-model.trim="filterForm.name"
-            clearable
-            style="width: 180px"
-            :placeholder="t('host.namePlaceholder')"
-          />
-        </ElFormItem>
-
-        <ElFormItem>
-          <ElButton type="primary" @click="handleSearch">{{ t('host.search') }}</ElButton>
-          <ElButton @click="handleReset">{{ t('host.reset') }}</ElButton>
-        </ElFormItem>
-      </ElForm>
-    </ElCard>
+    <!-- Filter -->
+    <ArtSearchBar
+      v-model="filterForm"
+      :items="filterItems"
+      @search="handleSearch"
+      @reset="handleReset"
+    />
 
     <!-- Table card -->
     <ElCard class="art-table-card" shadow="never">
@@ -100,7 +80,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, h } from 'vue'
+  import { ref, computed, h } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useRouter } from 'vue-router'
   import { ElButton, ElMessage, ElMessageBox, ElTag, ElIcon } from 'element-plus'
@@ -122,7 +102,22 @@
   const router = useRouter()
 
   // ── Filter state ─────────────────────────────────────────────────────────────
-  const filterForm = ref({ id: '', name: '' })
+  const filterForm = ref<Record<string, any>>({ id: '', name: '' })
+
+  const filterItems = computed(() => [
+    {
+      label: 'ID',
+      key: 'id',
+      type: 'input',
+      props: { placeholder: t('host.idPlaceholder'), clearable: true }
+    },
+    {
+      label: t('host.name'),
+      key: 'name',
+      type: 'input',
+      props: { placeholder: t('host.namePlaceholder'), clearable: true }
+    }
+  ])
 
   // ── Auto-register dialog state ────────────────────────────────────────────────
   const registerDialogVisible = ref(false)

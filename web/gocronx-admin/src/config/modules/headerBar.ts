@@ -22,10 +22,6 @@ export const headerBarConfig: HeaderBarFeatureConfig = {
     enabled: true,
     description: '页面刷新按钮'
   },
-  fastEnter: {
-    enabled: true,
-    description: '快速入口功能，提供常用应用和链接的快速访问'
-  },
   breadcrumb: {
     enabled: true,
     description: '面包屑导航，显示当前页面路径'
@@ -37,14 +33,6 @@ export const headerBarConfig: HeaderBarFeatureConfig = {
   fullscreen: {
     enabled: true,
     description: '全屏切换功能'
-  },
-  notification: {
-    enabled: true,
-    description: '通知中心，显示系统通知和消息'
-  },
-  chat: {
-    enabled: true,
-    description: '聊天功能，提供实时沟通'
   },
   language: {
     enabled: true,

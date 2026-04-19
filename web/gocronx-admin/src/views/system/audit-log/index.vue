@@ -1,67 +1,12 @@
 <template>
   <div class="audit-log-page art-full-height">
-    <!-- Filter card -->
-    <ElCard shadow="never" class="mb-3">
-      <ElForm :inline="true" :model="filterForm" @submit.prevent="handleSearch">
-        <ElFormItem :label="t('audit.module')">
-          <ElSelect
-            v-model="filterForm.module"
-            clearable
-            style="width: 150px"
-            :placeholder="t('audit.allModules')"
-          >
-            <ElOption
-              v-for="item in moduleOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </ElSelect>
-        </ElFormItem>
-
-        <ElFormItem :label="t('audit.action')">
-          <ElSelect
-            v-model="filterForm.action"
-            clearable
-            style="width: 170px"
-            :placeholder="t('audit.allActions')"
-          >
-            <ElOption
-              v-for="item in actionOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </ElSelect>
-        </ElFormItem>
-
-        <ElFormItem :label="t('audit.username')">
-          <ElInput
-            v-model.trim="filterForm.username"
-            clearable
-            :placeholder="t('audit.usernamePlaceholder')"
-            style="width: 160px"
-          />
-        </ElFormItem>
-
-        <ElFormItem :label="t('audit.dateRange')">
-          <ElDatePicker
-            v-model="dateRange"
-            type="daterange"
-            value-format="YYYY-MM-DD"
-            range-separator="-"
-            :start-placeholder="t('audit.startDate')"
-            :end-placeholder="t('audit.endDate')"
-            style="width: 240px"
-          />
-        </ElFormItem>
-
-        <ElFormItem>
-          <ElButton type="primary" @click="handleSearch">{{ t('audit.search') }}</ElButton>
-          <ElButton @click="handleReset">{{ t('audit.reset') }}</ElButton>
-        </ElFormItem>
-      </ElForm>
-    </ElCard>
+    <!-- Filter -->
+    <ArtSearchBar
+      v-model="filterForm"
+      :items="filterItems"
+      @search="handleSearch"
+      @reset="handleReset"
+    />
 
     <!-- Table card -->
     <ElCard class="art-table-card" shadow="never">
@@ -133,12 +78,45 @@
   )
 
   // ── Filter state ─────────────────────────────────────────────────────────
-  const filterForm = ref({
+  const filterForm = ref<Record<string, any>>({
     module: '',
     action: '',
-    username: ''
+    username: '',
+    dateRange: [] as string[]
   })
-  const dateRange = ref<string[]>([])
+
+  const filterItems = computed(() => [
+    {
+      label: t('audit.module'),
+      key: 'module',
+      type: 'select',
+      props: { placeholder: t('audit.allModules'), clearable: true, options: moduleOptions.value }
+    },
+    {
+      label: t('audit.action'),
+      key: 'action',
+      type: 'select',
+      props: { placeholder: t('audit.allActions'), clearable: true, options: actionOptions.value }
+    },
+    {
+      label: t('audit.username'),
+      key: 'username',
+      type: 'input',
+      props: { placeholder: t('audit.usernamePlaceholder'), clearable: true }
+    },
+    {
+      label: t('audit.dateRange'),
+      key: 'dateRange',
+      type: 'daterange',
+      props: {
+        type: 'daterange',
+        valueFormat: 'YYYY-MM-DD',
+        rangeSeparator: '-',
+        startPlaceholder: t('audit.startDate'),
+        endPlaceholder: t('audit.endDate')
+      }
+    }
+  ])
 
   // ── Detail dialog ─────────────────────────────────────────────────────────
   const dialogVisible = ref(false)
@@ -278,8 +256,8 @@
 
   // ── Search / Reset ────────────────────────────────────────────────────────
   function handleSearch() {
-    const [startDate, endDate] =
-      dateRange.value && dateRange.value.length === 2 ? dateRange.value : ['', '']
+    const dr = filterForm.value.dateRange
+    const [startDate, endDate] = Array.isArray(dr) && dr.length === 2 ? dr : ['', '']
 
     Object.assign(searchParams, {
       module: filterForm.value.module || '',
@@ -293,8 +271,7 @@
   }
 
   function handleReset() {
-    filterForm.value = { module: '', action: '', username: '' }
-    dateRange.value = []
+    filterForm.value = { module: '', action: '', username: '', dateRange: [] }
     resetSearchParams()
   }
 </script>

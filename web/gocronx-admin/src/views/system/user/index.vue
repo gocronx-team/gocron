@@ -30,7 +30,7 @@
   import { h } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useRouter } from 'vue-router'
-  import { ElTag, ElButton, ElMessageBox } from 'element-plus'
+  import { ElTag, ElButton, ElSwitch, ElMessageBox } from 'element-plus'
   import { useTable } from '@/hooks/core/useTable'
   import {
     fetchUserList,
@@ -94,14 +94,16 @@
         {
           prop: 'status',
           label: t('user.status'),
-          width: 110,
+          width: 100,
           align: 'center',
           formatter: (row: UserListItem) =>
-            h(
-              ElTag,
-              { type: row.status === 1 ? 'success' : 'warning', size: 'small' },
-              () => (row.status === 1 ? t('user.enabled') : t('user.disabled'))
-            )
+            h(ElSwitch, {
+              modelValue: row.status === 1,
+              activeValue: true,
+              inactiveValue: false,
+              'onUpdate:modelValue': (val: string | number | boolean) =>
+                handleStatusToggle(row, Boolean(val))
+            })
         },
         {
           prop: 'created',
@@ -113,42 +115,49 @@
         {
           prop: 'operation',
           label: t('user.actions'),
-          width: 240,
+          width: 180,
           fixed: 'right',
           align: 'center',
           formatter: (row: UserListItem) =>
-            h('div', { class: 'flex justify-center gap-1 flex-wrap' }, [
-              // Edit
-              h(
-                ElButton,
-                { type: 'primary', size: 'small', onClick: () => toEdit(row) },
-                () => t('user.edit')
-              ),
-              // Change password
-              h(
-                ElButton,
-                { type: 'success', size: 'small', onClick: () => toEditPassword(row) },
-                () => t('user.changePassword')
-              ),
-              // Enable / Disable toggle
-              row.status === 1
-                ? h(
-                    ElButton,
-                    { type: 'warning', size: 'small', onClick: () => toggleStatus(row) },
-                    () => t('user.disable')
-                  )
-                : h(
-                    ElButton,
-                    { type: 'info', size: 'small', onClick: () => toggleStatus(row) },
-                    () => t('user.enable')
-                  ),
-              // Delete
-              h(
-                ElButton,
-                { type: 'danger', size: 'small', onClick: () => removeUser(row) },
-                () => t('user.delete')
-              )
-            ])
+            h(
+              'div',
+              {
+                style:
+                  'display:grid;grid-template-columns:1fr 1fr;gap:6px;justify-items:stretch;padding:4px 0'
+              },
+              [
+                h(
+                  ElButton,
+                  {
+                    type: 'primary',
+                    size: 'small',
+                    style: 'margin:0',
+                    onClick: () => toEdit(row)
+                  },
+                  () => t('user.edit')
+                ),
+                h(
+                  ElButton,
+                  {
+                    type: 'success',
+                    size: 'small',
+                    style: 'margin:0',
+                    onClick: () => toEditPassword(row)
+                  },
+                  () => t('user.changePassword')
+                ),
+                h(
+                  ElButton,
+                  {
+                    type: 'danger',
+                    size: 'small',
+                    style: 'margin:0;grid-column:1 / -1',
+                    onClick: () => removeUser(row)
+                  },
+                  () => t('user.delete')
+                )
+              ]
+            )
         }
       ]
     }
@@ -170,18 +179,19 @@
 
   // ── Enable / Disable ──────────────────────────────────────────────────────
 
-  async function toggleStatus(row: UserListItem) {
+  async function handleStatusToggle(row: UserListItem, enabled: boolean) {
     try {
-      if (row.status === 1) {
-        await fetchUserDisable(row.id)
-        ElMessage.success(t('user.disableSuccess'))
-      } else {
+      if (enabled) {
         await fetchUserEnable(row.id)
         ElMessage.success(t('user.enableSuccess'))
+      } else {
+        await fetchUserDisable(row.id)
+        ElMessage.success(t('user.disableSuccess'))
       }
       refreshData()
     } catch {
-      // error toast handled by http interceptor
+      // revert optimistic switch state on failure
+      refreshData()
     }
   }
 

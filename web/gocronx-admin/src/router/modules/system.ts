@@ -21,16 +21,6 @@ export const systemRoutes: AppRouteRecord = {
       }
     },
     {
-      path: 'role',
-      name: 'Role',
-      component: '/system/role',
-      meta: {
-        title: 'menus.system.role',
-        keepAlive: true,
-        roles: ['R_SUPER']
-      }
-    },
-    {
       path: 'user-center',
       name: 'UserCenter',
       component: '/system/user-center',
@@ -39,21 +29,6 @@ export const systemRoutes: AppRouteRecord = {
         isHide: true,
         keepAlive: true,
         isHideTab: true
-      }
-    },
-    {
-      path: 'menu',
-      name: 'Menus',
-      component: '/system/menu',
-      meta: {
-        title: 'menus.system.menu',
-        keepAlive: true,
-        roles: ['R_SUPER'],
-        authList: [
-          { title: '新增', authMark: 'add' },
-          { title: '编辑', authMark: 'edit' },
-          { title: '删除', authMark: 'delete' }
-        ]
       }
     },
     {
@@ -86,6 +61,48 @@ export const systemRoutes: AppRouteRecord = {
         title: 'menus.system.twoFactor',
         isHide: true,
         keepAlive: false
+      }
+    },
+    {
+      path: 'user/edit/:id',
+      name: 'UserEdit',
+      component: '/system/user/edit',
+      meta: {
+        title: 'menus.system.userEdit',
+        isHide: true,
+        keepAlive: false
+      }
+    },
+    {
+      path: 'user/edit-password/:id',
+      name: 'UserEditPassword',
+      component: '/system/user/edit-password',
+      meta: {
+        title: 'menus.system.userEditPassword',
+        isHide: true,
+        keepAlive: false
+      }
+    },
+    {
+      path: 'log-retention',
+      name: 'LogRetention',
+      component: '/system/log-retention/index',
+      meta: {
+        title: 'menus.system.logRetention',
+        icon: 'ri:time-line',
+        keepAlive: true,
+        roles: ['R_SUPER', 'R_ADMIN']
+      }
+    },
+    {
+      path: 'notification',
+      name: 'Notification',
+      component: '/system/notification/index',
+      meta: {
+        title: 'menus.system.notification',
+        icon: 'ri:notification-2-line',
+        keepAlive: true,
+        roles: ['R_SUPER', 'R_ADMIN']
       }
     }
   ]

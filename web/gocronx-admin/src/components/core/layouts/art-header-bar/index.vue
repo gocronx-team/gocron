@@ -43,11 +43,6 @@
           @click="reload"
         />
 
-        <!-- 快速入口 -->
-        <ArtFastEnter v-if="shouldShowFastEnter && width >= headerBarFastEnterMinWidth">
-          <ArtIconButton icon="ri:function-line" class="ml-3" />
-        </ArtFastEnter>
-
         <!-- 面包屑 -->
         <ArtBreadcrumb
           v-if="(shouldShowBreadcrumb && isLeftMenu) || (shouldShowBreadcrumb && isDualMenu)"
@@ -109,25 +104,16 @@
           </template>
         </ElDropdown>
 
-        <!-- 通知按钮 -->
-        <ArtIconButton
-          v-if="shouldShowNotification"
-          icon="ri:notification-2-line"
-          class="notice-button relative"
-          @click="visibleNotice"
+        <!-- GitHub 链接 -->
+        <a
+          href="https://github.com/gocronx-team/gocron"
+          target="_blank"
+          rel="noopener"
+          title="GitHub"
+          class="github-link"
         >
-          <div class="absolute top-2 right-2 size-1.5 !bg-danger rounded-full"></div>
-        </ArtIconButton>
-
-        <!-- 聊天按钮 -->
-        <ArtIconButton
-          v-if="shouldShowChat"
-          icon="ri:message-3-line"
-          class="chat-button relative"
-          @click="openChat"
-        >
-          <div class="breathing-dot absolute top-2 right-2 size-1.5 !bg-success rounded-full"></div>
-        </ArtIconButton>
+          <ArtIconButton icon="ri:github-fill" />
+        </a>
 
         <!-- 设置按钮 -->
         <div v-if="shouldShowSettings">
@@ -163,8 +149,6 @@
     <!-- 标签页 -->
     <ArtWorkTab />
 
-    <!-- 通知 -->
-    <ArtNotification v-model:value="showNotice" ref="notice" />
   </div>
 </template>
 
@@ -201,16 +185,12 @@
   const {
     shouldShowMenuButton,
     shouldShowRefreshButton,
-    shouldShowFastEnter,
     shouldShowBreadcrumb,
     shouldShowGlobalSearch,
     shouldShowFullscreen,
-    shouldShowNotification,
-    shouldShowChat,
     shouldShowLanguage,
     shouldShowSettings,
-    shouldShowThemeToggle,
-    fastEnterMinWidth: headerBarFastEnterMinWidth
+    shouldShowThemeToggle
   } = useHeaderBar()
 
   const { menuOpen, systemThemeColor, showSettingGuide, menuType, isDark, tabStyle } =
@@ -218,9 +198,6 @@
 
   const { language } = storeToRefs(userStore)
   const { menuList } = storeToRefs(menuStore)
-
-  const showNotice = ref(false)
-  const notice = ref(null)
 
   // 菜单类型判断
   const isLeftMenu = computed(() => menuType.value === MenuTypeEnum.LEFT)
@@ -232,11 +209,6 @@
 
   onMounted(() => {
     initLanguage()
-    document.addEventListener('click', bodyCloseNotice)
-  })
-
-  onUnmounted(() => {
-    document.removeEventListener('click', bodyCloseNotice)
   })
 
   /**
@@ -310,40 +282,18 @@
     mittBus.emit('openSearchDialog')
   }
 
-  /**
-   * 点击页面其他区域关闭通知面板
-   * @param {Event} e - 点击事件对象
-   */
-  const bodyCloseNotice = (e: any): void => {
-    if (!showNotice.value) return
-
-    const target = e.target as HTMLElement
-
-    // 检查是否点击了通知按钮或通知面板内部
-    const isNoticeButton = target.closest('.notice-button')
-    const isNoticePanel = target.closest('.art-notification-panel')
-
-    if (!isNoticeButton && !isNoticePanel) {
-      showNotice.value = false
-    }
-  }
-
-  /**
-   * 切换通知面板显示状态
-   */
-  const visibleNotice = (): void => {
-    showNotice.value = !showNotice.value
-  }
-
-  /**
-   * 打开聊天窗口
-   */
-  const openChat = (): void => {
-    mittBus.emit('openChat')
-  }
 </script>
 
 <style lang="scss" scoped>
+  // GitHub link wrapper — inherit color so the ArtIconButton renders with
+  // the same icon color as sibling header icons.
+  .github-link {
+    color: inherit;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+  }
+
   /* Custom animations */
   @keyframes rotate180 {
     0% {
@@ -459,15 +409,6 @@
 
   .notice-button:hover :deep(.art-svg-icon) {
     animation: shake 0.5s ease-in-out;
-  }
-
-  .chat-button:hover :deep(.art-svg-icon) {
-    animation: shake 0.5s ease-in-out;
-  }
-
-  /* Breathing animation for chat dot */
-  .breathing-dot {
-    animation: breathing 1.5s ease-in-out infinite;
   }
 
   /* iPad breakpoint adjustments */

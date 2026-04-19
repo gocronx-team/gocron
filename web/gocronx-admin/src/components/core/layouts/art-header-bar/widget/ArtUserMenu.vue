@@ -70,7 +70,7 @@
   defineOptions({ name: 'ArtUserMenu' })
 
   const router = useRouter()
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const userStore = useUserStore()
 
   const { getUserInfo: userInfo } = storeToRefs(userStore)
@@ -85,10 +85,11 @@
   }
 
   /**
-   * 打开文档页面
+   * 打开文档页面（跟随当前语言切换中英文站点）
    */
   const toDocs = (): void => {
-    window.open(WEB_LINKS.DOCS)
+    const url = locale.value === 'zh' ? WEB_LINKS.DOCS_ZH : WEB_LINKS.DOCS_EN
+    window.open(url)
   }
 
   /**

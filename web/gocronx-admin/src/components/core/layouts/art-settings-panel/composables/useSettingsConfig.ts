@@ -125,13 +125,6 @@ export function useSettingsConfig() {
         headerBarKey: 'menuButton' as const
       },
       {
-        key: 'showFastEnter',
-        label: t('setting.basics.list.fastEnter'),
-        type: 'switch' as const,
-        handler: 'fastEnter',
-        headerBarKey: 'fastEnter' as const
-      },
-      {
         key: 'showRefreshButton',
         label: t('setting.basics.list.reloadPage'),
         type: 'switch' as const,

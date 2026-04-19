@@ -27,7 +27,6 @@
   const {
     uniqueOpened,
     showMenuButton,
-    showFastEnter,
     showRefreshButton,
     showCrumbs,
     showWorkTab,
@@ -45,7 +44,6 @@
   const settingValueMap = {
     uniqueOpened,
     showMenuButton,
-    showFastEnter,
     showRefreshButton,
     showCrumbs,
     showWorkTab,

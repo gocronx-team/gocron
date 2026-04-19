@@ -195,7 +195,7 @@
   display: flex;
   flex-direction: column;
 
-  @media (max-width: 640px) {
+  @media (max-width: 768px) {
     height: auto;
   }
 }
@@ -288,5 +288,118 @@
 @media screen and (max-width: 1180px) {
   * {
     -webkit-tap-highlight-color: transparent;
+  }
+}
+
+// ── Mobile responsiveness (≤768px) ────────────────────────────────────────────
+
+@media (max-width: 768px) {
+  // Dialogs: shrink to near full viewport width
+  .el-dialog {
+    width: 92vw !important;
+    margin: 20px auto !important;
+  }
+
+  .el-dialog__body {
+    padding: 16px !important;
+  }
+
+  // Edit forms: stack labels above inputs
+  .el-form--label-right .el-form-item__label,
+  .el-form--label-left .el-form-item__label {
+    text-align: left !important;
+  }
+
+  .el-form-item {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .el-form-item__label {
+    justify-content: flex-start !important;
+    padding-bottom: 4px !important;
+    line-height: 1.6 !important;
+    width: auto !important;
+    height: auto !important;
+  }
+
+  .el-form-item__content {
+    margin-left: 0 !important;
+  }
+
+  // Tables: ensure horizontal scroll is not clipped
+  .art-table .el-table {
+    overflow-x: auto !important;
+  }
+
+  .art-table-card .el-card__body {
+    overflow-x: auto !important;
+  }
+
+  // ElRow columns: full width on mobile to avoid cramped multi-column layouts
+  .el-row > .el-col {
+    max-width: 100% !important;
+    flex: 0 0 100% !important;
+  }
+
+  // Inline filter forms: wrap each item to its own row so hardcoded
+  // `style="width: 200px"` on ElInput / ElSelect / ElDatePicker doesn't
+  // overflow the viewport. Widgets expand to the form-item width instead.
+  .el-form--inline .el-form-item {
+    display: flex !important;
+    margin-right: 0 !important;
+    margin-bottom: 12px !important;
+    width: 100% !important;
+  }
+
+  .el-form--inline .el-form-item .el-input,
+  .el-form--inline .el-form-item .el-select,
+  .el-form--inline .el-form-item .el-date-editor,
+  .el-form--inline .el-form-item .el-input-number {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  // Any ElInput / ElSelect / ElInputNumber / ElDatePicker with a hardcoded
+  // inline width style should still stretch to fit on mobile.
+  .el-input[style*='width'],
+  .el-select[style*='width'],
+  .el-date-editor[style*='width'],
+  .el-input-number[style*='width'] {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  // Filter card action buttons: stack left/right content cleanly
+  .art-table-card :deep(.art-table-header),
+  .el-card :deep(.art-table-header) {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  // ArtTableHeader's right-side button clusters should wrap, not overflow
+  .art-table-header > * {
+    min-width: 0 !important;
+    flex-wrap: wrap !important;
+  }
+
+  // Collapse large form padding on narrow screens
+  .el-card__body {
+    padding: 14px !important;
+  }
+
+  // Task & template edit pages: allow their sticky action bar to span
+  // the card width without overshooting the viewport
+  .form-actions-bar {
+    justify-content: center !important;
+    padding: 10px 12px !important;
+  }
+
+  // Inline help text that sits beside inputs often wraps awkwardly; let it
+  // drop to its own line naturally
+  .inline-help {
+    display: block !important;
+    margin-left: 0 !important;
+    margin-top: 4px !important;
   }
 }

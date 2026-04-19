@@ -11,7 +11,7 @@ export const hostRoutes: AppRouteRecord = {
   },
   children: [
     {
-      path: '',
+      path: 'list',
       name: 'HostList',
       component: '/host/index',
       meta: {

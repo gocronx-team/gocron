@@ -19,9 +19,6 @@ export { useTheme } from './core/useTheme'
 // 礼花+文字滚动
 export { useCeremony } from './core/useCeremony'
 
-// 顶栏快速入口
-export { useFastEnter } from './core/useFastEnter'
-
 // 顶栏功能管理
 export { useHeaderBar } from './core/useHeaderBar'
 

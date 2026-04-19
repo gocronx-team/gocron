@@ -70,7 +70,6 @@
     { comment: '菜单风格', key: 'menuThemeType', enumMap: ENUM_MAPS.menuTheme },
     { comment: '系统主题颜色', key: 'systemThemeColor' },
     { comment: '是否显示菜单按钮', key: 'showMenuButton' },
-    { comment: '是否显示快速入口', key: 'showFastEnter' },
     { comment: '是否显示刷新按钮', key: 'showRefreshButton' },
     { comment: '是否显示面包屑', key: 'showCrumbs' },
     { comment: '是否显示工作台标签', key: 'showWorkTab' },
@@ -186,9 +185,6 @@
       // 界面显示（切换类方法）
       toggleIfDifferent(settingStore.showMenuButton, config.showMenuButton, () =>
         settingStore.setButton()
-      )
-      toggleIfDifferent(settingStore.showFastEnter, config.showFastEnter, () =>
-        settingStore.setFastEnter()
       )
       toggleIfDifferent(settingStore.showRefreshButton, config.showRefreshButton, () =>
         settingStore.setShowRefreshButton()

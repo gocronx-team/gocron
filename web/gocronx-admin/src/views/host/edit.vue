@@ -120,7 +120,7 @@
       const data = await fetchHostDetail(id)
       if (!data) {
         ElMessage.error(t('host.notFound'))
-        router.push('/host')
+        router.push('/host/list')
         return
       }
       form.id = data.id
@@ -130,7 +130,7 @@
       form.remark = data.remark ?? ''
     } catch {
       // error toast handled by http interceptor
-      router.push('/host')
+      router.push('/host/list')
     }
   }
 
@@ -152,7 +152,7 @@
         remark: form.remark
       })
       ElMessage.success(isEdit.value ? t('host.updateSuccess') : t('host.createSuccess'))
-      router.push('/host')
+      router.push('/host/list')
     } catch {
       // error toast handled by http interceptor
     } finally {
@@ -161,7 +161,7 @@
   }
 
   function handleCancel() {
-    router.push('/host')
+    router.push('/host/list')
   }
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────────

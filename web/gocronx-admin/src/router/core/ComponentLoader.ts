@@ -50,10 +50,10 @@ export class ComponentLoader {
   }
 
   /**
-   * 加载 iframe 组件
+   * 加载 iframe 组件（gocron 不使用 iframe 路由，返回空占位组件）
    */
   loadIframe(): () => Promise<any> {
-    return () => import('@/views/outside/Iframe.vue')
+    return this.createEmptyComponent()
   }
 
   /**

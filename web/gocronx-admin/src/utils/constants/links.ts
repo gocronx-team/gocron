@@ -6,30 +6,15 @@
  * @author GoCronX Team
  */
 export const WEB_LINKS = {
-  // Github 主页
-  GITHUB_HOME: 'https://github.com/gocronx/gocronx-admin',
-
   // 项目 Github 主页
-  GITHUB: 'https://github.com/gocronx/gocronx-admin',
+  GITHUB: 'https://github.com/gocronx-team/gocron',
 
-  // 个人博客
-  BLOG: 'https://github.com/gocronx',
+  // 中文文档
+  DOCS_ZH: 'https://gocron-docs.pages.dev/zh/',
 
-  // 项目文档
-  DOCS: 'https://github.com/gocronx/gocronx-admin',
+  // 英文文档
+  DOCS_EN: 'https://gocron-docs.pages.dev/en/',
 
-  // 精简版本
-  LiteVersion: 'https://github.com/gocronx/gocronx-admin',
-
-  // v2.6.1版本
-  OldVersion: 'https://github.com/gocronx/gocronx-admin',
-
-  // 项目社区
-  COMMUNITY: 'https://github.com/gocronx/gocronx-admin/discussions',
-
-  // 个人 Bilibili 主页
-  BILIBILI: '',
-
-  // 项目介绍
-  INTRODUCE: 'https://github.com/gocronx/gocronx-admin'
+  // 向后兼容别名 —— 默认走英文站，语言相关场景请直接用 DOCS_ZH / DOCS_EN
+  DOCS: 'https://gocron-docs.pages.dev/en/'
 }

@@ -16,6 +16,7 @@
 
 import axios, { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 import { useUserStore } from '@/store/modules/user'
+import { router } from '@/router'
 import { ApiStatus } from './status'
 import { HttpError, handleError, showError, showSuccess } from './error'
 import { $t } from '@/locales'
@@ -112,17 +113,27 @@ function createHttpError(message: string, code: number) {
   return new HttpError(message, code)
 }
 
-/** 处理401错误（带防抖） */
-function handleUnauthorizedError(message?: string): never {
-  const error = createHttpError(message || $t('httpMsg.unauthorized'), ApiStatus.unauthorized)
+/**
+ * 处理401错误（带防抖）
+ *
+ * Always uses our own friendly i18n copy; we deliberately ignore any
+ * backend message like "auth_failed" / "认证失败" because the user saw
+ * it as unfriendly. Also suppresses the toast if the user is already
+ * on the login page (avoids a noisy message on fresh page load).
+ */
+function handleUnauthorizedError(_message?: string): never {
+  const error = createHttpError($t('httpMsg.unauthorized'), ApiStatus.unauthorized)
 
   if (!isUnauthorizedErrorShown) {
     isUnauthorizedErrorShown = true
-    logOut()
-
     unauthorizedTimer = setTimeout(resetUnauthorizedError, UNAUTHORIZED_DEBOUNCE_TIME)
 
-    showError(error, true)
+    const onLoginPage = router.currentRoute.value?.path?.startsWith('/auth/login')
+    if (!onLoginPage) {
+      showError(error, true)
+      logOut()
+    }
+
     throw error
   }
 

@@ -257,7 +257,7 @@
         workbook.Props = {
           Title: filename,
           Subject: '数据导出',
-          Author: props.workbookOptions.creator || 'GoCronX Admin',
+          Author: props.workbookOptions.creator || 'gocron',
           Manager: props.workbookOptions.lastModifiedBy || '',
           Company: '系统导出',
           Category: '数据',

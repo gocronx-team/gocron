@@ -32,8 +32,7 @@ export function useHeaderBar() {
   const headerBarConfigRef = computed<HeaderBarFeatureConfig>(() => headerBarConfig)
 
   // 从store中获取相关状态
-  const { showMenuButton, showFastEnter, showRefreshButton, showCrumbs, showLanguage } =
-    storeToRefs(settingStore)
+  const { showMenuButton, showRefreshButton, showCrumbs, showLanguage } = storeToRefs(settingStore)
 
   /**
    * 检查特定功能是否启用
@@ -63,11 +62,6 @@ export function useHeaderBar() {
     return isFeatureEnabled('refreshButton') && showRefreshButton.value
   })
 
-  // 检查快速入口是否显示
-  const shouldShowFastEnter = computed(() => {
-    return isFeatureEnabled('fastEnter') && showFastEnter.value
-  })
-
   // 检查面包屑是否显示
   const shouldShowBreadcrumb = computed(() => {
     return isFeatureEnabled('breadcrumb') && showCrumbs.value
@@ -83,16 +77,6 @@ export function useHeaderBar() {
     return isFeatureEnabled('fullscreen')
   })
 
-  // 检查通知中心是否显示
-  const shouldShowNotification = computed(() => {
-    return isFeatureEnabled('notification')
-  })
-
-  // 检查聊天功能是否显示
-  const shouldShowChat = computed(() => {
-    return isFeatureEnabled('chat')
-  })
-
   // 检查语言切换是否显示
   const shouldShowLanguage = computed(() => {
     return isFeatureEnabled('language') && showLanguage.value
@@ -106,12 +90,6 @@ export function useHeaderBar() {
   // 检查主题切换是否显示
   const shouldShowThemeToggle = computed(() => {
     return isFeatureEnabled('themeToggle')
-  })
-
-  // 获取快速入口的最小宽度
-  const fastEnterMinWidth = computed(() => {
-    const config = getFeatureConfig('fastEnter')
-    return (config as any)?.minWidth || 1200
   })
 
   /**
@@ -175,18 +153,12 @@ export function useHeaderBar() {
     // 显示状态计算属性
     shouldShowMenuButton, // 是否显示菜单按钮
     shouldShowRefreshButton, // 是否显示刷新按钮
-    shouldShowFastEnter, // 是否显示快速入口
     shouldShowBreadcrumb, // 是否显示面包屑
     shouldShowGlobalSearch, // 是否显示全局搜索
     shouldShowFullscreen, // 是否显示全屏按钮
-    shouldShowNotification, // 是否显示通知中心
-    shouldShowChat, // 是否显示聊天功能
     shouldShowLanguage, // 是否显示语言切换
     shouldShowSettings, // 是否显示设置面板
     shouldShowThemeToggle, // 是否显示主题切换
-
-    // 配置相关
-    fastEnterMinWidth, // 快速入口最小宽度
 
     // 方法
     isFeatureEnabled, // 检查功能是否启用
