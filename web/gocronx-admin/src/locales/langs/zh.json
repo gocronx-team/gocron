@@ -48,20 +48,11 @@
   "setting": {
     "menuType": {
       "title": "菜单布局",
-      "list": [
-        "垂直",
-        "水平",
-        "混合",
-        "双列"
-      ]
+      "list": ["垂直", "水平", "混合", "双列"]
     },
     "theme": {
       "title": "主题风格",
-      "list": [
-        "浅色",
-        "深色",
-        "系统"
-      ]
+      "list": ["浅色", "深色", "系统"]
     },
     "menu": {
       "title": "菜单风格"
@@ -71,17 +62,11 @@
     },
     "box": {
       "title": "盒子样式",
-      "list": [
-        "边框",
-        "阴影"
-      ]
+      "list": ["边框", "阴影"]
     },
     "container": {
       "title": "容器宽度",
-      "list": [
-        "铺满",
-        "定宽"
-      ]
+      "list": ["铺满", "定宽"]
     },
     "basics": {
       "title": "基础配置",
@@ -127,14 +112,8 @@
   "notice": {
     "title": "通知",
     "btnRead": "标为已读",
-    "bar": [
-      "通知",
-      "消息",
-      "代办"
-    ],
-    "text": [
-      "暂无"
-    ],
+    "bar": ["通知", "消息", "代办"],
+    "text": ["暂无"],
     "viewAll": "查看全部"
   },
   "worktab": {
@@ -313,6 +292,20 @@
     "username": "用户名",
     "ip": "登录 IP",
     "loginTime": "登录时间"
+  },
+  "dashboard": {
+    "taskCount": "任务数",
+    "taskLogCount": "执行次数 (近7天)",
+    "failedCount": "失败数 (近7天)",
+    "successRate": "成功率 (近7天)",
+    "executionTrend": "执行趋势",
+    "last7Days": "近7天详细数据",
+    "refresh": "刷新",
+    "colDate": "日期",
+    "colTotal": "总次数",
+    "colSuccess": "成功",
+    "colFailed": "失败",
+    "colSuccessRate": "成功率"
   },
   "table": {
     "form": {

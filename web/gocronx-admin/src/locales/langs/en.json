@@ -48,20 +48,11 @@
   "setting": {
     "menuType": {
       "title": "Menu Layout",
-      "list": [
-        "Vertical",
-        "Horizontal",
-        "Mixed",
-        "Dual"
-      ]
+      "list": ["Vertical", "Horizontal", "Mixed", "Dual"]
     },
     "theme": {
       "title": "Theme Style",
-      "list": [
-        "Light",
-        "Dark",
-        "System"
-      ]
+      "list": ["Light", "Dark", "System"]
     },
     "menu": {
       "title": "Menu Style"
@@ -71,17 +62,11 @@
     },
     "box": {
       "title": "Box Style",
-      "list": [
-        "Border",
-        "Shadow"
-      ]
+      "list": ["Border", "Shadow"]
     },
     "container": {
       "title": "Container Width",
-      "list": [
-        "Full",
-        "Boxed"
-      ]
+      "list": ["Full", "Boxed"]
     },
     "basics": {
       "title": "Basic Config",
@@ -127,14 +112,8 @@
   "notice": {
     "title": "Notice",
     "btnRead": "Mark as read",
-    "bar": [
-      "Notice",
-      "Message",
-      "Todo"
-    ],
-    "text": [
-      "No"
-    ],
+    "bar": ["Notice", "Message", "Todo"],
+    "text": ["No"],
     "viewAll": "View all"
   },
   "worktab": {
@@ -313,6 +292,20 @@
     "username": "Username",
     "ip": "Login IP",
     "loginTime": "Login Time"
+  },
+  "dashboard": {
+    "taskCount": "Tasks",
+    "taskLogCount": "Total Executions (7d)",
+    "failedCount": "Failed (7d)",
+    "successRate": "Success Rate (7d)",
+    "executionTrend": "Execution Trend",
+    "last7Days": "Last 7 Days Detail",
+    "refresh": "Refresh",
+    "colDate": "Date",
+    "colTotal": "Total",
+    "colSuccess": "Success",
+    "colFailed": "Failed",
+    "colSuccessRate": "Success Rate"
   },
   "table": {
     "form": {
