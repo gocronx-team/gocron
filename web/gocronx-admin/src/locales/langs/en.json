@@ -566,6 +566,7 @@
     "actions": "Actions",
     "edit": "Edit",
     "delete": "Delete",
+    "useTemplate": "Use Template",
     "addTemplate": "New Template",
     "search": "Search",
     "reset": "Reset",

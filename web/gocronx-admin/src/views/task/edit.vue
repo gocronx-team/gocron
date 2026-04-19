@@ -856,6 +856,13 @@
 
     if (isEdit.value) {
       loadDetail(routeId.value)
+    } else {
+      // Create mode: auto-apply template if ?template_id=X query is present
+      const queryTplId = route.query.template_id
+      if (queryTplId) {
+        const tplId = Number(queryTplId)
+        if (tplId > 0) handleTemplateChange(tplId)
+      }
     }
   })
 

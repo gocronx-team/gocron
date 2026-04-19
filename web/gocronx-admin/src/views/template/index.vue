@@ -128,11 +128,20 @@
         {
           prop: 'action',
           label: t('template.actions'),
-          width: 180,
+          width: 260,
           fixed: 'right',
           align: 'center',
           formatter: (row: TemplateListItem) =>
             h('span', { style: 'display:inline-flex;gap:6px;' }, [
+              h(
+                ElButton,
+                {
+                  type: 'success',
+                  size: 'small',
+                  onClick: () => useTemplate(row)
+                },
+                () => t('template.useTemplate')
+              ),
               h(
                 ElButton,
                 {
@@ -174,6 +183,10 @@
 
   function toEdit(row: TemplateListItem) {
     router.push(`/template/edit/${row.id}`)
+  }
+
+  function useTemplate(row: TemplateListItem) {
+    router.push({ path: '/task/create', query: { template_id: String(row.id) } })
   }
 
   async function handleRemove(row: TemplateListItem) {

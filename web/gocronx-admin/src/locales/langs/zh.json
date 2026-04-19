@@ -566,6 +566,7 @@
     "actions": "操作",
     "edit": "编辑",
     "delete": "删除",
+    "useTemplate": "应用模板",
     "addTemplate": "新建模板",
     "search": "搜索",
     "reset": "重置",
