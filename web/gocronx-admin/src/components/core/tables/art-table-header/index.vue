@@ -323,19 +323,24 @@
 <style scoped>
   @reference '@styles/core/tailwind.css';
 
+  /* Toolbar icon buttons: outlined look so they stay visible on white cards. */
+  /* bg-g-300/55 blended into white made them near-invisible. */
   .button {
-    @apply ml-2 
-    size-8 
-    flex 
-    items-center 
-    justify-center 
-    cursor-pointer 
-    rounded-md 
-    bg-g-300/55
-    dark:bg-g-300/40
-    text-g-700  
-    hover:bg-g-300 
-    md:ml-0 
+    @apply ml-2
+    size-8
+    flex
+    items-center
+    justify-center
+    cursor-pointer
+    rounded-md
+    border
+    border-g-400
+    bg-transparent
+    text-g-600
+    dark:text-g-800
+    hover:bg-g-200
+    dark:hover:bg-g-300
+    md:ml-0
     md:mr-2.5;
   }
 </style>
