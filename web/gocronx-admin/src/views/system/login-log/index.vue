@@ -21,6 +21,7 @@
   import { useTable } from '@/hooks/core/useTable'
   import { fetchLoginLogList, type LoginLogItem } from '@/api/login-log'
   import { useI18n } from 'vue-i18n'
+  import { formatDateTime } from '@/utils/date'
 
   defineOptions({ name: 'LoginLog' })
 
@@ -54,7 +55,7 @@
         {
           prop: 'created',
           label: t('loginLog.loginTime'),
-          formatter: (row: LoginLogItem) => row.created
+          formatter: (row: LoginLogItem) => formatDateTime(row.created)
         }
       ]
     }

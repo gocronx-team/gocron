@@ -112,6 +112,7 @@
   import { ElTag, ElButton, ElTableColumn, ElTable } from 'element-plus'
   import { useTable } from '@/hooks/core/useTable'
   import { fetchAuditList, type AuditListItem } from '@/api/audit'
+  import { formatDateTime } from '@/utils/date'
   import {
     AUDIT_MODULES,
     AUDIT_ACTIONS,
@@ -209,7 +210,8 @@
           prop: 'created',
           label: t('audit.colCreated'),
           width: 180,
-          align: 'center'
+          align: 'center',
+          formatter: (row: AuditListItem) => formatDateTime(row.created)
         },
         {
           prop: 'username',
