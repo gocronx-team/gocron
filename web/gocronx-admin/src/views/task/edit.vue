@@ -4,9 +4,19 @@
   <div class="task-edit-page">
     <ElCard shadow="never">
       <template #header>
-        <span class="text-base font-medium">
-          {{ isEdit ? t('task.editTitle') : t('task.createTitle') }}
-        </span>
+        <div class="flex items-center justify-between">
+          <span class="text-base font-medium">
+            {{ isEdit ? t('task.editTitle') : t('task.createTitle') }}
+          </span>
+          <ElButton
+            v-if="isEdit"
+            size="small"
+            :icon="Collection"
+            @click="openSaveAsTemplate"
+          >
+            {{ t('template.saveAsTemplate') }}
+          </ElButton>
+        </div>
       </template>
 
       <ElForm
@@ -493,6 +503,64 @@
         </ElFormItem>
       </ElForm>
     </ElCard>
+
+    <!-- Save-as-template dialog -->
+    <ElDialog
+      v-model="saveAsTemplateVisible"
+      :title="t('template.saveAsTemplate')"
+      width="520px"
+      align-center
+      destroy-on-close
+    >
+      <ElAlert
+        type="warning"
+        :closable="false"
+        :title="t('template.saveAsTemplateWarning')"
+        style="margin-bottom: 16px"
+      />
+      <ElForm :model="saveAsTemplateForm" label-width="90px" @submit.prevent>
+        <ElFormItem :label="t('template.saveAsTemplateName')">
+          <ElInput
+            v-model.trim="saveAsTemplateForm.name"
+            :placeholder="t('template.templateNamePlaceholder')"
+            clearable
+          />
+        </ElFormItem>
+        <ElFormItem :label="t('template.saveAsTemplateDesc')">
+          <ElInput
+            v-model="saveAsTemplateForm.description"
+            :placeholder="t('template.templateDescPlaceholder')"
+            clearable
+          />
+        </ElFormItem>
+        <ElFormItem :label="t('template.saveAsTemplateCategory')">
+          <ElSelect
+            v-model="saveAsTemplateForm.category"
+            filterable
+            allow-create
+            style="width: 100%"
+          >
+            <ElOption value="backup" :label="t('template.category_backup')" />
+            <ElOption value="cleanup" :label="t('template.category_cleanup')" />
+            <ElOption value="monitor" :label="t('template.category_monitor')" />
+            <ElOption value="deploy" :label="t('template.category_deploy')" />
+            <ElOption value="api" :label="t('template.category_api')" />
+            <ElOption value="custom" :label="t('template.category_custom')" />
+          </ElSelect>
+        </ElFormItem>
+      </ElForm>
+      <template #footer>
+        <ElButton @click="saveAsTemplateVisible = false">{{ t('common.cancel') }}</ElButton>
+        <ElButton
+          type="primary"
+          :loading="saveAsTemplateSubmitting"
+          @click="handleSaveAsTemplate"
+          v-ripple
+        >
+          {{ t('task.save') }}
+        </ElButton>
+      </template>
+    </ElDialog>
   </div>
 </template>
 
@@ -500,7 +568,7 @@
   import { ref, reactive, computed, watch, onMounted } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useRoute, useRouter } from 'vue-router'
-  import { Clock, InfoFilled, WarningFilled } from '@element-plus/icons-vue'
+  import { Clock, Collection, InfoFilled, WarningFilled } from '@element-plus/icons-vue'
   import type { FormInstance, FormRules } from 'element-plus'
   import {
     fetchTaskDetail,
@@ -510,7 +578,11 @@
     type CronRun
   } from '@/api/task'
   import { fetchHostList, type HostItem } from '@/api/host'
-  import { fetchTemplateList, fetchTemplateDetail } from '@/api/template'
+  import {
+    fetchTemplateList,
+    fetchTemplateDetail,
+    fetchTemplateSaveFromTask
+  } from '@/api/template'
   import { fetchMail, fetchSlack, fetchWebhook } from '@/api/notification'
   import type { MailUser, SlackChannel, WebhookUrl } from '@/api/notification'
 
@@ -564,6 +636,15 @@
   const webhookUrls = ref<WebhookUrl[]>([])
   const templateOptions = ref<{ id: number; name: string }[]>([])
   const selectedTemplateId = ref<number | null>(null)
+
+  // Save-as-template dialog
+  const saveAsTemplateVisible = ref(false)
+  const saveAsTemplateSubmitting = ref(false)
+  const saveAsTemplateForm = reactive({
+    name: '',
+    description: '',
+    category: 'custom'
+  })
 
   // Cron preview
   const nextRuns = ref<CronRun[]>([])
@@ -839,6 +920,42 @@
       // error handled by http interceptor
     } finally {
       selectedTemplateId.value = null
+    }
+  }
+
+  // ── Save as template ─────────────────────────────────────────────────────────
+
+  function openSaveAsTemplate() {
+    // Pre-fill name with current task name so users just tweak and confirm.
+    saveAsTemplateForm.name = form.name || ''
+    saveAsTemplateForm.description = ''
+    saveAsTemplateForm.category = 'custom'
+    saveAsTemplateVisible.value = true
+  }
+
+  async function handleSaveAsTemplate() {
+    if (!saveAsTemplateForm.name) {
+      ElMessage.warning(t('template.templateNamePlaceholder'))
+      return
+    }
+    if (!form.id) {
+      ElMessage.warning(t('task.notFound'))
+      return
+    }
+    saveAsTemplateSubmitting.value = true
+    try {
+      await fetchTemplateSaveFromTask({
+        task_id: form.id,
+        name: saveAsTemplateForm.name,
+        description: saveAsTemplateForm.description,
+        category: saveAsTemplateForm.category
+      })
+      ElMessage.success(t('template.saveAsTemplateSuccess'))
+      saveAsTemplateVisible.value = false
+    } catch {
+      // error toast handled by http interceptor
+    } finally {
+      saveAsTemplateSubmitting.value = false
     }
   }
 

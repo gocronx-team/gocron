@@ -100,12 +100,14 @@ export function fetchTemplateStore(params: TemplateStoreParams) {
   if (params.timeout !== undefined) form.append('timeout', String(params.timeout))
   if (params.multi !== undefined) form.append('multi', String(params.multi))
   if (params.retry_times !== undefined) form.append('retry_times', String(params.retry_times))
-  if (params.retry_interval !== undefined) form.append('retry_interval', String(params.retry_interval))
+  if (params.retry_interval !== undefined)
+    form.append('retry_interval', String(params.retry_interval))
   if (params.timezone !== undefined) form.append('timezone', params.timezone)
   if (params.notify_status !== undefined) form.append('notify_status', String(params.notify_status))
   if (params.notify_type !== undefined) form.append('notify_type', String(params.notify_type))
   if (params.notify_keyword !== undefined) form.append('notify_keyword', params.notify_keyword)
-  if (params.log_retention_days !== undefined) form.append('log_retention_days', String(params.log_retention_days))
+  if (params.log_retention_days !== undefined)
+    form.append('log_retention_days', String(params.log_retention_days))
 
   return request.post<null>({
     url: '/api/template/store',
@@ -120,5 +122,28 @@ export function fetchTemplateStore(params: TemplateStoreParams) {
 export function fetchTemplateRemove(id: number) {
   return request.post<null>({
     url: `/api/template/remove/${id}`
+  })
+}
+
+/**
+ * POST /api/template/save-from-task
+ * Clone the current task's scheduling/command fields into a new template.
+ */
+export function fetchTemplateSaveFromTask(params: {
+  task_id: number
+  name: string
+  description?: string
+  category?: string
+}) {
+  const form = new URLSearchParams()
+  form.append('task_id', String(params.task_id))
+  form.append('name', params.name)
+  if (params.description !== undefined) form.append('description', params.description)
+  if (params.category !== undefined) form.append('category', params.category)
+
+  return request.post<null>({
+    url: '/api/template/save-from-task',
+    data: form,
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
   })
 }
