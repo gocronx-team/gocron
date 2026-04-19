@@ -2,7 +2,7 @@
 <template>
   <div
     v-if="showWorkTab"
-    class="box-border flex-b w-full px-5 mb-3 select-none max-sm:px-[15px]"
+    class="work-tab-root box-border flex-b w-full px-5 mb-3 select-none max-sm:px-[15px]"
     :class="[
       tabStyle === 'tab-card' ? 'py-1 border-b border-[var(--art-card-border)]' : '',
       tabStyle === 'tab-google' ? 'pt-1 pb-0 border-b border-[var(--art-card-border)]' : ''
@@ -579,6 +579,16 @@
     .box-border.flex.justify-between {
       padding-right: 0.9375rem;
       padding-left: 0.9375rem;
+    }
+  }
+
+  // Hide the entire work-tab row on phone screens.
+  // Mobile users don't juggle multiple tabs; the menu + breadcrumb are enough
+  // for navigation. The tab strip overflows on narrow viewports and steals
+  // scarce vertical space.
+  @media only screen and (width <= 768px) {
+    .work-tab-root {
+      display: none !important;
     }
   }
 </style>
