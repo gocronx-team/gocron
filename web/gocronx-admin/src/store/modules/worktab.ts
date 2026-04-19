@@ -40,7 +40,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { router } from '@/router'
-import { LocationQueryRaw, Router } from 'vue-router'
+import { LocationQueryRaw, RouteRecordName, Router } from 'vue-router'
 import { WorkTab } from '@/types'
 import { useCommon } from '@/hooks/core/useCommon'
 
@@ -434,24 +434,38 @@ export const useWorktabStore = defineStore(
      */
     const validateWorktabs = (routerInstance: Router): void => {
       try {
-        // 动态路由校验：优先使用路由 name 判断有效性；否则用 resolve 匹配参数化路径
+        // 动态路由校验：优先路由 name；fallback 用注册路由的 path 模式做正则匹配。
+        // 之前用 routerInstance.resolve() 会触发 Vue Router 的
+        // "[Vue Router warn] No match found" 在控制台刷屏，手写匹配就不会。
+        const routeMatchers = routerInstance
+          .getRoutes()
+          .map((r) => {
+            const pattern =
+              '^' +
+              r.path
+                // escape regex metacharacters other than ':' and '*'
+                .replace(/[.+?^${}()|[\]\\]/g, '\\$&')
+                // /:param or /:param(regex) -> one path segment
+                .replace(/:[^/]+/g, '[^/]+')
+                // optional trailing slash
+                .replace(/\/$/, '') +
+              '/?$'
+            try {
+              return { name: r.name, regex: new RegExp(pattern) }
+            } catch {
+              return null
+            }
+          })
+          .filter(Boolean) as Array<{ name: RouteRecordName | undefined; regex: RegExp }>
+
         const isTabRouteValid = (tab: Partial<WorkTab>): boolean => {
-          try {
-            if (tab.name) {
-              const routes = routerInstance.getRoutes()
-              if (routes.some((r) => r.name === tab.name)) return true
-            }
-            if (tab.path) {
-              const resolved = routerInstance.resolve({
-                path: tab.path,
-                query: (tab.query as LocationQueryRaw) || undefined
-              })
-              return resolved.matched.length > 0
-            }
-            return false
-          } catch {
-            return false
+          if (tab.name && routeMatchers.some((m) => m.name === tab.name)) {
+            return true
           }
+          if (tab.path) {
+            return routeMatchers.some((m) => m.regex.test(tab.path as string))
+          }
+          return false
         }
 
         // 过滤出有效的标签页
