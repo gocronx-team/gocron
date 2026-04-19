@@ -167,6 +167,9 @@
     "install": {
       "title": "Install"
     },
+    "userMgmt": {
+      "title": "Users"
+    },
     "system": {
       "title": "System",
       "user": "Users",

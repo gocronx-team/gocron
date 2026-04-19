@@ -16,6 +16,7 @@ export const hostRoutes: AppRouteRecord = {
       component: '/host/index',
       meta: {
         title: 'menus.host.list',
+        icon: 'ri:hard-drive-2-line',
         keepAlive: true
       }
     },

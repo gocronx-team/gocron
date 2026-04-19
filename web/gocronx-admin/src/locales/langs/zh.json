@@ -167,6 +167,9 @@
     "install": {
       "title": "系统安装"
     },
+    "userMgmt": {
+      "title": "用户管理"
+    },
     "system": {
       "title": "系统管理",
       "user": "用户管理",
