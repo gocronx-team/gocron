@@ -10,16 +10,18 @@
           <span class="text-base font-medium">{{ t('menus.task.list') }}</span>
         </template>
         <template #right>
-          <ElButton type="success" @click="handleBatchEnable">
-            {{ t('task.batchEnable') }}
-          </ElButton>
-          <ElButton type="warning" @click="handleBatchDisable">
-            {{ t('task.batchDisable') }}
-          </ElButton>
-          <ElButton type="danger" @click="handleBatchRemove">
-            {{ t('task.batchDelete') }}
-          </ElButton>
-          <ElButton type="primary" @click="toCreate">{{ t('task.addTask') }}</ElButton>
+          <div class="header-btn-group">
+            <ElButton type="success" @click="handleBatchEnable">
+              {{ t('task.batchEnable') }}
+            </ElButton>
+            <ElButton type="warning" @click="handleBatchDisable">
+              {{ t('task.batchDisable') }}
+            </ElButton>
+            <ElButton type="danger" @click="handleBatchRemove">
+              {{ t('task.batchDelete') }}
+            </ElButton>
+            <ElButton type="primary" @click="toCreate">{{ t('task.addTask') }}</ElButton>
+          </div>
         </template>
       </ArtTableHeader>
 
@@ -538,5 +540,16 @@
   .task-list-page {
     display: flex;
     flex-direction: column;
+  }
+
+  .header-btn-group {
+    display: inline-flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .header-btn-group :deep(.el-button) {
+    min-width: 110px;
+    margin-left: 0;
   }
 </style>
