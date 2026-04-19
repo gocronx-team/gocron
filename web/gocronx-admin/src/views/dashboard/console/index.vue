@@ -131,9 +131,25 @@
 
   const chartSeries = computed<LineDataItem[]>(() => {
     const asc = [...last7Days.value].reverse()
+    // Render circle markers at every data point. A line of length 1 can't draw
+    // a segment, so without a symbol the chart would look empty on first-day
+    // setups. Bump the radius when only one point exists so it's immediately
+    // visible as a single dot.
+    const isSingle = asc.length <= 1
+    const symbolSize = isSingle ? 10 : 6
     return [
-      { name: t('dashboard.colSuccess'), data: asc.map((r) => r.success) },
-      { name: t('dashboard.colFailed'), data: asc.map((r) => r.failed) }
+      {
+        name: t('dashboard.colSuccess'),
+        data: asc.map((r) => r.success),
+        symbol: 'circle',
+        symbolSize
+      },
+      {
+        name: t('dashboard.colFailed'),
+        data: asc.map((r) => r.failed),
+        symbol: 'circle',
+        symbolSize
+      }
     ]
   })
 
