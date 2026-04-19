@@ -183,6 +183,14 @@
   }
 
   // ── Format helpers ────────────────────────────────────────────────────────
+  // Backend stores task-log hostname as "alias - name<br>alias2 - name2<br>".
+  // For the table cell, split on <br>, drop empties, join with ", ".
+  function formatHostList(raw: string): string {
+    if (!raw) return '-'
+    const parts = raw.split(/<br\s*\/?>/i).map((s) => s.trim()).filter(Boolean)
+    return parts.length > 0 ? parts.join(', ') : '-'
+  }
+
   function formatDuration(seconds: number): string {
     const s = seconds > 0 ? seconds : 1
     if (s < 60) return `${s}s`
@@ -276,7 +284,7 @@
           label: t('task.log.colHost'),
           align: 'center',
           formatter: (row: TaskLogListItem) =>
-            h('span', {}, row.host_name || row.hostname || '-')
+            h('span', {}, formatHostList(row.host_name || row.hostname || ''))
         },
         {
           prop: 'protocol',
