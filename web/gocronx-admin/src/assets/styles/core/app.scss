@@ -402,4 +402,11 @@
     margin-left: 0 !important;
     margin-top: 4px !important;
   }
+
+  // ElMessageBox (confirm/alert) defaults to ~420px which overflows a 390px
+  // mobile viewport. Shrink it the same way we do for ElDialog.
+  .el-message-box {
+    width: 92vw !important;
+    max-width: 92vw !important;
+  }
 }
