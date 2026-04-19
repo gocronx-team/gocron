@@ -8,7 +8,6 @@
   import { useUserStore } from './store/modules/user'
   import zh from 'element-plus/es/locale/lang/zh-cn'
   import en from 'element-plus/es/locale/lang/en'
-  import { systemUpgrade } from './utils/sys'
   import { toggleTransition } from './utils/ui/animation'
   import { checkStorageCompatibility } from './utils/storage'
   import { initializeTheme } from './hooks/core/useTheme'
@@ -29,6 +28,5 @@
   onMounted(() => {
     checkStorageCompatibility()
     toggleTransition(false)
-    systemUpgrade()
   })
 </script>

@@ -83,8 +83,6 @@ export const useSettingStore = defineStore(
     const showSettingGuide = ref(SETTING_DEFAULT_CONFIG.showSettingGuide)
 
     // 功能设置
-    /** 是否自动关闭 */
-    const autoClose = ref(SETTING_DEFAULT_CONFIG.autoClose)
     /** 是否唯一展开 */
     const uniqueOpened = ref(SETTING_DEFAULT_CONFIG.uniqueOpened)
     /** 是否色弱模式 */
@@ -212,13 +210,6 @@ export const useSettingStore = defineStore(
     }
 
     /**
-     * 切换自动关闭
-     */
-    const setAutoClose = () => {
-      autoClose.value = !autoClose.value
-    }
-
-    /**
      * 切换刷新按钮显示
      */
     const setShowRefreshButton = () => {
@@ -331,7 +322,6 @@ export const useSettingStore = defineStore(
       showMenuButton,
       showRefreshButton,
       showCrumbs,
-      autoClose,
       showWorkTab,
       showLanguage,
       showNprogress,
@@ -357,7 +347,6 @@ export const useSettingStore = defineStore(
       setContainerWidth,
       setUniqueOpened,
       setButton,
-      setAutoClose,
       setShowRefreshButton,
       setCrumbs,
       setWorkTab,

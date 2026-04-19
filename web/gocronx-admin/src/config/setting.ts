@@ -57,8 +57,6 @@ export const SETTING_DEFAULT_CONFIG = {
   showNprogress: false,
   /** 是否显示设置引导 */
   showSettingGuide: false,
-  /** 是否自动关闭 */
-  autoClose: false,
   /** 是否唯一展开 */
   uniqueOpened: true,
   /** 是否色弱模式 */

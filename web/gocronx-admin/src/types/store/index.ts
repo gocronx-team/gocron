@@ -65,8 +65,6 @@ export interface SettingState {
   showRefreshButton: boolean
   /** 是否显示面包屑 */
   showCrumbs: boolean
-  /** 是否自动关闭 */
-  autoClose: boolean
   /** 是否显示工作标签页 */
   showWorkTab: boolean
   /** 是否显示语言切换 */

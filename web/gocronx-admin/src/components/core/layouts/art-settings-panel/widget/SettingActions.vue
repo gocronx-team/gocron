@@ -76,7 +76,6 @@
     { comment: '是否显示语言切换', key: 'showLanguage' },
     { comment: '是否显示进度条', key: 'showNprogress' },
     { comment: '是否显示设置引导', key: 'showSettingGuide' },
-    { comment: '是否自动关闭', key: 'autoClose' },
     { comment: '是否唯一展开', key: 'uniqueOpened' },
     { comment: '是否色弱模式', key: 'colorWeak' },
     { comment: '是否刷新', key: 'refresh' },
@@ -197,7 +196,6 @@
       settingStore.setWorkTab(config.showWorkTab)
 
       // 功能设置
-      toggleIfDifferent(settingStore.autoClose, config.autoClose, () => settingStore.setAutoClose())
       toggleIfDifferent(settingStore.uniqueOpened, config.uniqueOpened, () =>
         settingStore.setUniqueOpened()
       )
