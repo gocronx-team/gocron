@@ -309,6 +309,7 @@
           prop: 'action',
           label: t('task.actions'),
           width: 180,
+          fixed: 'right',
           align: 'center',
           formatter: (row: TaskListItem) =>
             h(

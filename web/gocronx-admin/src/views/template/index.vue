@@ -129,6 +129,7 @@
           prop: 'action',
           label: t('template.actions'),
           width: 180,
+          fixed: 'right',
           align: 'center',
           formatter: (row: TemplateListItem) =>
             h('span', { style: 'display:inline-flex;gap:6px;' }, [

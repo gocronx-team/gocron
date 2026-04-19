@@ -320,6 +320,7 @@
           prop: 'action',
           label: t('task.log.colOutput'),
           width: 170,
+          fixed: 'right',
           align: 'center',
           formatter: (row: TaskLogListItem) => {
             const btns = []

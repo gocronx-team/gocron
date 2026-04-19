@@ -194,6 +194,7 @@
           prop: 'action',
           label: t('host.operation'),
           width: 240,
+          fixed: 'right',
           align: 'center',
           formatter: (row: HostItem) =>
             h('span', { style: 'display:inline-flex;gap:6px;' }, [

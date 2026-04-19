@@ -236,6 +236,7 @@
           prop: 'detail',
           label: t('audit.colDetail'),
           width: 120,
+          fixed: 'right',
           align: 'center',
           formatter: (row: AuditListItem) =>
             row.detail
