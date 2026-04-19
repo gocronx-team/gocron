@@ -582,10 +582,8 @@
     }
   }
 
-  // Hide the entire work-tab row on phone screens.
-  // Mobile users don't juggle multiple tabs; the menu + breadcrumb are enough
-  // for navigation. The tab strip overflows on narrow viewports and steals
-  // scarce vertical space.
+  /* Hide the entire work-tab row on phone screens. */
+  /* Mobile users rarely juggle multiple tabs; menu + breadcrumb cover navigation. */
   @media only screen and (width <= 768px) {
     .work-tab-root {
       display: none !important;
