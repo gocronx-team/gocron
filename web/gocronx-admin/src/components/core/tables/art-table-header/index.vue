@@ -5,28 +5,29 @@
       <slot name="left"></slot>
     </div>
 
-    <div class="flex-c md:justify-end max-md:mt-3 max-sm:!hidden">
-      <div
-        v-if="showSearchBar != null"
-        class="button"
-        @click="search"
-        :class="showSearchBar ? 'active !bg-theme hover:!bg-theme/80' : ''"
-      >
-        <ArtSvgIcon icon="ri:search-line" :class="showSearchBar ? 'text-white' : 'text-g-700'" />
-      </div>
-      <div
-        v-if="shouldShow('refresh')"
-        class="button"
-        @click="refresh"
-        :class="{ loading: loading && isManualRefresh }"
-      >
-        <ArtSvgIcon
-          icon="ri:refresh-line"
-          :class="loading && isManualRefresh ? 'animate-spin text-g-600' : ''"
-        />
-      </div>
+    <div class="flex-c md:justify-end max-md:mt-3 max-sm:flex-wrap max-sm:gap-2">
+      <div class="flex-c max-sm:!hidden">
+        <div
+          v-if="showSearchBar != null"
+          class="button"
+          @click="search"
+          :class="showSearchBar ? 'active !bg-theme hover:!bg-theme/80' : ''"
+        >
+          <ArtSvgIcon icon="ri:search-line" :class="showSearchBar ? 'text-white' : 'text-g-700'" />
+        </div>
+        <div
+          v-if="shouldShow('refresh')"
+          class="button"
+          @click="refresh"
+          :class="{ loading: loading && isManualRefresh }"
+        >
+          <ArtSvgIcon
+            icon="ri:refresh-line"
+            :class="loading && isManualRefresh ? 'animate-spin text-g-600' : ''"
+          />
+        </div>
 
-      <ElDropdown v-if="shouldShow('size')" @command="handleTableSizeChange">
+        <ElDropdown v-if="shouldShow('size')" @command="handleTableSizeChange">
         <div class="button">
           <ArtSvgIcon icon="ri:arrow-up-down-fill" />
         </div>
@@ -98,25 +99,26 @@
           </ElScrollbar>
         </div>
       </ElPopover>
-      <!-- 其他设置 -->
-      <ElPopover v-if="shouldShow('settings')" placement="bottom" trigger="click">
-        <template #reference>
-          <div class="button">
-            <ArtSvgIcon icon="ri:settings-line" />
+        <!-- 其他设置 -->
+        <ElPopover v-if="shouldShow('settings')" placement="bottom" trigger="click">
+          <template #reference>
+            <div class="button">
+              <ArtSvgIcon icon="ri:settings-line" />
+            </div>
+          </template>
+          <div>
+            <ElCheckbox v-if="showZebra" v-model="isZebra" :value="true">{{
+              t('table.zebra')
+            }}</ElCheckbox>
+            <ElCheckbox v-if="showBorder" v-model="isBorder" :value="true">{{
+              t('table.border')
+            }}</ElCheckbox>
+            <ElCheckbox v-if="showHeaderBackground" v-model="isHeaderBackground" :value="true">{{
+              t('table.headerBackground')
+            }}</ElCheckbox>
           </div>
-        </template>
-        <div>
-          <ElCheckbox v-if="showZebra" v-model="isZebra" :value="true">{{
-            t('table.zebra')
-          }}</ElCheckbox>
-          <ElCheckbox v-if="showBorder" v-model="isBorder" :value="true">{{
-            t('table.border')
-          }}</ElCheckbox>
-          <ElCheckbox v-if="showHeaderBackground" v-model="isHeaderBackground" :value="true">{{
-            t('table.headerBackground')
-          }}</ElCheckbox>
-        </div>
-      </ElPopover>
+        </ElPopover>
+      </div>
       <slot name="right"></slot>
     </div>
   </div>
