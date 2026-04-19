@@ -26,10 +26,6 @@
                 <ArtSvgIcon icon="ri:mail-line" class="info-icon" />
                 <span>{{ userInfo.email }}</span>
               </div>
-              <div class="info-row">
-                <ArtSvgIcon icon="ri:hashtag" class="info-icon" />
-                <span>ID {{ userInfo.userId ?? '-' }}</span>
-              </div>
             </div>
 
             <ElDivider />
