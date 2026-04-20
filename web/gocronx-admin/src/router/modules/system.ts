@@ -53,6 +53,52 @@ export const systemRoutes: AppRouteRecord = {
         keepAlive: true,
         roles: ['R_SUPER', 'R_ADMIN']
       }
+    },
+    // ── hidden user-related routes ────────────────────────────────────────────
+    // User list is a standalone sidebar entry (router/modules/user.ts), but its
+    // support pages — user center, 2FA, edit user, reset password — live here
+    // as hidden children of the System layout. URLs are unchanged; they just
+    // don't render in the sidebar.
+    {
+      path: 'user-center',
+      name: 'UserCenter',
+      component: '/system/user-center',
+      meta: {
+        title: 'menus.system.userCenter',
+        isHide: true,
+        keepAlive: true,
+        isHideTab: true
+      }
+    },
+    {
+      path: 'two-factor',
+      name: 'TwoFactor',
+      component: '/system/user-center/two-factor',
+      meta: {
+        title: 'menus.system.twoFactor',
+        isHide: true,
+        keepAlive: false
+      }
+    },
+    {
+      path: 'user/edit/:id',
+      name: 'UserEdit',
+      component: '/system/user/edit',
+      meta: {
+        title: 'menus.system.userEdit',
+        isHide: true,
+        keepAlive: false
+      }
+    },
+    {
+      path: 'user/edit-password/:id',
+      name: 'UserEditPassword',
+      component: '/system/user/edit-password',
+      meta: {
+        title: 'menus.system.userEditPassword',
+        isHide: true,
+        keepAlive: false
+      }
     }
   ]
 }

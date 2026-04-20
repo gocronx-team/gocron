@@ -119,11 +119,11 @@
             )
         },
         {
-          prop: 'created',
+          prop: 'created_at',
           label: t('template.created'),
           width: 180,
           align: 'center',
-          formatter: (row: TemplateListItem) => formatDateTime(row.created ?? '')
+          formatter: (row: TemplateListItem) => formatDateTime(row.created_at ?? '')
         },
         {
           prop: 'action',

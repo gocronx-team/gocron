@@ -19,5 +19,6 @@ export function initRouter(app: App<Element>): void {
   app.use(router)
 }
 
-// 主页路径，默认使用菜单第一个有效路径，配置后使用此路径
-export const HOME_PAGE_PATH = ''
+// 主页路径 —— 登录后默认跳转到此。任务列表是 gocron 用户最高频的页面，
+// 选它当首页省去一次额外点击。留空则 fall back 到 getFirstMenuPath（菜单第一项）。
+export const HOME_PAGE_PATH = '/task/list'

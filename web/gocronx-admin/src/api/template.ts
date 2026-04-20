@@ -31,7 +31,9 @@ export interface TemplateListItem {
   notify_keyword?: string
   log_retention_days?: number
   is_builtin?: number
-  created?: string
+  created_at?: string
+  updated_at?: string
+  created_by?: string
 }
 
 export interface TemplateStoreParams {
