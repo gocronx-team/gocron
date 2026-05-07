@@ -16,11 +16,11 @@ type User struct {
 	Salt         string    `json:"-" gorm:"type:char(6);not null"`
 	Email        string    `json:"email" gorm:"type:varchar(50);not null;uniqueIndex;default:''"`
 	TwoFactorKey string    `json:"-" gorm:"column:two_factor_key;type:varchar(100);default:''"`
-	TwoFactorOn  int8      `json:"two_factor_on" gorm:"column:two_factor_on;type:tinyint;not null;default:0"`
+	TwoFactorOn  int8      `json:"two_factor_on" gorm:"column:two_factor_on;smallint;not null;default:0"`
 	CreatedAt    time.Time `json:"created" gorm:"column:created;autoCreateTime"`
 	UpdatedAt    time.Time `json:"updated" gorm:"column:updated;autoUpdateTime"`
-	IsAdmin      int8      `json:"is_admin" gorm:"type:tinyint;not null;default:0"`
-	Status       Status    `json:"status" gorm:"type:tinyint;not null;default:1"`
+	IsAdmin      int8      `json:"is_admin" gorm:"smallint;not null;default:0"`
+	Status       Status    `json:"status" gorm:"smallint;not null;default:1"`
 	BaseModel    `json:"-" gorm:"-"`
 }
 

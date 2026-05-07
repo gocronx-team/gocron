@@ -70,28 +70,28 @@ func (t *NextRunTime) UnmarshalJSON(data []byte) error {
 type Task struct {
 	Id               int                  `json:"id" gorm:"primaryKey;autoIncrement"`
 	Name             string               `json:"name" gorm:"type:varchar(32);not null"`
-	Level            TaskLevel            `json:"level" gorm:"type:tinyint;not null;index;default:1"`
+	Level            TaskLevel            `json:"level" gorm:"smallint;not null;index;default:1"`
 	DependencyTaskId string               `json:"dependency_task_id" gorm:"type:varchar(64);not null;default:''"`
-	DependencyStatus TaskDependencyStatus `json:"dependency_status" gorm:"type:tinyint;not null;default:1"`
+	DependencyStatus TaskDependencyStatus `json:"dependency_status" gorm:"smallint;not null;default:1"`
 	Spec             string               `json:"spec" gorm:"type:varchar(64);not null"`
-	Protocol         TaskProtocol         `json:"protocol" gorm:"type:tinyint;not null;index"`
+	Protocol         TaskProtocol         `json:"protocol" gorm:"smallint;not null;index"`
 	Command          string               `json:"command" gorm:"type:text;not null"`
-	HttpMethod       TaskHTTPMethod       `json:"http_method" gorm:"type:tinyint;not null;default:1"`
+	HttpMethod       TaskHTTPMethod       `json:"http_method" gorm:"smallint;not null;default:1"`
 	HttpBody         string               `json:"http_body" gorm:"type:text"`
 	HttpHeaders      string               `json:"http_headers" gorm:"type:text"`
 	SuccessPattern   string               `json:"success_pattern" gorm:"type:varchar(512);not null;default:''"`
 	Timeout          int                  `json:"timeout" gorm:"type:mediumint;not null;default:0"`
-	Multi            int8                 `json:"multi" gorm:"type:tinyint;not null;default:0"`
-	RetryTimes       int8                 `json:"retry_times" gorm:"type:tinyint;not null;default:0"`
+	Multi            int8                 `json:"multi" gorm:"smallint;not null;default:0"`
+	RetryTimes       int8                 `json:"retry_times" gorm:"smallint;not null;default:0"`
 	RetryInterval    int16                `json:"retry_interval" gorm:"type:smallint;not null;default:0"`
-	NotifyStatus     int8                 `json:"notify_status" gorm:"type:tinyint;not null;default:0"`
-	NotifyType       int8                 `json:"notify_type" gorm:"type:tinyint;not null;default:0"`
+	NotifyStatus     int8                 `json:"notify_status" gorm:"smallint;not null;default:0"`
+	NotifyType       int8                 `json:"notify_type" gorm:"smallint;not null;default:0"`
 	NotifyReceiverId string               `json:"notify_receiver_id" gorm:"type:varchar(256);not null;default:''"`
 	NotifyKeyword    string               `json:"notify_keyword" gorm:"type:varchar(128);not null;default:''"`
 	Tag              string               `json:"tag" gorm:"type:varchar(255);not null;default:''"`
 	LogRetentionDays int                  `json:"log_retention_days" gorm:"type:smallint;not null;default:0"`
 	Remark           string               `json:"remark" gorm:"type:varchar(100);not null;default:''"`
-	Status           Status               `json:"status" gorm:"type:tinyint;not null;index;default:0"`
+	Status           Status               `json:"status" gorm:"smallint;not null;index;default:0"`
 	CreatedAt        time.Time            `json:"created" gorm:"column:created;autoCreateTime"`
 	DeletedAt        *time.Time           `json:"deleted" gorm:"column:deleted;index"`
 	BaseModel        `json:"-" gorm:"-"`

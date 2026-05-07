@@ -49,14 +49,14 @@ type TaskLog struct {
 	TaskId     int          `json:"task_id" gorm:"not null;index;default:0"`
 	Name       string       `json:"name" gorm:"type:varchar(32);not null"`
 	Spec       string       `json:"spec" gorm:"type:varchar(64);not null"`
-	Protocol   TaskProtocol `json:"protocol" gorm:"type:tinyint;not null;index"`
+	Protocol   TaskProtocol `json:"protocol" gorm:"smallint;not null;index"`
 	Command    string       `json:"command" gorm:"type:varchar(256);not null"`
 	Timeout    int          `json:"timeout" gorm:"type:mediumint;not null;default:0"`
-	RetryTimes int8         `json:"retry_times" gorm:"type:tinyint;not null;default:0"`
+	RetryTimes int8         `json:"retry_times" gorm:"smallint;not null;default:0"`
 	Hostname   string       `json:"hostname" gorm:"type:varchar(128);not null;default:''"`
 	StartTime  LocalTime    `json:"start_time" gorm:"column:start_time;autoCreateTime"`
 	EndTime    LocalTime    `json:"end_time" gorm:"column:end_time;autoUpdateTime"`
-	Status     Status       `json:"status" gorm:"type:tinyint;not null;index;default:1"`
+	Status     Status       `json:"status" gorm:"smallint;not null;index;default:1"`
 	Result     string       `json:"result" gorm:"type:mediumtext;not null"`
 	TotalTime  int          `json:"total_time" gorm:"-"`
 	BaseModel  `json:"-" gorm:"-"`
