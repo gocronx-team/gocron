@@ -13,7 +13,7 @@ type Migration struct{}
 func (migration *Migration) Install(dbName string) error {
 	setting := new(Setting)
 	tables := []interface{}{
-		&User{}, &Task{}, &TaskLog{}, &Host{}, setting, &LoginLog{}, &TaskHost{}, &AgentToken{}, &AuditLog{}, &TaskScriptVersion{}, &TaskTemplate{}, &ApiToken{},
+		&User{}, &Task{}, &TaskLog{}, &Host{}, setting, &LoginLog{}, &TaskHost{}, &AgentToken{}, &AuditLog{}, &TaskScriptVersion{}, &TaskTemplate{}, &ApiToken{}, &Secret{},
 	}
 
 	for _, table := range tables {
@@ -46,7 +46,7 @@ func (migration *Migration) Upgrade(oldVersionId int) {
 		return
 	}
 
-	versionIds := []int{110, 122, 130, 140, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 1510, 160, 163}
+	versionIds := []int{110, 122, 130, 140, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 1510, 160, 163, 166}
 	upgradeFuncs := []func(*gorm.DB) error{
 		migration.upgradeFor110,
 		migration.upgradeFor122,
@@ -65,6 +65,7 @@ func (migration *Migration) Upgrade(oldVersionId int) {
 		migration.upgradeFor1510,
 		migration.upgradeFor160,
 		migration.upgradeFor163,
+		migration.upgradeFor166,
 	}
 
 	startIndex := -1
@@ -729,4 +730,19 @@ func (m *Migration) fixSQLiteAutoIncrement() {
 		Db.Exec(`ALTER TABLE host_new RENAME TO host;`)
 		logger.Info("修复host表完成")
 	}
+}
+
+// 升级到v1.6.6版本:新增机密(secret)表
+func (m *Migration) upgradeFor166(tx *gorm.DB) error {
+	logger.Info("开始升级到v1.6.6")
+
+	if !tx.Migrator().HasTable(&Secret{}) {
+		if err := tx.AutoMigrate(&Secret{}); err != nil {
+			return err
+		}
+	}
+
+	logger.Info("已升级到v1.6.6")
+
+	return nil
 }

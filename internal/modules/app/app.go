@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/gocronx-team/gocron/internal/modules/crypto"
 	"github.com/gocronx-team/gocron/internal/modules/logger"
 	"github.com/gocronx-team/gocron/internal/modules/setting"
 	"github.com/gocronx-team/gocron/internal/modules/utils"
@@ -70,6 +71,10 @@ func InitEnv(versionString string) {
 	Installed = IsInstalled()
 	VersionId = ToNumberVersion(versionString)
 	AppVersion = versionString
+
+	// 初始化机密加密主密钥（读取 GOCRON_SECRET_KEY 后即从环境清除）；
+	// 未配置时机密功能保持不可用，不影响其它功能。
+	crypto.Init()
 }
 
 // IsInstalled 判断应用是否已安装

@@ -26,6 +26,7 @@ import (
 	"github.com/gocronx-team/gocron/internal/routers/loginlog"
 	"github.com/gocronx-team/gocron/internal/routers/manage"
 	"github.com/gocronx-team/gocron/internal/routers/mcptoken"
+	"github.com/gocronx-team/gocron/internal/routers/secret"
 	"github.com/gocronx-team/gocron/internal/routers/statistics"
 	"github.com/gocronx-team/gocron/internal/routers/task"
 	"github.com/gocronx-team/gocron/internal/routers/tasklog"
@@ -188,6 +189,14 @@ func Register(r *gin.Engine) {
 	auditGroup := api.Group("/audit")
 	{
 		auditGroup.GET("", audit.Index)
+	}
+
+	// 机密管理（仅管理员，走全局 JWT 鉴权；普通用户不在 urlAuth 白名单内）
+	secretGroup := api.Group("/secret")
+	{
+		secretGroup.GET("", secret.Index)
+		secretGroup.POST("/store", secret.Store)
+		secretGroup.POST("/remove/:id", secret.Remove)
 	}
 
 	// MCP 访问令牌管理（仅管理员，走全局 JWT 鉴权）
@@ -581,6 +590,16 @@ func resolveModuleAction(path string, c *gin.Context) (module, action string) {
 	case "/api/user/editPassword/:id":
 		return "user", "reset-password"
 
+	// Secret routes
+	case "/api/secret/store":
+		idStr := c.PostForm("id")
+		if idStr == "" || idStr == "0" {
+			return "secret", "create"
+		}
+		return "secret", "update"
+	case "/api/secret/remove/:id":
+		return "secret", "delete"
+
 	// Template routes
 	case "/api/template/store":
 		idStr := c.PostForm("id")
@@ -629,6 +648,11 @@ func resolveTargetName(ctx context.Context, module string, targetId int) string 
 		u := &models.User{}
 		if err := db.Select("name").First(u, targetId).Error; err == nil {
 			return u.Name
+		}
+	case "secret":
+		s := &models.Secret{}
+		if err := db.Select("name").First(s, targetId).Error; err == nil {
+			return s.Name
 		}
 	case "template":
 		tmpl := &models.TaskTemplate{}
