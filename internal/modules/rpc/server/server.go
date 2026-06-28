@@ -92,8 +92,8 @@ func (s *Server) Run(ctx context.Context, req *pb.TaskRequest) (*pb.TaskResponse
 		}
 	}()
 
-	// 执行命令
-	output, execErr := utils.ExecShell(taskCtx, cleanedCmd)
+	// 执行命令,注入随请求下发的环境变量(机密等)
+	output, execErr := utils.ExecShellWithEnv(taskCtx, cleanedCmd, envSlice(req.Env))
 	outputBuf.WriteString(output)
 
 	resp := new(pb.TaskResponse)
@@ -158,4 +158,16 @@ func Start(addr string, enableTLS bool, certificate auth.Certificate) {
 		}
 	}
 
+}
+
+// envSlice 把 proto 的 env map 转为 "KEY=VALUE" 形式的切片,供 exec.Cmd.Env 使用。
+func envSlice(env map[string]string) []string {
+	if len(env) == 0 {
+		return nil
+	}
+	out := make([]string, 0, len(env))
+	for k, v := range env {
+		out = append(out, k+"="+v)
+	}
+	return out
 }

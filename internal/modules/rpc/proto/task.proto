@@ -12,6 +12,7 @@ message TaskRequest {
     string command = 2; // 命令
     int32 timeout = 3;  // 任务执行超时时间
     int64 id = 4; // 执行任务唯一ID
+    map<string, string> env = 5; // 注入到执行环境的环境变量(含机密),仅在执行期生效
 }
 
 message TaskResponse {

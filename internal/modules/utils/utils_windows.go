@@ -28,7 +28,13 @@ type Result struct {
 
 // 执行shell命令，可设置执行超时时间
 // 改进：将命令写入临时批处理文件执行，即使超时或被取消，也会返回已产生的输出
+// ExecShell 执行命令(不注入额外环境变量)。
 func ExecShell(ctx context.Context, command string) (string, error) {
+	return ExecShellWithEnv(ctx, command, nil)
+}
+
+// ExecShellWithEnv 执行命令,并在父进程环境基础上追加 env(机密等),仅本次执行可见。
+func ExecShellWithEnv(ctx context.Context, command string, env []string) (string, error) {
 	// 清理可能存在的 HTML 实体编码,防止 &quot; 等导致命令执行失败
 	// 例如: del &quot;C:\file.txt&quot; -> del "C:\file.txt"
 	command = CleanHTMLEntities(command)
@@ -70,6 +76,10 @@ func ExecShell(ctx context.Context, command string) (string, error) {
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		HideWindow: true,
 		CmdLine:    `cmd /c "` + batFile.Name() + `"`,
+	}
+	// 注入额外环境变量(机密等),在父进程环境基础上追加,仅本次执行可见
+	if len(env) > 0 {
+		cmd.Env = append(os.Environ(), env...)
 	}
 	// 设置工作目录为用户家目录，避免 getcwd 错误
 	if homeDir, err := os.UserHomeDir(); err == nil {

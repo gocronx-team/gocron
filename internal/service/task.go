@@ -16,6 +16,7 @@ import (
 	"github.com/gocronx-team/cron"
 	"github.com/gocronx-team/gocron/internal/models"
 	"github.com/gocronx-team/gocron/internal/modules/app"
+	"github.com/gocronx-team/gocron/internal/modules/crypto"
 	"github.com/gocronx-team/gocron/internal/modules/httpclient"
 	"github.com/gocronx-team/gocron/internal/modules/logger"
 	"github.com/gocronx-team/gocron/internal/modules/notify"
@@ -446,6 +447,8 @@ func (h *RPCHandler) Run(taskModel models.Task, taskUniqueId int64) (result stri
 	taskRequest.Timeout = int32(taskModel.Timeout)
 	taskRequest.Command = taskModel.Command
 	taskRequest.Id = taskUniqueId
+	// 注入机密为环境变量(仅执行期生效,随 gRPC 下发到节点)
+	taskRequest.Env = loadSecretEnv()
 	resultChan := make(chan TaskResult, len(taskModel.Hosts))
 	for _, taskHost := range taskModel.Hosts {
 		logger.Infof("Preparing RPC call#Host-%s:%d#Command-%s", taskHost.Name, taskHost.Port, taskModel.Command)
@@ -483,6 +486,44 @@ func (h *RPCHandler) Run(taskModel models.Task, taskUniqueId int64) (result stri
 	}
 
 	return resultBuilder.String(), aggregationErr
+}
+
+// loadSecretEnv 读取全部机密并解密为 name->明文 映射,用于注入任务执行环境。
+// 未配置加密或读取/解密失败时安全降级(返回 nil 或跳过失败项)。
+func loadSecretEnv() map[string]string {
+	if !crypto.Configured() {
+		return nil
+	}
+	all, err := new(models.Secret).All()
+	if err != nil {
+		logger.Warnf("加载机密失败: %v", err)
+		return nil
+	}
+	if len(all) == 0 {
+		return nil
+	}
+	env := make(map[string]string, len(all))
+	for _, s := range all {
+		plain, err := crypto.Decrypt(s.Value)
+		if err != nil {
+			logger.Warnf("解密机密失败#%s: %v", s.Name, err)
+			continue
+		}
+		env[s.Name] = plain
+	}
+	return env
+}
+
+// secretValues 返回机密明文值列表,用于任务输出脱敏。
+func secretValues(env map[string]string) []string {
+	if len(env) == 0 {
+		return nil
+	}
+	values := make([]string, 0, len(env))
+	for _, v := range env {
+		values = append(values, v)
+	}
+	return values
 }
 
 // 创建任务日志
@@ -607,6 +648,10 @@ func beforeExecJob(taskModel models.Task) (taskLogId int64) {
 
 // 任务执行后置操作
 func afterExecJob(taskModel models.Task, taskResult TaskResult, taskLogId int64) {
+	// 落库前对输出脱敏,避免机密明文写入任务日志(以及后续告警通知)
+	if values := secretValues(loadSecretEnv()); len(values) > 0 {
+		taskResult.Result = crypto.MaskSecrets(taskResult.Result, values)
+	}
 	_, err := updateTaskLog(taskLogId, taskResult)
 	if err != nil {
 		logger.Error("Task ended#Failed to update task log-", err)

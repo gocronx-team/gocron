@@ -111,3 +111,25 @@ func TestDetectBashPath(t *testing.T) {
 		t.Fatalf("Expected output to contain 'bash_ok', got: %s", string(output))
 	}
 }
+
+func TestExecShellWithEnvInjectsEnv(t *testing.T) {
+	ctx := context.Background()
+	output, err := ExecShellWithEnv(ctx, `echo "val=$MY_SECRET"`, []string{"MY_SECRET=hunter2"})
+	if err != nil {
+		t.Fatalf("ExecShellWithEnv error: %v", err)
+	}
+	if !strings.Contains(output, "val=hunter2") {
+		t.Errorf("injected env not visible in command output: %q", output)
+	}
+}
+
+func TestExecShellWithEnvNilEnv(t *testing.T) {
+	ctx := context.Background()
+	output, err := ExecShellWithEnv(ctx, "echo ok", nil)
+	if err != nil {
+		t.Fatalf("ExecShellWithEnv(nil) error: %v", err)
+	}
+	if !strings.Contains(output, "ok") {
+		t.Errorf("unexpected output: %q", output)
+	}
+}

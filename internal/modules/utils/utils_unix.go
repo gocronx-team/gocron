@@ -31,7 +31,14 @@ func detectBashPath() string {
 
 // 执行shell命令，可设置执行超时时间
 // 改进：将命令写入临时脚本执行，即使超时或被取消，也会返回已产生的输出
+// ExecShell 执行 shell 命令(不注入额外环境变量)。
 func ExecShell(ctx context.Context, command string) (string, error) {
+	return ExecShellWithEnv(ctx, command, nil)
+}
+
+// ExecShellWithEnv 执行 shell 命令,并在父进程环境基础上追加 env(机密等),
+// 仅本次执行可见。
+func ExecShellWithEnv(ctx context.Context, command string, env []string) (string, error) {
 	// 清理可能存在的 HTML 实体编码
 	command = CleanHTMLEntities(command)
 	// 将换行符统一替换为Unix风格的\n
@@ -73,6 +80,10 @@ func ExecShell(ctx context.Context, command string) (string, error) {
 	cmd := exec.Command(bashPath, scriptPath)
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Setpgid: true,
+	}
+	// 注入额外环境变量(机密等),在父进程环境基础上追加,仅本次执行可见
+	if len(env) > 0 {
+		cmd.Env = append(os.Environ(), env...)
 	}
 	// 设置工作目录为用户家目录，避免 getcwd 错误
 	if homeDir, err := os.UserHomeDir(); err == nil {
