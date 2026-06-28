@@ -21,7 +21,7 @@ func setupSecretTestDb(t *testing.T) func() {
 	return func() { Db = originalDb }
 }
 
-func TestUpgradeFor166CreatesSecretTable(t *testing.T) {
+func TestUpgradeFor170CreatesSecretTable(t *testing.T) {
 	db, err := gorm.Open(gormlite.Open(":memory:"), &gorm.Config{})
 	if err != nil {
 		t.Fatalf("open sqlite: %v", err)
@@ -31,15 +31,15 @@ func TestUpgradeFor166CreatesSecretTable(t *testing.T) {
 	defer func() { Db = original }()
 
 	m := &Migration{}
-	if err := m.upgradeFor166(db); err != nil {
-		t.Fatalf("upgradeFor166 error: %v", err)
+	if err := m.upgradeFor170(db); err != nil {
+		t.Fatalf("upgradeFor170 error: %v", err)
 	}
 	if !db.Migrator().HasTable(&Secret{}) {
-		t.Fatal("secret table not created by upgradeFor166")
+		t.Fatal("secret table not created by upgradeFor170")
 	}
 	// 幂等:表已存在时再次执行不应报错
-	if err := m.upgradeFor166(db); err != nil {
-		t.Fatalf("upgradeFor166 not idempotent: %v", err)
+	if err := m.upgradeFor170(db); err != nil {
+		t.Fatalf("upgradeFor170 not idempotent: %v", err)
 	}
 }
 

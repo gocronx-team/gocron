@@ -46,7 +46,7 @@ func (migration *Migration) Upgrade(oldVersionId int) {
 		return
 	}
 
-	versionIds := []int{110, 122, 130, 140, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 1510, 160, 163, 166}
+	versionIds := []int{110, 122, 130, 140, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 1510, 160, 163, 170}
 	upgradeFuncs := []func(*gorm.DB) error{
 		migration.upgradeFor110,
 		migration.upgradeFor122,
@@ -65,7 +65,7 @@ func (migration *Migration) Upgrade(oldVersionId int) {
 		migration.upgradeFor1510,
 		migration.upgradeFor160,
 		migration.upgradeFor163,
-		migration.upgradeFor166,
+		migration.upgradeFor170,
 	}
 
 	startIndex := -1
@@ -732,9 +732,9 @@ func (m *Migration) fixSQLiteAutoIncrement() {
 	}
 }
 
-// 升级到v1.6.6版本:新增机密(secret)表
-func (m *Migration) upgradeFor166(tx *gorm.DB) error {
-	logger.Info("开始升级到v1.6.6")
+// 升级到v1.7.0版本:新增机密(secret)表
+func (m *Migration) upgradeFor170(tx *gorm.DB) error {
+	logger.Info("开始升级到v1.7.0")
 
 	if !tx.Migrator().HasTable(&Secret{}) {
 		if err := tx.AutoMigrate(&Secret{}); err != nil {
@@ -742,7 +742,7 @@ func (m *Migration) upgradeFor166(tx *gorm.DB) error {
 		}
 	}
 
-	logger.Info("已升级到v1.6.6")
+	logger.Info("已升级到v1.7.0")
 
 	return nil
 }
