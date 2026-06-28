@@ -181,6 +181,7 @@
       "logRetention": "Log Retention",
       "notification": "Notification",
       "mcpToken": "MCP Keys",
+      "secret": "Secrets",
       "aiConfig": "AI Config"
     }
   },
@@ -775,6 +776,34 @@
     "confirm": "Confirm",
     "cancel": "Cancel",
     "done": "Done"
+  },
+  "secret": {
+    "introTitle": "Secrets",
+    "introDesc": "Like GitHub Secrets: values are encrypted at rest, never readable after saving, injected as environment variables only during task execution, and automatically masked in task logs.",
+    "keyHint": "The server must set the GOCRON_SECRET_KEY environment variable as the encryption master key, otherwise secrets cannot be saved.",
+    "refresh": "Refresh",
+    "create": "New Secret",
+    "editTitle": "Edit Secret",
+    "name": "Name",
+    "namePlaceholder": "Environment variable name, e.g. API_KEY",
+    "nameRequired": "Please enter a name",
+    "nameInvalid": "Only letters, digits and underscore are allowed, and it cannot start with a digit",
+    "value": "Value",
+    "valuePlaceholder": "Secret value",
+    "valueEditPlaceholder": "Leave empty to keep the current value",
+    "valueRequired": "Please enter the secret value",
+    "remark": "Remark",
+    "remarkPlaceholder": "Optional description",
+    "updatedAt": "Updated At",
+    "operation": "Actions",
+    "edit": "Edit",
+    "delete": "Delete",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "confirmDelete": "Delete secret \"{name}\"? Tasks referencing it will no longer get its value.",
+    "createSuccess": "Secret created",
+    "updateSuccess": "Secret updated",
+    "deleteSuccess": "Secret deleted"
   },
   "aiConfig": {
     "title": "AI Config",

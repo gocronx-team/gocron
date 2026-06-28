@@ -66,6 +66,17 @@ export const systemRoutes: AppRouteRecord = {
       }
     },
     {
+      path: 'secret',
+      name: 'Secret',
+      component: '/system/secret/index',
+      meta: {
+        title: 'menus.system.secret',
+        icon: 'ri:lock-password-line',
+        keepAlive: true,
+        roles: ['R_SUPER', 'R_ADMIN']
+      }
+    },
+    {
       path: 'ai-config',
       name: 'AiConfig',
       component: '/system/ai-config/index',

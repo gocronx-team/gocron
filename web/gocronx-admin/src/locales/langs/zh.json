@@ -181,6 +181,7 @@
       "logRetention": "日志保留",
       "notification": "通知配置",
       "mcpToken": "MCP 密钥",
+      "secret": "机密管理",
       "aiConfig": "AI 配置"
     }
   },
@@ -775,6 +776,34 @@
     "confirm": "确定",
     "cancel": "取消",
     "done": "完成"
+  },
+  "secret": {
+    "introTitle": "机密管理",
+    "introDesc": "类似 GitHub Secrets：值加密存储、写入后不可读取，仅在任务执行时作为环境变量注入，并会在任务日志中自动打码。",
+    "keyHint": "需在服务端配置环境变量 GOCRON_SECRET_KEY 作为加密主密钥，否则无法保存机密。",
+    "refresh": "刷新",
+    "create": "新建机密",
+    "editTitle": "编辑机密",
+    "name": "名称",
+    "namePlaceholder": "环境变量名，如：API_KEY",
+    "nameRequired": "请输入名称",
+    "nameInvalid": "仅允许字母、数字和下划线，且不能以数字开头",
+    "value": "值",
+    "valuePlaceholder": "机密值",
+    "valueEditPlaceholder": "留空则保持原值不变",
+    "valueRequired": "请输入机密值",
+    "remark": "备注",
+    "remarkPlaceholder": "可选，用途说明",
+    "updatedAt": "更新时间",
+    "operation": "操作",
+    "edit": "编辑",
+    "delete": "删除",
+    "confirm": "确定",
+    "cancel": "取消",
+    "confirmDelete": "确认删除机密「{name}」？引用它的任务将无法再获取该值。",
+    "createSuccess": "机密已创建",
+    "updateSuccess": "机密已更新",
+    "deleteSuccess": "机密已删除"
   },
   "aiConfig": {
     "title": "AI 配置",
