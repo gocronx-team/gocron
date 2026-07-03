@@ -335,7 +335,7 @@
           align: 'center'
         },
         {
-          prop: 'task_name',
+          prop: 'name',
           label: t('task.log.colTaskName'),
           align: 'center',
           formatter: (row: TaskLogListItem) =>
@@ -345,15 +345,14 @@
                 style: 'color: var(--el-color-primary); cursor: pointer;',
                 onClick: () => router.push(`/task/edit/${row.task_id}`)
               },
-              row.task_name || String(row.task_id)
+              row.name || String(row.task_id)
             )
         },
         {
-          prop: 'host_name',
+          prop: 'hostname',
           label: t('task.log.colHost'),
           align: 'center',
-          formatter: (row: TaskLogListItem) =>
-            h('span', {}, formatHostList(row.host_name || row.hostname || ''))
+          formatter: (row: TaskLogListItem) => h('span', {}, formatHostList(row.hostname || ''))
         },
         {
           prop: 'protocol',

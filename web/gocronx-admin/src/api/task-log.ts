@@ -17,9 +17,9 @@ export interface TaskLogListParams {
 export interface TaskLogListItem {
   id: number
   task_id: number
-  task_name: string
+  /** Task name (backend field is `name`) */
+  name: string
   host_id: number
-  host_name: string
   /** Raw command string (may contain HTML entities from old encoding) */
   command: string
   protocol: number
