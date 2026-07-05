@@ -15,7 +15,7 @@ type mockRPCHandlerWithPartialOutput struct {
 	errorType     string // "timeout", "manual_stop", "normal_error", "success"
 }
 
-func (m *mockRPCHandlerWithPartialOutput) Run(taskModel models.Task, taskUniqueId int64) (string, error) {
+func (m *mockRPCHandlerWithPartialOutput) Run(taskModel models.Task, taskUniqueId int64, _ map[string]string) (string, error) {
 	switch m.errorType {
 	case "timeout":
 		// 模拟超时情况，返回部分输出和超时错误
@@ -48,7 +48,7 @@ func TestExecJobWithPartialOutput_Timeout(t *testing.T) {
 		RetryTimes: 0, // 不重试，直接测试超时
 	}
 
-	result := execJob(handler, task, 1)
+	result := execJob(handler, task, 1, nil)
 
 	if result.Err == nil {
 		t.Fatal("Expected timeout error")
@@ -79,7 +79,7 @@ func TestExecJobWithPartialOutput_ManualStop(t *testing.T) {
 		RetryTimes: 0,
 	}
 
-	result := execJob(handler, task, 2)
+	result := execJob(handler, task, 2, nil)
 
 	if result.Err == nil {
 		t.Fatal("Expected manual stop error")
@@ -107,7 +107,7 @@ func TestExecJobWithPartialOutput_NormalError(t *testing.T) {
 		RetryTimes: 0,
 	}
 
-	result := execJob(handler, task, 3)
+	result := execJob(handler, task, 3, nil)
 
 	if result.Err == nil {
 		t.Fatal("Expected normal error")
@@ -136,7 +136,7 @@ func TestExecJobWithPartialOutput_Success(t *testing.T) {
 		RetryTimes: 0,
 	}
 
-	result := execJob(handler, task, 4)
+	result := execJob(handler, task, 4, nil)
 
 	if result.Err != nil {
 		t.Fatalf("Expected no error for success, got: %v", result.Err)
@@ -154,7 +154,7 @@ type overridableHandler struct {
 	runFunc func(models.Task, int64) (string, error)
 }
 
-func (h *overridableHandler) Run(taskModel models.Task, taskUniqueId int64) (string, error) {
+func (h *overridableHandler) Run(taskModel models.Task, taskUniqueId int64, _ map[string]string) (string, error) {
 	return h.runFunc(taskModel, taskUniqueId)
 }
 
@@ -188,7 +188,7 @@ func TestExecJobWithPartialOutput_RetryWithTimeout(t *testing.T) {
 	}
 	defer func() { sleepFunc = originalSleep }()
 
-	result := execJob(handler, task, 5)
+	result := execJob(handler, task, 5, nil)
 
 	if result.Err != nil {
 		t.Fatalf("Expected success after retry, got: %v", result.Err)

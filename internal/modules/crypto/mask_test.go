@@ -9,11 +9,17 @@ func TestMaskSecrets(t *testing.T) {
 		secrets []string
 		want    string
 	}{
-		{"empty text", "", []string{"a"}, ""},
+		{"empty text", "", []string{"abcde"}, ""},
 		{"no secrets", "hello world", nil, "hello world"},
 		{"single", "token=abc123 done", []string{"abc123"}, "token=" + MaskPlaceholder + " done"},
-		{"multiple occurrences", "abc and abc", []string{"abc"}, MaskPlaceholder + " and " + MaskPlaceholder},
+		{"multiple occurrences", "abcde and abcde", []string{"abcde"}, MaskPlaceholder + " and " + MaskPlaceholder},
 		{"empty secret ignored", "keep this", []string{""}, "keep this"},
+		{
+			"short values below min length are not masked",
+			"1 ok true abcd",
+			[]string{"1", "ok", "true", "abcd"},
+			"1 ok true abcd",
+		},
 		{
 			"overlapping prefers longer",
 			"pass=supersecret123",
@@ -22,8 +28,8 @@ func TestMaskSecrets(t *testing.T) {
 		},
 		{
 			"multiple distinct secrets",
-			"a=1111 b=2222",
-			[]string{"1111", "2222"},
+			"a=11111 b=22222",
+			[]string{"11111", "22222"},
 			"a=" + MaskPlaceholder + " b=" + MaskPlaceholder,
 		},
 	}

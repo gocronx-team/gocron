@@ -39,7 +39,7 @@ func TestHTTPHandlerRunGetUsesCustomTimeout(t *testing.T) {
 		Timeout:    1000,
 		HttpMethod: models.TaskHTTPMethodGet,
 	}
-	result, err := handler.Run(task, 1)
+	result, err := handler.Run(task, 1, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -68,7 +68,7 @@ func TestHTTPHandlerRunGetDefaultTimeout(t *testing.T) {
 		Timeout:    0, // not set
 		HttpMethod: models.TaskHTTPMethodGet,
 	}
-	handler.Run(task, 1)
+	handler.Run(task, 1, nil)
 	if capturedTimeout != HttpDefaultTimeout {
 		t.Fatalf("expected default timeout %d, got %d", HttpDefaultTimeout, capturedTimeout)
 	}
@@ -93,7 +93,7 @@ func TestHTTPHandlerRunPostParsesParams(t *testing.T) {
 		Timeout:    10,
 		HttpMethod: models.TaskHttpMethodPost,
 	}
-	result, err := handler.Run(task, 1)
+	result, err := handler.Run(task, 1, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -117,7 +117,7 @@ func TestHTTPHandlerRunReturnsErrorForNon200(t *testing.T) {
 	}
 	handler := &HTTPHandler{}
 	task := models.Task{Command: "http://example.com", HttpMethod: models.TaskHTTPMethodGet}
-	result, err := handler.Run(task, 1)
+	result, err := handler.Run(task, 1, nil)
 	if err == nil {
 		t.Fatal("expected error for non-200 response")
 	}
@@ -143,7 +143,7 @@ func TestHTTPHandlerRunPostJsonBody(t *testing.T) {
 		HttpBody:   `{"key":"value"}`,
 		Timeout:    10,
 	}
-	_, err := handler.Run(task, 1)
+	_, err := handler.Run(task, 1, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -169,7 +169,7 @@ func TestHTTPHandlerRunPostFallbackToParams(t *testing.T) {
 		HttpBody:   "", // empty — should fallback to URL params
 		Timeout:    10,
 	}
-	_, err := handler.Run(task, 1)
+	_, err := handler.Run(task, 1, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -193,7 +193,7 @@ func TestHTTPHandlerRunSuccessPatternMatch(t *testing.T) {
 		SuccessPattern: `"code":0`,
 		Timeout:        10,
 	}
-	_, err := handler.Run(task, 1)
+	_, err := handler.Run(task, 1, nil)
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
 	}
@@ -214,7 +214,7 @@ func TestHTTPHandlerRunSuccessPatternNoMatch(t *testing.T) {
 		SuccessPattern: `"code":0`,
 		Timeout:        10,
 	}
-	_, err := handler.Run(task, 1)
+	_, err := handler.Run(task, 1, nil)
 	if err == nil {
 		t.Fatal("expected error for non-matching pattern")
 	}
@@ -238,7 +238,7 @@ func TestHTTPHandlerRunSuccessPatternInvalidRegex(t *testing.T) {
 		SuccessPattern: `[invalid`,
 		Timeout:        10,
 	}
-	_, err := handler.Run(task, 1)
+	_, err := handler.Run(task, 1, nil)
 	if err == nil {
 		t.Fatal("expected error for invalid regex")
 	}
@@ -271,7 +271,7 @@ func TestHTTPHandlerRunSuccessPatternMatchCompactJSON(t *testing.T) {
 		SuccessPattern: `"key":"value"`,
 		Timeout:        10,
 	}
-	_, err := handler.Run(task, 1)
+	_, err := handler.Run(task, 1, nil)
 	if err != nil {
 		t.Fatalf("expected success with compacted JSON matching, got error: %v", err)
 	}
@@ -292,7 +292,7 @@ func TestHTTPHandlerRunEmptyPatternSkipsCheck(t *testing.T) {
 		SuccessPattern: "", // empty — should skip assertion
 		Timeout:        10,
 	}
-	_, err := handler.Run(task, 1)
+	_, err := handler.Run(task, 1, nil)
 	if err != nil {
 		t.Fatalf("expected success with empty pattern, got: %v", err)
 	}
@@ -315,7 +315,7 @@ func TestHTTPHandlerRunGetWithHeaders(t *testing.T) {
 		HttpHeaders: `{"Authorization":"Bearer abc"}`,
 		Timeout:     10,
 	}
-	_, err := handler.Run(task, 1)
+	_, err := handler.Run(task, 1, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -343,7 +343,7 @@ func TestHTTPHandlerRunPostJsonWithHeaders(t *testing.T) {
 		HttpHeaders: `{"X-Token":"secret"}`,
 		Timeout:     10,
 	}
-	_, err := handler.Run(task, 1)
+	_, err := handler.Run(task, 1, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -365,7 +365,7 @@ type handlerResponse struct {
 	err    error
 }
 
-func (f *fakeHandler) Run(taskModel models.Task, taskUniqueId int64) (string, error) {
+func (f *fakeHandler) Run(taskModel models.Task, taskUniqueId int64, _ map[string]string) (string, error) {
 	res := f.results[f.callCount]
 	f.callCount++
 	return res.result, res.err
@@ -387,7 +387,7 @@ func TestExecJobRetriesUntilSuccess(t *testing.T) {
 		},
 	}
 	task := models.Task{Id: 1, RetryTimes: 1, RetryInterval: 1}
-	result := execJob(handler, task, 1)
+	result := execJob(handler, task, 1, nil)
 	if result.Result != "second" || result.Err != nil {
 		t.Fatalf("unexpected result: %+v", result)
 	}
@@ -418,7 +418,7 @@ func TestExecJobReturnsErrorAfterRetriesExhausted(t *testing.T) {
 		},
 	}
 	task := models.Task{Id: 2, RetryTimes: 2, RetryInterval: 1}
-	result := execJob(handler, task, 1)
+	result := execJob(handler, task, 1, nil)
 	if result.Err == nil {
 		t.Fatal("expected error")
 	}

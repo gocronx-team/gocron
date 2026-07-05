@@ -201,3 +201,14 @@ func TestRemove(t *testing.T) {
 		t.Errorf("expected 0 secrets after remove, got %d", len(remaining))
 	}
 }
+
+func TestStoreRejectsReservedName(t *testing.T) {
+	r, cleanup := setupTestRouter(t)
+	defer cleanup()
+	for _, name := range []string{"PATH", "LD_PRELOAD", "home"} {
+		w := postForm(r, "/api/secret/store", url.Values{"name": {name}, "value": {"somevalue"}})
+		if code := decodeCode(t, w); code == 0 {
+			t.Errorf("expected reserved name %q to be rejected, got success", name)
+		}
+	}
+}

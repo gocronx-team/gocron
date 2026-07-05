@@ -358,7 +358,9 @@ func (task Task) Run(taskModel models.Task) {
 }
 
 type Handler interface {
-	Run(taskModel models.Task, taskUniqueId int64) (string, error)
+	// secretEnv 为本次执行需注入的机密环境变量(name->明文);由调用方一次性加载并复用,
+	// 保证注入与后续脱敏用的是同一份快照。HTTP 任务忽略该参数。
+	Run(taskModel models.Task, taskUniqueId int64, secretEnv map[string]string) (string, error)
 }
 
 // HTTP任务
@@ -367,7 +369,7 @@ type HTTPHandler struct{}
 // HttpDefaultTimeout HTTP 任务默认超时（秒），用户未设置时使用
 const HttpDefaultTimeout = 300
 
-func (h *HTTPHandler) Run(taskModel models.Task, taskUniqueId int64) (result string, err error) {
+func (h *HTTPHandler) Run(taskModel models.Task, taskUniqueId int64, _ map[string]string) (result string, err error) {
 	if taskModel.Timeout <= 0 {
 		taskModel.Timeout = HttpDefaultTimeout
 	}
@@ -438,22 +440,24 @@ func compactJSON(s string) string {
 // RPC调用执行任务
 type RPCHandler struct{}
 
-func (h *RPCHandler) Run(taskModel models.Task, taskUniqueId int64) (result string, err error) {
+func (h *RPCHandler) Run(taskModel models.Task, taskUniqueId int64, secretEnv map[string]string) (result string, err error) {
 	logger.Infof("RPC task execution started#Task ID-%d#Host count-%d", taskModel.Id, len(taskModel.Hosts))
 	if len(taskModel.Hosts) == 0 {
 		return "", fmt.Errorf("task is not associated with any host")
 	}
-	taskRequest := new(pb.TaskRequest)
-	taskRequest.Timeout = int32(taskModel.Timeout)
-	taskRequest.Command = taskModel.Command
-	taskRequest.Id = taskUniqueId
-	// 注入机密为环境变量(仅执行期生效,随 gRPC 下发到节点)
-	taskRequest.Env = loadSecretEnv()
 	resultChan := make(chan TaskResult, len(taskModel.Hosts))
 	for _, taskHost := range taskModel.Hosts {
 		logger.Infof("Preparing RPC call#Host-%s:%d#Command-%s", taskHost.Name, taskHost.Port, taskModel.Command)
 		go func(th models.TaskHostDetail) {
-			output, err := rpcClient.Exec(th.Name, th.Port, taskRequest)
+			// 每个 host 使用独立的 TaskRequest,避免多 goroutine 并发写同一请求指针
+			// (rpcClient.Exec 内部会改写 Timeout)产生数据竞态。Env 为只读共享,安全。
+			req := &pb.TaskRequest{
+				Command: taskModel.Command,
+				Timeout: int32(taskModel.Timeout),
+				Id:      taskUniqueId,
+				Env:     secretEnv,
+			}
+			output, err := rpcClient.Exec(th.Name, th.Port, req)
 			errorMessage := ""
 			if err != nil {
 				// 如果是手动停止错误，保留原始错误以便后续判断，但显示翻译后的文本
@@ -503,13 +507,23 @@ func loadSecretEnv() map[string]string {
 		return nil
 	}
 	env := make(map[string]string, len(all))
+	failed := 0
 	for _, s := range all {
+		// 纵深防御:跳过受保护的系统环境变量名,防止绕过 API 写入的坏数据覆盖 PATH/LD_PRELOAD 等
+		if models.IsReservedEnvName(s.Name) {
+			logger.Warnf("跳过受保护的机密名#%s(不允许覆盖系统环境变量)", s.Name)
+			continue
+		}
 		plain, err := crypto.Decrypt(s.Value)
 		if err != nil {
-			logger.Warnf("解密机密失败#%s: %v", s.Name, err)
+			failed++
 			continue
 		}
 		env[s.Name] = plain
+	}
+	// 汇总告警:解密失败通常意味着 GOCRON_SECRET_KEY 已变更,否则任务会静默拿不到机密
+	if failed > 0 {
+		logger.Errorf("有 %d 条机密解密失败,可能 GOCRON_SECRET_KEY 已变更;相关任务将无法获取这些机密,请检查主密钥或重建机密", failed)
 	}
 	return env
 }
@@ -601,10 +615,12 @@ func createJob(taskModel models.Task) cron.FuncJob {
 		concurrencyQueue.Add()
 		defer concurrencyQueue.Done()
 
+		// 一次性加载本次执行的机密快照:注入与后续脱敏复用同一份,避免二次查询与不一致窗口
+		secretEnv := loadSecretEnv()
 		logger.Infof("Starting task execution#%s#Command-%s", taskModel.Name, taskModel.Command)
-		taskResult := execJob(handler, taskModel, taskLogId)
+		taskResult := execJob(handler, taskModel, taskLogId, secretEnv)
 		logger.Infof("Task completed#%s#Command-%s", taskModel.Name, taskModel.Command)
-		afterExecJob(taskModel, taskResult, taskLogId)
+		afterExecJob(taskModel, taskResult, taskLogId, secretEnv)
 	}
 
 	return taskFunc
@@ -647,9 +663,10 @@ func beforeExecJob(taskModel models.Task) (taskLogId int64) {
 }
 
 // 任务执行后置操作
-func afterExecJob(taskModel models.Task, taskResult TaskResult, taskLogId int64) {
-	// 落库前对输出脱敏,避免机密明文写入任务日志(以及后续告警通知)
-	if values := secretValues(loadSecretEnv()); len(values) > 0 {
+func afterExecJob(taskModel models.Task, taskResult TaskResult, taskLogId int64, secretEnv map[string]string) {
+	// 落库前对输出脱敏,避免机密明文写入任务日志(以及后续告警通知);
+	// 复用注入时的同一份机密快照,保证脱敏与注入一致
+	if values := secretValues(secretEnv); len(values) > 0 {
 		taskResult.Result = crypto.MaskSecrets(taskResult.Result, values)
 	}
 	_, err := updateTaskLog(taskLogId, taskResult)
@@ -742,7 +759,7 @@ func SendNotification(taskModel models.Task, taskResult TaskResult) {
 }
 
 // 执行具体任务
-func execJob(handler Handler, taskModel models.Task, taskUniqueId int64) (result TaskResult) {
+func execJob(handler Handler, taskModel models.Task, taskUniqueId int64, secretEnv map[string]string) (result TaskResult) {
 	defer func() {
 		if err := recover(); err != nil {
 			logger.Error("panic#service/task.go:execJob#", err)
@@ -759,13 +776,14 @@ func execJob(handler Handler, taskModel models.Task, taskUniqueId int64) (result
 	var output string
 	var err error
 	for i < execTimes {
-		output, err = handler.Run(taskModel, taskUniqueId)
+		output, err = handler.Run(taskModel, taskUniqueId, secretEnv)
 		if err == nil {
 			return TaskResult{Result: output, Err: err, RetryTimes: i}
 		}
 		i++
 		if i < execTimes {
-			logger.Warnf("Task execution failed#Task ID-%d#Retry attempt %d#Output-%s#Error-%s", taskModel.Id, i, output, err.Error())
+			// 不打印 output:重试阶段的原始输出可能含注入的机密明文,完整输出会在 afterExecJob 脱敏后落库
+			logger.Warnf("Task execution failed#Task ID-%d#Retry attempt %d#Error-%s", taskModel.Id, i, err.Error())
 			if taskModel.RetryInterval > 0 {
 				sleepFunc(time.Duration(taskModel.RetryInterval) * time.Second)
 			} else {

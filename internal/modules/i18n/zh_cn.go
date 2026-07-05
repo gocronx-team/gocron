@@ -30,6 +30,7 @@ var zhCN = map[string]string{
 	"update_failed":                          "更新失败",
 	"save_success":                           "保存成功",
 	"secret_name_invalid":                    "机密名称非法，仅允许字母、数字和下划线，且不能以数字开头",
+	"secret_name_reserved":                   "该名称为系统保留环境变量，不允许用作机密名称",
 	"secret_name_exists":                     "机密名称已存在",
 	"secret_value_required":                  "请输入机密值",
 	"secret_key_not_configured":              "服务端未配置加密主密钥（GOCRON_SECRET_KEY），无法保存机密",

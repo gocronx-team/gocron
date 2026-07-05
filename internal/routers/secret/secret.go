@@ -58,6 +58,12 @@ func Store(c *gin.Context) {
 		return
 	}
 
+	// 拒绝覆盖系统关键环境变量(PATH/LD_PRELOAD 等),防止破坏任务执行或库劫持
+	if models.IsReservedEnvName(form.Name) {
+		base.RespondError(c, i18n.T(c, "secret_name_reserved"))
+		return
+	}
+
 	// 加密能力未配置时,无法安全存储,直接拒绝并提示。
 	if !crypto.Configured() {
 		base.RespondError(c, i18n.T(c, "secret_key_not_configured"))

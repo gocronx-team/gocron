@@ -151,3 +151,16 @@ func TestSecretUpdateAndDelete(t *testing.T) {
 		t.Error("expected record to be gone after delete")
 	}
 }
+
+func TestIsReservedEnvName(t *testing.T) {
+	for _, n := range []string{"PATH", "path", "Ld_Preload", "LD_LIBRARY_PATH", "HOME", "GOCRON_SECRET_KEY", "  PATH  "} {
+		if !IsReservedEnvName(n) {
+			t.Errorf("expected %q to be reserved", n)
+		}
+	}
+	for _, n := range []string{"API_KEY", "MY_TOKEN", "DB_PASSWORD", "FOO"} {
+		if IsReservedEnvName(n) {
+			t.Errorf("expected %q to be allowed", n)
+		}
+	}
+}

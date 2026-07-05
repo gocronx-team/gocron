@@ -1,6 +1,29 @@
 package models
 
-import "time"
+import (
+	"strings"
+	"time"
+)
+
+// reservedEnvNames 是不允许用作机密名的系统环境变量:覆盖它们会破坏任务执行
+// 环境(如 PATH)或带来安全风险(如 LD_PRELOAD 库劫持)。
+var reservedEnvNames = map[string]bool{
+	"PATH":                  true,
+	"HOME":                  true,
+	"IFS":                   true,
+	"SHELL":                 true,
+	"PWD":                   true,
+	"LD_PRELOAD":            true,
+	"LD_LIBRARY_PATH":       true,
+	"DYLD_INSERT_LIBRARIES": true,
+	"DYLD_LIBRARY_PATH":     true,
+	"GOCRON_SECRET_KEY":     true,
+}
+
+// IsReservedEnvName 判断机密名是否为受保护的系统环境变量(大小写不敏感)。
+func IsReservedEnvName(name string) bool {
+	return reservedEnvNames[strings.ToUpper(strings.TrimSpace(name))]
+}
 
 // Secret 机密(类 GitHub Secrets):值以 AES-GCM 密文存储,写入后不可读取,
 // 仅在任务调度执行时按需解密注入到执行环境。Value 字段对外永不序列化。

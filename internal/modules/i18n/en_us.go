@@ -30,6 +30,7 @@ var enUS = map[string]string{
 	"update_failed":                          "Update failed",
 	"save_success":                           "Saved successfully",
 	"secret_name_invalid":                    "Invalid secret name: only letters, digits and underscore are allowed, and it cannot start with a digit",
+	"secret_name_reserved":                   "This name is a reserved system environment variable and cannot be used as a secret name",
 	"secret_name_exists":                     "Secret name already exists",
 	"secret_value_required":                  "Please enter the secret value",
 	"secret_key_not_configured":              "Server has no encryption master key (GOCRON_SECRET_KEY) configured; cannot store secrets",
