@@ -5,6 +5,8 @@ package utils
 
 import (
 	"context"
+	"os"
+	"os/exec"
 	"strings"
 	"testing"
 	"time"
@@ -74,5 +76,38 @@ func TestExecShellCommandError(t *testing.T) {
 	// 应该有错误输出
 	if output == "" {
 		t.Fatal("Expected some error output")
+	}
+}
+
+func TestDetectBashPath(t *testing.T) {
+	path := detectBashPath()
+
+	// 路径不能为空
+	if path == "" {
+		t.Fatal("Expected non-empty bash path")
+	}
+
+	// 路径应该以 "bash" 结尾
+	if !strings.HasSuffix(path, "bash") {
+		t.Fatalf("Expected path to end with 'bash', got: %s", path)
+	}
+
+	// 验证路径指向一个存在的文件，而非目录
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatalf("Bash path does not exist: %s, error: %v", path, err)
+	}
+	if info.IsDir() {
+		t.Fatalf("Bash path is a directory, not a file: %s", path)
+	}
+
+	// 验证该路径确实可以执行 shell 命令
+	cmd := exec.Command(path, "-c", "echo 'bash_ok'")
+	output, err := cmd.Output()
+	if err != nil {
+		t.Fatalf("Failed to execute bash at %s: %v", path, err)
+	}
+	if !strings.Contains(string(output), "bash_ok") {
+		t.Fatalf("Expected output to contain 'bash_ok', got: %s", string(output))
 	}
 }
