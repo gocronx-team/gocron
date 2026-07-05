@@ -67,6 +67,8 @@ var enUS = map[string]string{
 	"invalid_url":                            "Please enter a valid URL",
 	"hostname_exists":                        "Hostname already exists",
 	"task_name_exists":                       "Task name already exists",
+	"task_import_parse_failed":               "Failed to parse YAML, please check the file format",
+	"task_import_success":                    "Task import completed",
 	"retry_times_range_0_10":                 "Retry times must be between 0-10",
 	"retry_interval_range_0_3600":            "Retry interval must be between 0-3600",
 	"param_error":                            "Parameter error",

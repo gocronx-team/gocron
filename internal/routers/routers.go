@@ -105,6 +105,8 @@ func Register(r *gin.Engine) {
 		taskGroup.POST("/batch-disable", task.BatchDisable)
 		taskGroup.POST("/batch-remove", task.BatchRemove)
 		taskGroup.GET("/run/:id", task.Run)
+		taskGroup.GET("/export", task.Export)
+		taskGroup.POST("/import", task.Import)
 	}
 
 	// 主机
@@ -561,6 +563,8 @@ func resolveModuleAction(path string, c *gin.Context) (module, action string) {
 		return "task", "batch-disable"
 	case "/api/task/batch-remove":
 		return "task", "batch-remove"
+	case "/api/task/import":
+		return "task", "import"
 
 	// Host routes
 	case "/api/host/store":

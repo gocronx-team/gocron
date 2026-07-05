@@ -25,6 +25,17 @@
             <ElButton type="danger" @click="handleBatchRemove">
               {{ t('task.batchDelete') }}
             </ElButton>
+            <ElButton @click="handleExport">{{ t('task.exportYaml') }}</ElButton>
+            <ElButton :loading="importing" @click="triggerImport">{{
+              t('task.importYaml')
+            }}</ElButton>
+            <input
+              ref="importInputRef"
+              type="file"
+              accept=".yaml,.yml"
+              style="display: none"
+              @change="handleImportFile"
+            />
             <ElButton type="primary" @click="toCreate">{{ t('task.addTask') }}</ElButton>
           </div>
         </template>
@@ -48,6 +59,7 @@
   import { ref, computed, h, onMounted, onActivated } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useRouter } from 'vue-router'
+  import { useUserStore } from '@/store/modules/user'
   import { ElButton, ElMessage, ElMessageBox, ElSwitch, ElTag } from 'element-plus'
   import { useTable } from '@/hooks/core/useTable'
   import {
@@ -68,6 +80,8 @@
 
   const { t } = useI18n()
   const router = useRouter()
+  const importInputRef = ref<HTMLInputElement>()
+  const importing = ref(false)
 
   // ── Filter state ──────────────────────────────────────────────────────────────
   const filterForm = ref({
@@ -398,6 +412,60 @@
   function handleReset() {
     filterForm.value = { name: '', host_id: '', protocol: '', status: '', tag: '' }
     resetSearchParams()
+  }
+
+  // ── Import / Export (YAML) ──────────────────────────────────────────────────
+  // 导出/导入走原生 fetch:导出是 YAML 附件(非 JSON 信封),导入体是原始 YAML 文本。
+  async function handleExport() {
+    try {
+      const { accessToken } = useUserStore()
+      const resp = await fetch('/api/task/export', { headers: { 'Auth-Token': accessToken } })
+      if (!resp.ok) throw new Error(String(resp.status))
+      const blob = await resp.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'gocron-tasks.yaml'
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      ElMessage.error(t('task.exportFailed'))
+    }
+  }
+
+  function triggerImport() {
+    importInputRef.value?.click()
+  }
+
+  async function handleImportFile(e: Event) {
+    const input = e.target as HTMLInputElement
+    const file = input.files?.[0]
+    if (!file) return
+    importing.value = true
+    try {
+      const text = await file.text()
+      const { accessToken } = useUserStore()
+      const resp = await fetch('/api/task/import', {
+        method: 'POST',
+        headers: { 'Auth-Token': accessToken, 'Content-Type': 'application/x-yaml' },
+        body: text
+      })
+      const json = await resp.json()
+      if (json.code === 0) {
+        const d = json.data || {}
+        ElMessage.success(
+          t('task.importDone', { created: d.created ?? 0, skipped: d.skipped ?? 0 })
+        )
+        refreshData()
+      } else {
+        ElMessage.error(json.message || t('task.importFailed'))
+      }
+    } catch {
+      ElMessage.error(t('task.importFailed'))
+    } finally {
+      importing.value = false
+      input.value = '' // 允许再次选择同一文件
+    }
   }
 
   // ── Navigation ────────────────────────────────────────────────────────────────

@@ -67,6 +67,8 @@ var zhCN = map[string]string{
 	"invalid_url":                            "请输入正确的URL地址",
 	"hostname_exists":                        "主机名已存在",
 	"task_name_exists":                       "任务名称已存在",
+	"task_import_parse_failed":               "YAML 解析失败，请检查文件格式",
+	"task_import_success":                    "任务导入完成",
 	"retry_times_range_0_10":                 "任务重试次数取值0-10",
 	"retry_interval_range_0_3600":            "任务重试间隔时间取值0-3600",
 	"param_error":                            "参数错误",
