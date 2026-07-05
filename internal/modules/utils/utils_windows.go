@@ -65,6 +65,11 @@ func ExecShellWithEnv(ctx context.Context, command string, env []string) (string
 		return "", fmt.Errorf("写入批处理文件失败: %w", err)
 	}
 
+	// 关闭编码 writer,flush GBK 编码缓冲区中的剩余字节,否则末尾内容可能未写入导致 bat 被截断
+	if err = gbkWriter.Close(); err != nil {
+		return "", fmt.Errorf("刷新批处理文件失败: %w", err)
+	}
+
 	// 确保文件内容写入磁盘
 	err = batFile.Sync()
 	if err != nil {
