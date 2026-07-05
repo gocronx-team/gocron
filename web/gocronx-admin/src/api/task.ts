@@ -42,6 +42,7 @@ export interface TaskListItem {
   notify_status?: number
   notify_type?: number
   notify_keyword?: string
+  notify_keyword_regex?: number
   notify_receiver_id?: string
   log_retention_days?: number
   next_run_time: string
@@ -72,6 +73,7 @@ export interface TaskStoreParams {
   notify_status?: number
   notify_type?: number
   notify_keyword?: string
+  notify_keyword_regex?: number
   notify_receiver_id?: string
   log_retention_days?: number
 }

@@ -322,15 +322,14 @@
         <ElRow :gutter="24">
           <ElCol :span="8">
             <ElFormItem :label="t('task.notifyStatus')">
-              <ElSelect v-model="form.notify_status" style="width: 100%">
-                <ElOption :value="0" :label="t('task.notifyStatusNone')" />
-                <ElOption :value="1" :label="t('task.notifyStatusFailed')" />
-                <ElOption :value="2" :label="t('task.notifyStatusAll')" />
-                <ElOption :value="3" :label="t('template.notifyKeywordMatch')" />
-              </ElSelect>
+              <ElCheckboxGroup v-model="notifyConditions">
+                <ElCheckbox :value="1">{{ t('task.notifyStatusFailed') }}</ElCheckbox>
+                <ElCheckbox :value="2">{{ t('task.notifyStatusSuccess') }}</ElCheckbox>
+                <ElCheckbox :value="4">{{ t('task.notifyKeyword') }}</ElCheckbox>
+              </ElCheckboxGroup>
             </ElFormItem>
           </ElCol>
-          <ElCol :span="8" v-if="form.notify_status !== 0">
+          <ElCol :span="8" v-if="form.notify_status > 0">
             <ElFormItem :label="t('task.notifyType')">
               <ElSelect v-model="form.notify_type" style="width: 100%">
                 <ElOption :value="0" :label="t('task.notifyTypeEmail')" />
@@ -339,13 +338,19 @@
               </ElSelect>
             </ElFormItem>
           </ElCol>
-          <ElCol :span="8" v-if="form.notify_status === 3">
+          <ElCol :span="8" v-if="(form.notify_status & 4) !== 0">
             <ElFormItem :label="t('task.notifyKeyword')">
               <ElInput
                 v-model.trim="form.notify_keyword"
                 :placeholder="t('template.notifyKeywordPlaceholder')"
                 clearable
               />
+            </ElFormItem>
+          </ElCol>
+          <ElCol :span="8" v-if="(form.notify_status & 4) !== 0">
+            <ElFormItem :label="t('task.notifyKeywordRegex')">
+              <ElSwitch v-model="form.notify_keyword_regex" :active-value="1" :inactive-value="0" />
+              <span class="regex-hint">{{ t('task.notifyKeywordRegexHint') }}</span>
             </ElFormItem>
           </ElCol>
         </ElRow>
@@ -426,10 +431,23 @@
     notify_status: 0,
     notify_type: 0,
     notify_keyword: '',
+    notify_keyword_regex: 0,
     log_retention_days: 0
   })
 
   const form = reactive(emptyForm())
+
+  // 通知触发条件多选(位掩码 1=失败 2=成功 4=关键字)UI 中间态,同步到 form.notify_status
+  const notifyConditions = ref<number[]>([])
+  watch(notifyConditions, (vals) => {
+    form.notify_status = vals.reduce((sum, v) => sum + v, 0)
+    if (form.notify_status === 0) {
+      form.notify_type = 0
+    }
+    if ((form.notify_status & 4) === 0) {
+      form.notify_keyword = ''
+    }
+  })
 
   // ── Computed ─────────────────────────────────────────────────────────────────
   const routeId = computed(() => {
@@ -566,8 +584,10 @@
       form.retry_times = data.retry_times ?? 0
       form.retry_interval = data.retry_interval ?? 0
       form.notify_status = data.notify_status ?? 0
+      notifyConditions.value = [1, 2, 4].filter((b) => (form.notify_status & b) !== 0)
       form.notify_type = data.notify_type ?? 0
       form.notify_keyword = data.notify_keyword ?? ''
+      form.notify_keyword_regex = data.notify_keyword_regex ?? 0
       form.log_retention_days = data.log_retention_days ?? 0
 
       previewCron()
@@ -606,6 +626,7 @@
         notify_status: form.notify_status,
         notify_type: form.notify_type,
         notify_keyword: form.notify_keyword,
+        notify_keyword_regex: form.notify_keyword_regex,
         log_retention_days: form.log_retention_days
       })
       ElMessage.success(isEdit.value ? t('template.updateSuccess') : t('template.createSuccess'))

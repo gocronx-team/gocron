@@ -15,27 +15,28 @@ import (
 )
 
 type TemplateForm struct {
-	Id               int    `form:"id" json:"id"`
-	Name             string `form:"name" json:"name" binding:"required,max=64"`
-	Description      string `form:"description" json:"description" binding:"max=500"`
-	Category         string `form:"category" json:"category" binding:"required,max=32"`
-	Protocol         int8   `form:"protocol" json:"protocol" binding:"oneof=1 2"`
-	Command          string `form:"command" json:"command" binding:"required,max=65535"`
-	HttpMethod       int8   `form:"http_method" json:"http_method" binding:"oneof=1 2"`
-	HttpBody         string `form:"http_body" json:"http_body"`
-	HttpHeaders      string `form:"http_headers" json:"http_headers"`
-	SuccessPattern   string `form:"success_pattern" json:"success_pattern" binding:"max=512"`
-	Tag              string `form:"tag" json:"tag"`
-	Spec             string `form:"spec" json:"spec"`
-	Timeout          int    `form:"timeout" json:"timeout" binding:"min=0,max=86400"`
-	Multi            int8   `form:"multi" json:"multi" binding:"oneof=0 1"`
-	RetryTimes       int8   `form:"retry_times" json:"retry_times"`
-	RetryInterval    int16  `form:"retry_interval" json:"retry_interval"`
-	Timezone         string `form:"timezone" json:"timezone"`
-	NotifyStatus     int8   `form:"notify_status" json:"notify_status"`
-	NotifyType       int8   `form:"notify_type" json:"notify_type"`
-	NotifyKeyword    string `form:"notify_keyword" json:"notify_keyword"`
-	LogRetentionDays int    `form:"log_retention_days" json:"log_retention_days" binding:"min=0,max=3650"`
+	Id                 int    `form:"id" json:"id"`
+	Name               string `form:"name" json:"name" binding:"required,max=64"`
+	Description        string `form:"description" json:"description" binding:"max=500"`
+	Category           string `form:"category" json:"category" binding:"required,max=32"`
+	Protocol           int8   `form:"protocol" json:"protocol" binding:"oneof=1 2"`
+	Command            string `form:"command" json:"command" binding:"required,max=65535"`
+	HttpMethod         int8   `form:"http_method" json:"http_method" binding:"oneof=1 2"`
+	HttpBody           string `form:"http_body" json:"http_body"`
+	HttpHeaders        string `form:"http_headers" json:"http_headers"`
+	SuccessPattern     string `form:"success_pattern" json:"success_pattern" binding:"max=512"`
+	Tag                string `form:"tag" json:"tag"`
+	Spec               string `form:"spec" json:"spec"`
+	Timeout            int    `form:"timeout" json:"timeout" binding:"min=0,max=86400"`
+	Multi              int8   `form:"multi" json:"multi" binding:"oneof=0 1"`
+	RetryTimes         int8   `form:"retry_times" json:"retry_times"`
+	RetryInterval      int16  `form:"retry_interval" json:"retry_interval"`
+	Timezone           string `form:"timezone" json:"timezone"`
+	NotifyStatus       int8   `form:"notify_status" json:"notify_status" binding:"min=0,max=7"`
+	NotifyType         int8   `form:"notify_type" json:"notify_type"`
+	NotifyKeyword      string `form:"notify_keyword" json:"notify_keyword"`
+	NotifyKeywordRegex int8   `form:"notify_keyword_regex" json:"notify_keyword_regex" binding:"oneof=0 1"`
+	LogRetentionDays   int    `form:"log_retention_days" json:"log_retention_days" binding:"min=0,max=3650"`
 }
 
 type SaveFromTaskForm struct {
@@ -142,6 +143,7 @@ func Store(c *gin.Context) {
 	tmplModel.NotifyStatus = form.NotifyStatus
 	tmplModel.NotifyType = form.NotifyType
 	tmplModel.NotifyKeyword = form.NotifyKeyword
+	tmplModel.NotifyKeywordRegex = form.NotifyKeywordRegex
 	tmplModel.LogRetentionDays = form.LogRetentionDays
 
 	if id == 0 {
@@ -264,6 +266,7 @@ func SaveFromTask(c *gin.Context) {
 	tmplModel.NotifyStatus = task.NotifyStatus
 	tmplModel.NotifyType = task.NotifyType
 	tmplModel.NotifyKeyword = task.NotifyKeyword
+	tmplModel.NotifyKeywordRegex = task.NotifyKeywordRegex
 	tmplModel.LogRetentionDays = task.LogRetentionDays
 	tmplModel.CreatedBy = user.Username(c)
 

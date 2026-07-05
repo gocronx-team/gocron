@@ -79,6 +79,7 @@ var zhCN = map[string]string{
 	"log_not_found":                          "日志不存在",
 	"log_no_result":                          "该日志没有可供诊断的输出内容",
 	"select_at_least_one_receiver":           "至少选择一个通知接收者",
+	"notify_keyword_regex_invalid":           "通知关键字的正则表达式不合法",
 	"select_hostname":                        "请选择主机名",
 	"select_dependency":                      "请选择依赖关系",
 	"host_in_use_cannot_delete":              "有任务引用此主机，不能删除",

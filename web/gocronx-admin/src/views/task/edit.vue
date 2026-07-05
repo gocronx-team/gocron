@@ -431,24 +431,19 @@
           </template>
 
           <ElRow :gutter="24">
-            <!-- notify status -->
+            <!-- notify triggers (multi-select, bitmask) -->
             <ElCol :span="8">
               <ElFormItem :label="t('task.notifyStatus')">
-                <ElSelect
-                  v-model="form.notify_status"
-                  @change="handleNotifyStatusChange"
-                  style="width: 100%"
-                >
-                  <ElOption :label="t('task.notifyStatusNone')" :value="0" />
-                  <ElOption :label="t('task.notifyStatusFailed')" :value="1" />
-                  <ElOption :label="t('task.notifyStatusAll')" :value="2" />
-                  <ElOption :label="t('task.notifyKeyword')" :value="3" />
-                </ElSelect>
+                <ElCheckboxGroup v-model="notifyConditions">
+                  <ElCheckbox :value="1">{{ t('task.notifyStatusFailed') }}</ElCheckbox>
+                  <ElCheckbox :value="2">{{ t('task.notifyStatusSuccess') }}</ElCheckbox>
+                  <ElCheckbox :value="4">{{ t('task.notifyKeyword') }}</ElCheckbox>
+                </ElCheckboxGroup>
               </ElFormItem>
             </ElCol>
 
-            <!-- notify type (when enabled) -->
-            <ElCol :span="8" v-if="form.notify_status !== 0">
+            <!-- notify type (when any trigger enabled) -->
+            <ElCol :span="8" v-if="form.notify_status > 0">
               <ElFormItem :label="t('task.notifyType')">
                 <ElSelect v-model="form.notify_type" style="width: 100%">
                   <ElOption :label="t('task.notifyTypeEmail')" :value="0" />
@@ -459,7 +454,7 @@
             </ElCol>
 
             <!-- notify receiver: email -->
-            <ElCol :span="8" v-if="form.notify_status !== 0 && form.notify_type === 0">
+            <ElCol :span="8" v-if="form.notify_status > 0 && form.notify_type === 0">
               <ElFormItem :label="t('task.notifyReceiver')">
                 <ElSelect v-model="selectedMailIds" multiple filterable style="width: 100%">
                   <ElOption v-for="u in mailUsers" :key="u.id" :label="u.username" :value="u.id" />
@@ -468,7 +463,7 @@
             </ElCol>
 
             <!-- notify receiver: slack -->
-            <ElCol :span="8" v-if="form.notify_status !== 0 && form.notify_type === 1">
+            <ElCol :span="8" v-if="form.notify_status > 0 && form.notify_type === 1">
               <ElFormItem :label="t('task.notifyReceiver')">
                 <ElSelect v-model="selectedSlackIds" multiple filterable style="width: 100%">
                   <ElOption v-for="c in slackChannels" :key="c.id" :label="c.name" :value="c.id" />
@@ -477,7 +472,7 @@
             </ElCol>
 
             <!-- notify receiver: webhook -->
-            <ElCol :span="8" v-if="form.notify_status !== 0 && form.notify_type === 2">
+            <ElCol :span="8" v-if="form.notify_status > 0 && form.notify_type === 2">
               <ElFormItem :label="t('task.notifyReceiver')">
                 <ElSelect v-model="selectedWebhookIds" multiple filterable style="width: 100%">
                   <ElOption v-for="w in webhookUrls" :key="w.id" :label="w.name" :value="w.id" />
@@ -486,11 +481,21 @@
             </ElCol>
           </ElRow>
 
-          <!-- keyword match -->
-          <ElRow :gutter="24" v-if="form.notify_status === 3">
+          <!-- keyword match + regex mode (when keyword trigger enabled) -->
+          <ElRow :gutter="24" v-if="(form.notify_status & 4) !== 0">
             <ElCol :span="12">
               <ElFormItem :label="t('task.notifyKeyword')" prop="notify_keyword">
                 <ElInput v-model.trim="form.notify_keyword" clearable />
+              </ElFormItem>
+            </ElCol>
+            <ElCol :span="12">
+              <ElFormItem :label="t('task.notifyKeywordRegex')">
+                <ElSwitch
+                  v-model="form.notify_keyword_regex"
+                  :active-value="1"
+                  :inactive-value="0"
+                />
+                <span class="regex-hint">{{ t('task.notifyKeywordRegexHint') }}</span>
               </ElFormItem>
             </ElCol>
           </ElRow>
@@ -681,7 +686,23 @@
     notify_status: 0,
     notify_type: 0,
     notify_keyword: '',
+    notify_keyword_regex: 0,
     notify_receiver_id: ''
+  })
+
+  // 通知触发条件多选(位掩码 1=失败 2=成功 4=关键字)的 UI 中间态;
+  // 变化时同步为 form.notify_status 的位掩码值。
+  const notifyConditions = ref<number[]>([])
+  watch(notifyConditions, (vals) => {
+    form.notify_status = vals.reduce((sum, v) => sum + v, 0)
+    // 全部取消时重置通知类型;取消关键字条件时清空关键字并清除其校验
+    if (form.notify_status === 0) {
+      form.notify_type = 0
+    }
+    if ((form.notify_status & 4) === 0) {
+      form.notify_keyword = ''
+      formRef.value?.clearValidate('notify_keyword')
+    }
   })
 
   // Notification receiver selection (separated by type, like old frontend)
@@ -767,7 +788,7 @@
       ]
     }
 
-    if (form.notify_status === 3) {
+    if ((form.notify_status & 4) !== 0) {
       r.notify_keyword = [
         { required: true, message: t('task.notifyKeywordRequired'), trigger: 'blur' }
       ]
@@ -874,8 +895,11 @@
     form.retry_times = data.retry_times ?? 0
     form.retry_interval = data.retry_interval ?? 0
     form.notify_status = data.notify_status ?? 0
+    // 从位掩码还原多选条件(1=失败 2=成功 4=关键字)
+    notifyConditions.value = [1, 2, 4].filter((b) => (form.notify_status & b) !== 0)
     form.notify_type = data.notify_type ?? 0
     form.notify_keyword = data.notify_keyword || ''
+    form.notify_keyword_regex = data.notify_keyword_regex ?? 0
     form.notify_receiver_id = data.notify_receiver_id || ''
 
     // Shell host IDs
@@ -987,14 +1011,6 @@
       form.host_ids = []
       // Clear host_ids validation error
       formRef.value?.clearValidate('host_ids')
-    }
-  }
-
-  function handleNotifyStatusChange(val: number) {
-    if (val === 0) {
-      form.notify_type = 0
-      form.notify_keyword = ''
-      formRef.value?.clearValidate('notify_keyword')
     }
   }
 
@@ -1188,6 +1204,7 @@
         notify_status: form.notify_status,
         notify_type: form.notify_type,
         notify_keyword: form.notify_keyword,
+        notify_keyword_regex: form.notify_keyword_regex,
         notify_receiver_id: notifyReceiverIds,
         remark: form.remark
       })
@@ -1282,8 +1299,10 @@
         notify_status: 0,
         notify_type: 0,
         notify_keyword: '',
+        notify_keyword_regex: 0,
         notify_receiver_id: ''
       })
+      notifyConditions.value = []
       selectedMailIds.value = []
       selectedSlackIds.value = []
       selectedWebhookIds.value = []

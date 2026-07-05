@@ -461,13 +461,13 @@ func TestSendNotificationBehavior(t *testing.T) {
 		},
 		{
 			name:   "keywordMismatch",
-			task:   models.Task{NotifyStatus: 3, NotifyType: 2, NotifyKeyword: "ERROR"},
+			task:   models.Task{NotifyStatus: 4, NotifyType: 2, NotifyKeyword: "ERROR"},
 			result: TaskResult{Result: "all good"},
 			count:  0,
 		},
 		{
 			name:   "keywordMatch",
-			task:   models.Task{Name: "job", NotifyStatus: 3, NotifyType: 2, NotifyKeyword: "ERROR"},
+			task:   models.Task{Name: "job", NotifyStatus: 4, NotifyType: 2, NotifyKeyword: "ERROR"},
 			result: TaskResult{Result: "found ERROR", Err: nil},
 			count:  1,
 			check: func(t *testing.T, msg notify.Message) {

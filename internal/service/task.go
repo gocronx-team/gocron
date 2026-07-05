@@ -719,31 +719,62 @@ func execDependencyTask(taskModel models.Task, taskResult TaskResult) {
 }
 
 // 发送任务结果通知
-func SendNotification(taskModel models.Task, taskResult TaskResult) {
-	var statusName string
-	// 未开启通知
-	if taskModel.NotifyStatus == 0 {
-		return
+// 通知触发条件位掩码(可组合):失败 / 成功 / 关键字匹配。0 表示不通知。
+// 兼容旧值:旧 1(仅失败)= bit0 语义不变;旧 2(总是)、旧 3(关键字)由迁移转换。
+const (
+	notifyOnFailure = 1 // bit0
+	notifyOnSuccess = 2 // bit1
+	notifyOnKeyword = 4 // bit2
+)
+
+// matchNotifyKeyword 按任务配置对输出做关键字匹配:子串包含或正则(标准库 RE2)。
+func matchNotifyKeyword(taskModel models.Task, output string) bool {
+	kw := taskModel.NotifyKeyword
+	if kw == "" {
+		return false
 	}
-	if taskModel.NotifyStatus == 1 && taskResult.Err == nil {
-		// 执行失败才发送通知
-		return
-	}
-	if taskModel.NotifyStatus == 3 {
-		// 关键字匹配通知
-		if !strings.Contains(taskResult.Result, taskModel.NotifyKeyword) {
-			return
+	if taskModel.NotifyKeywordRegex == 1 {
+		re, err := regexp.Compile(kw)
+		if err != nil {
+			logger.Warnf("通知关键字正则编译失败#task-%d: %v", taskModel.Id, err)
+			return false
 		}
+		return re.MatchString(output)
 	}
+	return strings.Contains(output, kw)
+}
+
+func SendNotification(taskModel models.Task, taskResult TaskResult) {
+	ns := taskModel.NotifyStatus
+	// 未开启通知
+	if ns == 0 {
+		return
+	}
+
+	failed := taskResult.Err != nil
+	// 多条件:任一勾选的条件满足即发送一条通知
+	shouldNotify := false
+	if failed && ns&notifyOnFailure != 0 {
+		shouldNotify = true
+	}
+	if !failed && ns&notifyOnSuccess != 0 {
+		shouldNotify = true
+	}
+	if ns&notifyOnKeyword != 0 && matchNotifyKeyword(taskModel, taskResult.Result) {
+		shouldNotify = true
+	}
+	if !shouldNotify {
+		return
+	}
+
 	// NotifyType: 0=邮件, 1=Slack, 2=WebHook
 	// WebHook(type=2)不需要receiver_id，其他类型需要
 	if taskModel.NotifyType != 2 && taskModel.NotifyReceiverId == "" {
 		return
 	}
-	if taskResult.Err != nil {
+	statusName := "Success"
+	if failed {
 		statusName = "Failed"
-	} else {
-		statusName = "Success"
 	}
 	// 发送通知
 	msg := notify.Message{

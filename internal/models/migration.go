@@ -742,6 +742,36 @@ func (m *Migration) upgradeFor170(tx *gorm.DB) error {
 		}
 	}
 
+	// 通知增强:新增 notify_keyword_regex 列(关键字是否按正则匹配)
+	if !tx.Migrator().HasColumn(&Task{}, "notify_keyword_regex") {
+		if err := tx.Migrator().AddColumn(&Task{}, "NotifyKeywordRegex"); err != nil {
+			return err
+		}
+	}
+
+	// notify_status 由单选值迁移为位掩码(1=失败 2=成功 4=关键字)。
+	// 旧语义:1=仅失败(bit0,不变)、2=总是、3=关键字。
+	// 顺序:先 3→4,再 2→3,避免链式误转。
+	if err := tx.Model(&Task{}).Where("notify_status = ?", 3).Update("notify_status", 4).Error; err != nil {
+		return err
+	}
+	if err := tx.Model(&Task{}).Where("notify_status = ?", 2).Update("notify_status", 3).Error; err != nil {
+		return err
+	}
+
+	// 任务模板同样迁移(apply 时会带入任务,需保持 notify 语义一致)
+	if !tx.Migrator().HasColumn(&TaskTemplate{}, "notify_keyword_regex") {
+		if err := tx.Migrator().AddColumn(&TaskTemplate{}, "NotifyKeywordRegex"); err != nil {
+			return err
+		}
+	}
+	if err := tx.Model(&TaskTemplate{}).Where("notify_status = ?", 3).Update("notify_status", 4).Error; err != nil {
+		return err
+	}
+	if err := tx.Model(&TaskTemplate{}).Where("notify_status = ?", 2).Update("notify_status", 3).Error; err != nil {
+		return err
+	}
+
 	logger.Info("已升级到v1.7.0")
 
 	return nil

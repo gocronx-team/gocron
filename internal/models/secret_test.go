@@ -30,6 +30,11 @@ func TestUpgradeFor170CreatesSecretTable(t *testing.T) {
 	Db = db
 	defer func() { Db = original }()
 
+	// upgradeFor170 会迁移 task/task_template 的 notify 字段,需先建表
+	if err := db.AutoMigrate(&Task{}, &TaskTemplate{}); err != nil {
+		t.Fatalf("pre-migrate tables: %v", err)
+	}
+
 	m := &Migration{}
 	if err := m.upgradeFor170(db); err != nil {
 		t.Fatalf("upgradeFor170 error: %v", err)
@@ -161,6 +166,41 @@ func TestIsReservedEnvName(t *testing.T) {
 	for _, n := range []string{"API_KEY", "MY_TOKEN", "DB_PASSWORD", "FOO"} {
 		if IsReservedEnvName(n) {
 			t.Errorf("expected %q to be allowed", n)
+		}
+	}
+}
+
+func TestUpgradeFor170MigratesNotifyStatus(t *testing.T) {
+	db, err := gorm.Open(gormlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("open sqlite: %v", err)
+	}
+	original := Db
+	Db = db
+	defer func() { Db = original }()
+	if err := db.AutoMigrate(&Task{}, &TaskTemplate{}, &Secret{}); err != nil {
+		t.Fatalf("migrate: %v", err)
+	}
+
+	// 旧 notify_status 语义:0=禁用 1=仅失败 2=总是 3=关键字
+	for _, ns := range []int8{0, 1, 2, 3} {
+		task := &Task{Name: "t" + string(rune('0'+ns)), NotifyStatus: ns, Command: "x"}
+		if err := db.Create(task).Error; err != nil {
+			t.Fatalf("seed task ns=%d: %v", ns, err)
+		}
+	}
+
+	if err := (&Migration{}).upgradeFor170(db); err != nil {
+		t.Fatalf("upgrade: %v", err)
+	}
+
+	// 位掩码映射:0->0, 1->1(失败位不变), 2->3(失败|成功), 3->4(关键字位)
+	want := map[string]int8{"t0": 0, "t1": 1, "t2": 3, "t3": 4}
+	for name, exp := range want {
+		var tk Task
+		db.Where("name = ?", name).First(&tk)
+		if tk.NotifyStatus != exp {
+			t.Errorf("%s: notify_status = %d, want %d", name, tk.NotifyStatus, exp)
 		}
 	}
 }

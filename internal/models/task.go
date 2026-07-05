@@ -88,15 +88,17 @@ type Task struct {
 	NotifyType       int8                 `json:"notify_type" gorm:"not null;default:0"`
 	NotifyReceiverId string               `json:"notify_receiver_id" gorm:"type:varchar(256);not null;default:''"`
 	NotifyKeyword    string               `json:"notify_keyword" gorm:"type:varchar(128);not null;default:''"`
-	Tag              string               `json:"tag" gorm:"type:varchar(255);not null;default:''"`
-	LogRetentionDays int                  `json:"log_retention_days" gorm:"type:smallint;not null;default:0"`
-	Remark           string               `json:"remark" gorm:"type:varchar(100);not null;default:''"`
-	Status           Status               `json:"status" gorm:"not null;index;default:0"`
-	CreatedAt        time.Time            `json:"created" gorm:"column:created;autoCreateTime"`
-	DeletedAt        *time.Time           `json:"deleted" gorm:"column:deleted;index"`
-	BaseModel        `json:"-" gorm:"-"`
-	Hosts            []TaskHostDetail `json:"hosts" gorm:"-"`
-	NextRunTime      NextRunTime      `json:"next_run_time" gorm:"-"`
+	// NotifyKeywordRegex 关键字匹配模式:0=子串包含,1=正则(标准库 regexp/RE2)
+	NotifyKeywordRegex int8       `json:"notify_keyword_regex" gorm:"not null;default:0"`
+	Tag                string     `json:"tag" gorm:"type:varchar(255);not null;default:''"`
+	LogRetentionDays   int        `json:"log_retention_days" gorm:"type:smallint;not null;default:0"`
+	Remark             string     `json:"remark" gorm:"type:varchar(100);not null;default:''"`
+	Status             Status     `json:"status" gorm:"not null;index;default:0"`
+	CreatedAt          time.Time  `json:"created" gorm:"column:created;autoCreateTime"`
+	DeletedAt          *time.Time `json:"deleted" gorm:"column:deleted;index"`
+	BaseModel          `json:"-" gorm:"-"`
+	Hosts              []TaskHostDetail `json:"hosts" gorm:"-"`
+	NextRunTime        NextRunTime      `json:"next_run_time" gorm:"-"`
 }
 
 // 新增
@@ -108,7 +110,7 @@ func (task *Task) Create() (insertId int, err error) {
 		"spec", "protocol", "command", "http_method", "http_body",
 		"http_headers", "success_pattern", "timeout", "multi",
 		"retry_times", "retry_interval", "notify_status", "notify_type",
-		"notify_receiver_id", "notify_keyword", "tag", "log_retention_days",
+		"notify_receiver_id", "notify_keyword", "notify_keyword_regex", "tag", "log_retention_days",
 		"remark", "status",
 	).Create(task)
 	if result.Error == nil {
@@ -124,30 +126,31 @@ func (task *Task) UpdateBean(id int) (int64, error) {
 			"retry_times", "retry_interval", "remark", "notify_status",
 			"notify_type", "notify_receiver_id", "dependency_task_id",
 			"dependency_status", "tag", "http_method", "http_body",
-			"http_headers", "success_pattern", "notify_keyword",
+			"http_headers", "success_pattern", "notify_keyword", "notify_keyword_regex",
 			"log_retention_days").
 		UpdateColumns(map[string]interface{}{
-			"name":               task.Name,
-			"spec":               task.Spec,
-			"protocol":           task.Protocol,
-			"command":            task.Command,
-			"timeout":            task.Timeout,
-			"multi":              task.Multi,
-			"retry_times":        task.RetryTimes,
-			"retry_interval":     task.RetryInterval,
-			"remark":             task.Remark,
-			"notify_status":      task.NotifyStatus,
-			"notify_type":        task.NotifyType,
-			"notify_receiver_id": task.NotifyReceiverId,
-			"dependency_task_id": task.DependencyTaskId,
-			"dependency_status":  task.DependencyStatus,
-			"tag":                task.Tag,
-			"http_method":        task.HttpMethod,
-			"http_body":          task.HttpBody,
-			"http_headers":       task.HttpHeaders,
-			"success_pattern":    task.SuccessPattern,
-			"notify_keyword":     task.NotifyKeyword,
-			"log_retention_days": task.LogRetentionDays,
+			"name":                 task.Name,
+			"spec":                 task.Spec,
+			"protocol":             task.Protocol,
+			"command":              task.Command,
+			"timeout":              task.Timeout,
+			"multi":                task.Multi,
+			"retry_times":          task.RetryTimes,
+			"retry_interval":       task.RetryInterval,
+			"remark":               task.Remark,
+			"notify_status":        task.NotifyStatus,
+			"notify_type":          task.NotifyType,
+			"notify_receiver_id":   task.NotifyReceiverId,
+			"dependency_task_id":   task.DependencyTaskId,
+			"dependency_status":    task.DependencyStatus,
+			"tag":                  task.Tag,
+			"http_method":          task.HttpMethod,
+			"http_body":            task.HttpBody,
+			"http_headers":         task.HttpHeaders,
+			"success_pattern":      task.SuccessPattern,
+			"notify_keyword":       task.NotifyKeyword,
+			"notify_keyword_regex": task.NotifyKeywordRegex,
+			"log_retention_days":   task.LogRetentionDays,
 		})
 	return result.RowsAffected, result.Error
 }
