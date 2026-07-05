@@ -44,7 +44,9 @@ build-errors.log
 .gocache
 .gstack/
 .design-review/
-/.claude/
+/.claude/*
+!/.claude/commands/
+!/.claude/skills/
 .claude/worktrees/
 docs/superpowers/
 docs/GOCRONX_ADMIN_MIGRATION.md
