@@ -752,17 +752,10 @@ func SendNotification(taskModel models.Task, taskResult TaskResult) {
 	}
 
 	failed := taskResult.Err != nil
-	// 多条件:任一勾选的条件满足即发送一条通知
-	shouldNotify := false
-	if failed && ns&notifyOnFailure != 0 {
-		shouldNotify = true
-	}
-	if !failed && ns&notifyOnSuccess != 0 {
-		shouldNotify = true
-	}
-	if ns&notifyOnKeyword != 0 && matchNotifyKeyword(taskModel, taskResult.Result) {
-		shouldNotify = true
-	}
+	// 多条件:任一勾选的条件满足即发送一条通知(OR 短路,关键字匹配仅在需要时求值)
+	shouldNotify := (failed && ns&notifyOnFailure != 0) ||
+		(!failed && ns&notifyOnSuccess != 0) ||
+		(ns&notifyOnKeyword != 0 && matchNotifyKeyword(taskModel, taskResult.Result))
 	if !shouldNotify {
 		return
 	}
