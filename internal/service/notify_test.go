@@ -22,6 +22,23 @@ func TestMatchNotifyKeyword(t *testing.T) {
 		{"regex hit", "ERR[0-9]+", 1, "ERR503 occurred", true},
 		{"regex miss", "ERR[0-9]+", 1, "ERR occurred", false},
 		{"invalid regex is safe", "ERR[0-9", 1, "ERR503", false},
+		// 大小写:正则默认区分大小写
+		{"regex case-sensitive miss", "error", 1, "ERROR happened", false},
+		{"regex case-insensitive flag", "(?i)error", 1, "ERROR happened", true},
+		// 或、锚点
+		{"regex alternation", "timeout|refused", 1, "connection refused", true},
+		{"regex anchor hit", "^FAIL", 1, "FAIL: boom", true},
+		{"regex anchor miss single-line", "^FAIL", 1, "job FAIL", false},
+		// 多行输出:MatchString 在整段任意位置匹配
+		{"regex matches within multiline", "panic", 1, "line1\nfatal panic\nline3", true},
+		// 默认 ^ 只锚定整串开头(非每行);多行需显式 (?m)
+		{"regex anchor without multiline flag", "^panic", 1, "line1\npanic here", false},
+		{"regex multiline flag anchors each line", "(?m)^panic", 1, "line1\npanic here", true},
+		// 默认 . 不跨行;需 (?s) 才跨行
+		{"regex dot no newline by default", "start.end", 1, "start\nend", false},
+		{"regex dotall flag crosses newline", "(?s)start.end", 1, "start\nend", true},
+		// 中文关键字
+		{"regex chinese keyword", "错误|失败", 1, "任务执行失败", true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
