@@ -40,8 +40,7 @@
       <div v-if="currentLog">
         <div v-if="currentLog.hostname" style="margin-bottom: 12px">
           <strong>{{ t('task.log.colHost') }}:</strong>
-          <!-- eslint-disable-next-line vue/no-v-html -->
-          <pre class="log-pre" v-html="currentLog.hostname" />
+          <pre class="log-pre">{{ formatHostLines(currentLog.hostname) }}</pre>
         </div>
         <div style="margin-bottom: 12px">
           <strong>{{ t('task.name') }}:</strong>
@@ -247,14 +246,27 @@
 
   // ── Format helpers ────────────────────────────────────────────────────────
   // Backend stores task-log hostname as "alias - name<br>alias2 - name2<br>".
-  // For the table cell, split on <br>, drop empties, join with ", ".
-  function formatHostList(raw: string): string {
-    if (!raw) return '-'
-    const parts = raw
+  // Split into trimmed, non-empty segments. Rendering the segments as text
+  // (never v-html) keeps alias/name inert, avoiding stored XSS.
+  function splitHosts(raw: string): string[] {
+    if (!raw) return []
+    return raw
       .split(/<br\s*\/?>/i)
       .map((s) => s.trim())
       .filter(Boolean)
+  }
+
+  // For the table cell: join with ", ".
+  function formatHostList(raw: string): string {
+    const parts = splitHosts(raw)
     return parts.length > 0 ? parts.join(', ') : '-'
+  }
+
+  // For the detail dialog: one host per line, rendered as escaped text inside
+  // a <pre> (newlines become line breaks — same look as the old <br> markup).
+  function formatHostLines(raw: string): string {
+    const parts = splitHosts(raw)
+    return parts.length > 0 ? parts.join('\n') : '-'
   }
 
   function formatDuration(seconds: number): string {
