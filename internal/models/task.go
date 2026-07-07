@@ -89,16 +89,18 @@ type Task struct {
 	NotifyReceiverId string               `json:"notify_receiver_id" gorm:"type:varchar(256);not null;default:''"`
 	NotifyKeyword    string               `json:"notify_keyword" gorm:"type:varchar(128);not null;default:''"`
 	// NotifyKeywordRegex 关键字匹配模式:0=子串包含,1=正则(标准库 regexp/RE2)
-	NotifyKeywordRegex int8       `json:"notify_keyword_regex" gorm:"not null;default:0"`
-	Tag                string     `json:"tag" gorm:"type:varchar(255);not null;default:''"`
-	LogRetentionDays   int        `json:"log_retention_days" gorm:"type:smallint;not null;default:0"`
-	Remark             string     `json:"remark" gorm:"type:varchar(100);not null;default:''"`
-	Status             Status     `json:"status" gorm:"not null;index;default:0"`
-	CreatedAt          time.Time  `json:"created" gorm:"column:created;autoCreateTime"`
-	DeletedAt          *time.Time `json:"deleted" gorm:"column:deleted;index"`
-	BaseModel          `json:"-" gorm:"-"`
-	Hosts              []TaskHostDetail `json:"hosts" gorm:"-"`
-	NextRunTime        NextRunTime      `json:"next_run_time" gorm:"-"`
+	NotifyKeywordRegex int8 `json:"notify_keyword_regex" gorm:"not null;default:0"`
+	// NotifyDiagnosis 失败通知是否附带 AI 根因诊断:0=否,1=是(需配置 LLM)
+	NotifyDiagnosis  int8       `json:"notify_diagnosis" gorm:"not null;default:0"`
+	Tag              string     `json:"tag" gorm:"type:varchar(255);not null;default:''"`
+	LogRetentionDays int        `json:"log_retention_days" gorm:"type:smallint;not null;default:0"`
+	Remark           string     `json:"remark" gorm:"type:varchar(100);not null;default:''"`
+	Status           Status     `json:"status" gorm:"not null;index;default:0"`
+	CreatedAt        time.Time  `json:"created" gorm:"column:created;autoCreateTime"`
+	DeletedAt        *time.Time `json:"deleted" gorm:"column:deleted;index"`
+	BaseModel        `json:"-" gorm:"-"`
+	Hosts            []TaskHostDetail `json:"hosts" gorm:"-"`
+	NextRunTime      NextRunTime      `json:"next_run_time" gorm:"-"`
 }
 
 // 新增
@@ -150,6 +152,7 @@ func (task *Task) UpdateBean(id int) (int64, error) {
 			"success_pattern":      task.SuccessPattern,
 			"notify_keyword":       task.NotifyKeyword,
 			"notify_keyword_regex": task.NotifyKeywordRegex,
+			"notify_diagnosis":     task.NotifyDiagnosis,
 			"log_retention_days":   task.LogRetentionDays,
 		})
 	return result.RowsAffected, result.Error

@@ -499,6 +499,14 @@
               </ElFormItem>
             </ElCol>
           </ElRow>
+          <ElRow>
+            <ElCol :span="24">
+              <ElFormItem :label="t('task.notifyDiagnosis')">
+                <ElSwitch v-model="form.notify_diagnosis" :active-value="1" :inactive-value="0" />
+                <span class="regex-hint">{{ t('task.notifyDiagnosisHint') }}</span>
+              </ElFormItem>
+            </ElCol>
+          </ElRow>
         </ElCard>
 
         <!-- ── Template ───────────────────────────────────────────────── -->
@@ -687,6 +695,7 @@
     notify_type: 0,
     notify_keyword: '',
     notify_keyword_regex: 0,
+    notify_diagnosis: 0,
     notify_receiver_id: ''
   })
 
@@ -900,6 +909,7 @@
     form.notify_type = data.notify_type ?? 0
     form.notify_keyword = data.notify_keyword || ''
     form.notify_keyword_regex = data.notify_keyword_regex ?? 0
+    form.notify_diagnosis = data.notify_diagnosis ?? 0
     form.notify_receiver_id = data.notify_receiver_id || ''
 
     // Shell host IDs

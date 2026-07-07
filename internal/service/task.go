@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -17,7 +18,9 @@ import (
 	"github.com/gocronx-team/gocron/internal/models"
 	"github.com/gocronx-team/gocron/internal/modules/app"
 	"github.com/gocronx-team/gocron/internal/modules/crypto"
+	"github.com/gocronx-team/gocron/internal/modules/diagnosis"
 	"github.com/gocronx-team/gocron/internal/modules/httpclient"
+	"github.com/gocronx-team/gocron/internal/modules/llm"
 	"github.com/gocronx-team/gocron/internal/modules/logger"
 	"github.com/gocronx-team/gocron/internal/modules/notify"
 	rpcClient "github.com/gocronx-team/gocron/internal/modules/rpc/client"
@@ -769,17 +772,106 @@ func SendNotification(taskModel models.Task, taskResult TaskResult) {
 	if failed {
 		statusName = "Failed"
 	}
+
+	output := taskResult.Result
+	// 失败 + 开启诊断时,尽力附带 AI 根因分析(不阻塞:本函数已在 goroutine 中调用)
+	if failed && taskModel.NotifyDiagnosis == 1 {
+		if block := diagnoseForNotify(taskModel, output); block != "" {
+			output = block + "\n\n" + output
+		}
+	}
+
 	// 发送通知
 	msg := notify.Message{
 		"task_type":        taskModel.NotifyType,
 		"task_receiver_id": taskModel.NotifyReceiverId,
 		"name":             taskModel.Name,
-		"output":           taskResult.Result,
+		"output":           output,
 		"status":           statusName,
 		"task_id":          taskModel.Id,
 		"remark":           taskModel.Remark,
 	}
 	notifyPushFunc(msg)
+}
+
+// 失败诊断通知路径的参数
+const (
+	// notifyDiagnosisTimeout 单次诊断在通知路径的超时:失败告警不能被拖太久,
+	// 超时则发不带诊断的原通知(比 diagnosis.Timeout 短)。
+	notifyDiagnosisTimeout = 30 * time.Second
+	// notifyDiagnosisCooldown 同一任务两次诊断的最小间隔,防止 flapping 任务刷爆 LLM。
+	notifyDiagnosisCooldown = 10 * time.Minute
+)
+
+// diagnoseCooldown 记录每个任务上次诊断时间,做限频。
+var diagnoseCooldown = &cooldownTracker{last: make(map[int]time.Time)}
+
+type cooldownTracker struct {
+	mu   sync.Mutex
+	last map[int]time.Time
+}
+
+// allow 在距上次放行超过 window 时返回 true 并记录 now;否则返回 false。
+func (c *cooldownTracker) allow(id int, now time.Time, window time.Duration) bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if t, ok := c.last[id]; ok && now.Sub(t) < window {
+		return false
+	}
+	c.last[id] = now
+	return true
+}
+
+// formatDiagnosisBlock 把诊断结果渲染成附加到通知输出前的文本块。
+func formatDiagnosisBlock(d diagnosis.Result, english bool) string {
+	if strings.TrimSpace(d.RootCause) == "" && len(d.Suggestions) == 0 {
+		return ""
+	}
+	title, cause, advice := "【AI 诊断】", "根因", "建议"
+	if english {
+		title, cause, advice = "[AI Diagnosis]", "Root cause", "Suggestions"
+	}
+	var b strings.Builder
+	b.WriteString(title + "\n")
+	if strings.TrimSpace(d.RootCause) != "" {
+		fmt.Fprintf(&b, "%s: %s\n", cause, strings.TrimSpace(d.RootCause))
+	}
+	if len(d.Suggestions) > 0 {
+		b.WriteString(advice + ":\n")
+		for _, s := range d.Suggestions {
+			if strings.TrimSpace(s) != "" {
+				fmt.Fprintf(&b, "- %s\n", strings.TrimSpace(s))
+			}
+		}
+	}
+	return strings.TrimRight(b.String(), "\n")
+}
+
+// diagnoseForNotify 尽力为失败任务生成诊断文本块;任何前置条件不满足(未配 LLM、
+// 限频命中、调用失败/超时)都返回空串,让通知照常不带诊断发出。
+func diagnoseForNotify(taskModel models.Task, output string) string {
+	client, err := llm.FromSettings()
+	if err != nil {
+		return "" // 未配置 LLM,静默跳过
+	}
+	if !diagnoseCooldown.allow(taskModel.Id, time.Now(), notifyDiagnosisCooldown) {
+		return ""
+	}
+	// 复用诊断模块的输入构造(内部会截断过长输出);通知路径无请求上下文,默认中文
+	log := &models.TaskLog{
+		Name:     taskModel.Name,
+		Protocol: taskModel.Protocol,
+		Command:  taskModel.Command,
+		Result:   output,
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), notifyDiagnosisTimeout)
+	defer cancel()
+	d, err := diagnosis.Diagnose(ctx, client, log, false)
+	if err != nil {
+		logger.Warnf("失败通知诊断#task-%d#%v", taskModel.Id, err)
+		return ""
+	}
+	return formatDiagnosisBlock(d, false)
 }
 
 // 执行具体任务

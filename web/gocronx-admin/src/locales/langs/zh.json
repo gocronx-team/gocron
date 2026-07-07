@@ -504,6 +504,8 @@
     "notifyStatusAll": "总是通知",
     "notifyKeywordRegex": "正则模式",
     "notifyKeywordRegexHint": "开启后关键字按正则表达式(RE2)匹配输出",
+    "notifyDiagnosis": "AI 失败诊断",
+    "notifyDiagnosisHint": "任务失败时,通知中附带 AI 根因分析与建议(需配置 LLM)",
     "notifyType": "通知方式",
     "notifyTypeEmail": "邮件",
     "notifyTypeSlack": "Slack",

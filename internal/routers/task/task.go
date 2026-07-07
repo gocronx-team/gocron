@@ -43,6 +43,7 @@ type TaskForm struct {
 	NotifyReceiverId   string                      `form:"notify_receiver_id" json:"notify_receiver_id"`
 	NotifyKeyword      string                      `form:"notify_keyword" json:"notify_keyword"`
 	NotifyKeywordRegex int8                        `form:"notify_keyword_regex" json:"notify_keyword_regex" binding:"oneof=0 1"`
+	NotifyDiagnosis    int8                        `form:"notify_diagnosis" json:"notify_diagnosis" binding:"oneof=0 1"`
 	LogRetentionDays   int                         `form:"log_retention_days" json:"log_retention_days" binding:"min=0,max=3650"`
 }
 
@@ -136,6 +137,7 @@ func Store(c *gin.Context) {
 	taskModel.NotifyReceiverId = form.NotifyReceiverId
 	taskModel.NotifyKeyword = form.NotifyKeyword
 	taskModel.NotifyKeywordRegex = form.NotifyKeywordRegex
+	taskModel.NotifyDiagnosis = form.NotifyDiagnosis
 	taskModel.LogRetentionDays = form.LogRetentionDays
 	taskModel.Spec = form.Spec
 	taskModel.Level = form.Level

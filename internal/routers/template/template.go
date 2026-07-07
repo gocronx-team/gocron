@@ -36,6 +36,7 @@ type TemplateForm struct {
 	NotifyType         int8   `form:"notify_type" json:"notify_type"`
 	NotifyKeyword      string `form:"notify_keyword" json:"notify_keyword"`
 	NotifyKeywordRegex int8   `form:"notify_keyword_regex" json:"notify_keyword_regex" binding:"oneof=0 1"`
+	NotifyDiagnosis    int8   `form:"notify_diagnosis" json:"notify_diagnosis" binding:"oneof=0 1"`
 	LogRetentionDays   int    `form:"log_retention_days" json:"log_retention_days" binding:"min=0,max=3650"`
 }
 
@@ -144,6 +145,7 @@ func Store(c *gin.Context) {
 	tmplModel.NotifyType = form.NotifyType
 	tmplModel.NotifyKeyword = form.NotifyKeyword
 	tmplModel.NotifyKeywordRegex = form.NotifyKeywordRegex
+	tmplModel.NotifyDiagnosis = form.NotifyDiagnosis
 	tmplModel.LogRetentionDays = form.LogRetentionDays
 
 	if id == 0 {
@@ -267,6 +269,7 @@ func SaveFromTask(c *gin.Context) {
 	tmplModel.NotifyType = task.NotifyType
 	tmplModel.NotifyKeyword = task.NotifyKeyword
 	tmplModel.NotifyKeywordRegex = task.NotifyKeywordRegex
+	tmplModel.NotifyDiagnosis = task.NotifyDiagnosis
 	tmplModel.LogRetentionDays = task.LogRetentionDays
 	tmplModel.CreatedBy = user.Username(c)
 

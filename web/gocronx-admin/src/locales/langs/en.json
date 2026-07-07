@@ -504,6 +504,8 @@
     "notifyStatusAll": "Always",
     "notifyKeywordRegex": "Regex Mode",
     "notifyKeywordRegexHint": "Match output with a regular expression (RE2) when enabled",
+    "notifyDiagnosis": "AI Failure Diagnosis",
+    "notifyDiagnosisHint": "On failure, attach AI root-cause analysis and suggestions to the notification (requires LLM configured)",
     "notifyType": "Notify Via",
     "notifyTypeEmail": "Email",
     "notifyTypeSlack": "Slack",

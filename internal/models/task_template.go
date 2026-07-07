@@ -30,6 +30,7 @@ type TaskTemplate struct {
 	NotifyType         int8      `json:"notify_type" gorm:"not null;default:0"`
 	NotifyKeyword      string    `json:"notify_keyword" gorm:"type:varchar(128);not null;default:''"`
 	NotifyKeywordRegex int8      `json:"notify_keyword_regex" gorm:"not null;default:0"`
+	NotifyDiagnosis    int8      `json:"notify_diagnosis" gorm:"not null;default:0"`
 	LogRetentionDays   int       `json:"log_retention_days" gorm:"type:smallint;not null;default:0"`
 	IsBuiltin          int8      `json:"is_builtin" gorm:"not null;default:0"`
 	UsageCount         int       `json:"usage_count" gorm:"type:int;not null;default:0"`
@@ -71,6 +72,7 @@ func (t *TaskTemplate) UpdateBean(id int) (int64, error) {
 			"notify_type":          t.NotifyType,
 			"notify_keyword":       t.NotifyKeyword,
 			"notify_keyword_regex": t.NotifyKeywordRegex,
+			"notify_diagnosis":     t.NotifyDiagnosis,
 			"log_retention_days":   t.LogRetentionDays,
 		})
 	return result.RowsAffected, result.Error

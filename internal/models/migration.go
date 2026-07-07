@@ -46,7 +46,7 @@ func (migration *Migration) Upgrade(oldVersionId int) {
 		return
 	}
 
-	versionIds := []int{110, 122, 130, 140, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 1510, 160, 163, 170}
+	versionIds := []int{110, 122, 130, 140, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 1510, 160, 163, 170, 180}
 	upgradeFuncs := []func(*gorm.DB) error{
 		migration.upgradeFor110,
 		migration.upgradeFor122,
@@ -66,6 +66,7 @@ func (migration *Migration) Upgrade(oldVersionId int) {
 		migration.upgradeFor160,
 		migration.upgradeFor163,
 		migration.upgradeFor170,
+		migration.upgradeFor180,
 	}
 
 	startIndex := -1
@@ -773,6 +774,27 @@ func (m *Migration) upgradeFor170(tx *gorm.DB) error {
 	}
 
 	logger.Info("已升级到v1.7.0")
+
+	return nil
+}
+
+func (m *Migration) upgradeFor180(tx *gorm.DB) error {
+	logger.Info("开始升级到v1.8.0")
+
+	// 失败通知增强:新增 notify_diagnosis 列(失败时是否附带 AI 根因诊断)
+	if !tx.Migrator().HasColumn(&Task{}, "notify_diagnosis") {
+		if err := tx.Migrator().AddColumn(&Task{}, "NotifyDiagnosis"); err != nil {
+			return err
+		}
+	}
+	// 任务模板同步(apply 时会带入任务,需保持 notify 语义一致)
+	if !tx.Migrator().HasColumn(&TaskTemplate{}, "notify_diagnosis") {
+		if err := tx.Migrator().AddColumn(&TaskTemplate{}, "NotifyDiagnosis"); err != nil {
+			return err
+		}
+	}
+
+	logger.Info("已升级到v1.8.0")
 
 	return nil
 }
