@@ -429,84 +429,6 @@
     white-space: pre-wrap;
   }
 
-  /* Markdown 渲染内容（v-html，不受 scoped 影响，需用 :deep） */
-  .ai-chat-md {
-    white-space: normal;
-  }
-
-  .ai-chat-md :deep(p) {
-    margin: 0 0 8px;
-  }
-
-  .ai-chat-md :deep(p:last-child) {
-    margin-bottom: 0;
-  }
-
-  .ai-chat-md :deep(:is(h1, h2, h3, h4, h5, h6)) {
-    margin: 10px 0 6px;
-    font-size: 14px;
-    font-weight: 600;
-  }
-
-  .ai-chat-md :deep(:is(ul, ol)) {
-    padding-left: 20px;
-    margin: 4px 0;
-  }
-
-  .ai-chat-md :deep(li) {
-    margin: 2px 0;
-  }
-
-  .ai-chat-md :deep(code) {
-    padding: 1px 4px;
-    font-family: monospace;
-    font-size: 12px;
-    background: var(--art-gray-300);
-    border-radius: 3px;
-  }
-
-  .ai-chat-md :deep(pre) {
-    padding: 8px 10px;
-    margin: 6px 0;
-    overflow-x: auto;
-    background: var(--art-gray-300);
-    border-radius: 6px;
-  }
-
-  .ai-chat-md :deep(pre code) {
-    padding: 0;
-    background: none;
-  }
-
-  .ai-chat-md :deep(table) {
-    margin: 6px 0;
-    font-size: 12px;
-    border-collapse: collapse;
-  }
-
-  .ai-chat-md :deep(:is(th, td)) {
-    padding: 4px 8px;
-    border: 1px solid var(--art-gray-400);
-  }
-
-  .ai-chat-md :deep(a) {
-    color: var(--main-color);
-    text-decoration: underline;
-  }
-
-  .ai-chat-md :deep(blockquote) {
-    padding-left: 10px;
-    margin: 6px 0;
-    color: var(--art-gray-600);
-    border-left: 3px solid var(--art-gray-400);
-  }
-
-  .ai-chat-md :deep(hr) {
-    margin: 8px 0;
-    border: none;
-    border-top: 1px solid var(--art-gray-400);
-  }
-
   .ai-chat-copy {
     @apply h-auto p-0 mt-0.5 text-xs text-g-500;
   }
@@ -532,5 +454,89 @@
 
   .ai-chat-input {
     @apply flex flex-col gap-2 pt-3 mt-2 border-t border-g-300/80;
+  }
+</style>
+
+<!--
+  Markdown 渲染内容通过 v-html 注入，拿不到 scoped 的 data-v- 属性，因此这些样式
+  放在非 scoped 块里，用 .ai-chat-md 类名做命名空间（避免全局污染）。这样无需 :deep()，
+  也不会触发 Tailwind(lightningcss) 对 :deep() 伪类的解析告警。
+-->
+<style>
+  .ai-chat-md {
+    white-space: normal;
+  }
+
+  .ai-chat-md p {
+    margin: 0 0 8px;
+  }
+
+  .ai-chat-md p:last-child {
+    margin-bottom: 0;
+  }
+
+  .ai-chat-md :is(h1, h2, h3, h4, h5, h6) {
+    margin: 10px 0 6px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .ai-chat-md :is(ul, ol) {
+    padding-left: 20px;
+    margin: 4px 0;
+  }
+
+  .ai-chat-md li {
+    margin: 2px 0;
+  }
+
+  .ai-chat-md code {
+    padding: 1px 4px;
+    font-family: monospace;
+    font-size: 12px;
+    background: var(--art-gray-300);
+    border-radius: 3px;
+  }
+
+  .ai-chat-md pre {
+    padding: 8px 10px;
+    margin: 6px 0;
+    overflow-x: auto;
+    background: var(--art-gray-300);
+    border-radius: 6px;
+  }
+
+  .ai-chat-md pre code {
+    padding: 0;
+    background: none;
+  }
+
+  .ai-chat-md table {
+    margin: 6px 0;
+    font-size: 12px;
+    border-collapse: collapse;
+  }
+
+  .ai-chat-md :is(th, td) {
+    padding: 4px 8px;
+    border: 1px solid var(--art-gray-400);
+  }
+
+  .ai-chat-md a {
+    color: var(--main-color);
+    text-decoration: underline;
+  }
+
+  .ai-chat-md blockquote {
+    padding-left: 10px;
+    margin: 6px 0;
+    color: var(--art-gray-600);
+    border-left: 3px solid var(--art-gray-400);
+  }
+
+  .ai-chat-md hr {
+    margin: 8px 0;
+    border: none;
+    border-top: 1px solid var(--art-gray-400);
   }
 </style>
