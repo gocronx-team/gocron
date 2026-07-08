@@ -182,6 +182,14 @@ resources:
     memory: 256Mi
 ```
 
+::: tip Memory limit & GOMEMLIMIT
+When you set a `resources.limits.memory`, gocron automatically sets Go's
+`GOMEMLIMIT` to about 90% of that limit at startup (read from the container's
+cgroup). This makes the garbage collector reclaim memory before the pod hits its
+limit, reducing OOM kills — no extra configuration needed. Without a memory
+limit, this is a no-op.
+:::
+
 ### PostgreSQL + Multiple Replicas
 
 ```yaml

@@ -28,6 +28,7 @@ Full documentation is available at: **[document](https://gocron-docs.pages.dev/e
 - **MCP Support**: Remote management by AI clients (Claude Desktop, Cursor, etc.) via the Model Context Protocol, secured with web-managed access tokens
 - **AI Assist**: Natural-language to cron expression, AI-powered failure-log diagnosis, and an in-app AI ops chat assistant (query tasks/logs/hosts/templates, diagnose failures), backed by any OpenAI-compatible model (configurable endpoint, also works with self-hosted/local models)
 - **Multi-Database**: MySQL / PostgreSQL / SQLite support
+- **Container-Aware Memory**: Automatically sets `GOMEMLIMIT` from the container's cgroup memory limit to reduce OOM kills in Docker/Kubernetes
 - **Log Management**: Complete execution logs with auto-cleanup
 - **Notifications**: Email, Slack, Webhook support
 

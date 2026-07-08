@@ -182,6 +182,12 @@ resources:
     memory: 256Mi
 ```
 
+::: tip 内存限额与 GOMEMLIMIT
+当你设置了 `resources.limits.memory`，gocron 启动时会自动把 Go 的 `GOMEMLIMIT`
+设为该上限的约 90%（从容器 cgroup 读取）。这样垃圾回收会在 Pod 触顶前主动回收内存，
+减少被 OOM kill，无需额外配置。未设内存限额时该行为为空操作（no-op）。
+:::
+
 ### PostgreSQL + 多副本
 
 ```yaml
