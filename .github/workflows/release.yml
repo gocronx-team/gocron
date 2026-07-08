@@ -56,9 +56,19 @@ jobs:
           name: frontend-dist
           path: web/gocronx-admin/dist/
 
+      # The Helm chart-releaser publishes tags like "gocron-0.1.1"; without this
+      # GoReleaser would pick the nearest such tag as the previous release and
+      # truncate the changelog. Force the previous tag to the prior v* release.
+      - name: Determine previous v* tag
+        id: prevtag
+        run: |
+          prev=$(git tag -l 'v*' --sort=-version:refname | grep -vFx "${GITHUB_REF_NAME}" | head -n1)
+          echo "tag=$prev" >> "$GITHUB_OUTPUT"
+
       - uses: goreleaser/goreleaser-action@v7
         with:
           version: latest
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GORELEASER_PREVIOUS_TAG: ${{ steps.prevtag.outputs.tag }}
