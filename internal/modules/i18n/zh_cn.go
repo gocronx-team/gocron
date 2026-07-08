@@ -81,6 +81,7 @@ var zhCN = map[string]string{
 	"llm_test_success":                       "连接成功，AI 模型配置可用",
 	"llm_test_failed":                        "连接失败",
 	"llm_test_incomplete":                    "请先填写 Base URL、模型和 API Key",
+	"llm_invalid_base_url":                   "接口地址必须是带主机名的 http/https 地址",
 	"ai_chat_max_iterations":                 "AI 多次调用工具仍未给出结论，请简化问题或稍后重试",
 	"log_not_found":                          "日志不存在",
 	"log_no_result":                          "该日志没有可供诊断的输出内容",

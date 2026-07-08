@@ -48,6 +48,14 @@ func UpdateLLM(c *gin.Context) {
 	}
 
 	settingModel := new(models.Setting)
+	baseURL := strings.TrimSpace(form.BaseURL)
+	// 校验接口地址(仅允许带 host 的 http/https),拒绝危险 scheme,收敛 SSRF 面。
+	if baseURL != "" {
+		if err := llm.ValidateBaseURL(baseURL); err != nil {
+			base.RespondError(c, i18n.T(c, "llm_invalid_base_url"))
+			return
+		}
+	}
 	apiKey := strings.TrimSpace(form.ApiKey)
 	if apiKey == "" {
 		existing, err := settingModel.LLM()
@@ -58,7 +66,7 @@ func UpdateLLM(c *gin.Context) {
 		apiKey = existing.ApiKey
 	}
 
-	if err := settingModel.UpdateLLM(form.Enable, strings.TrimSpace(form.BaseURL), apiKey, strings.TrimSpace(form.Model)); err != nil {
+	if err := settingModel.UpdateLLM(form.Enable, baseURL, apiKey, strings.TrimSpace(form.Model)); err != nil {
 		base.RespondErrorWithDefaultMsg(c, err)
 		return
 	}
@@ -84,6 +92,11 @@ func TestLLM(c *gin.Context) {
 	}
 	if baseURL == "" || model == "" || apiKey == "" {
 		base.RespondError(c, i18n.T(c, "llm_test_incomplete"))
+		return
+	}
+	// 校验接口地址(仅允许带 host 的 http/https),拒绝危险 scheme,收敛 SSRF 面。
+	if err := llm.ValidateBaseURL(baseURL); err != nil {
+		base.RespondError(c, i18n.T(c, "llm_invalid_base_url"))
 		return
 	}
 

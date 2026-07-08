@@ -116,6 +116,10 @@ type chatResponse struct {
 // Chat 发送一次单轮对话，返回模型回复文本。
 // 调用方应通过 ctx 控制取消/超时；客户端自身也带有默认超时。
 func (c *Client) Chat(ctx context.Context, system, user string) (string, error) {
+	// 请求发出前校验 base_url(收敛 SSRF 面:仅允许带 host 的 http/https)。
+	if err := ValidateBaseURL(c.baseURL); err != nil {
+		return "", err
+	}
 	reqBody := chatRequest{
 		Model:       c.model,
 		Temperature: 0.2,
@@ -270,6 +274,10 @@ const streamScannerBuffer = 1 << 20 // 1MB
 // 两个回调均可为 nil。返回的 Message 仅含最终答案 Content 与按 index 组装的 ToolCalls
 // （reasoning 是过程性内容，不计入 Content、不回灌历史）。HTTP 非 200 时先读体返回错误。
 func (c *Client) ChatStream(ctx context.Context, messages []Message, tools []Tool, onContent, onReasoning func(delta string)) (Message, error) {
+	// 请求发出前校验 base_url(收敛 SSRF 面:仅允许带 host 的 http/https)。
+	if err := ValidateBaseURL(c.baseURL); err != nil {
+		return Message{}, err
+	}
 	reqBody := streamChatRequest{
 		Model:       c.model,
 		Messages:    messages,

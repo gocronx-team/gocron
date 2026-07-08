@@ -12,5 +12,8 @@ func FromSettings() (*Client, error) {
 	if !cfg.Enable || cfg.BaseURL == "" || cfg.ApiKey == "" || cfg.Model == "" {
 		return nil, ErrNotConfigured
 	}
+	if err := ValidateBaseURL(cfg.BaseURL); err != nil {
+		return nil, err
+	}
 	return New(cfg.BaseURL, cfg.ApiKey, cfg.Model), nil
 }

@@ -81,6 +81,7 @@ var enUS = map[string]string{
 	"llm_test_success":                       "Connection OK, the AI model config works",
 	"llm_test_failed":                        "Connection failed",
 	"llm_test_incomplete":                    "Please fill in Base URL, model and API Key first",
+	"llm_invalid_base_url":                   "Base URL must be an http(s) URL with a host",
 	"ai_chat_max_iterations":                 "The AI kept calling tools without reaching a conclusion. Simplify the question or try again later",
 	"log_not_found":                          "Log not found",
 	"log_no_result":                          "This log has no output to diagnose",
