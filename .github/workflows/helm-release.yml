@@ -27,5 +27,8 @@ jobs:
       - uses: helm/chart-releaser-action@v1.7.0
         with:
           charts_dir: helm
+          # Don't fail if a chart version was already released (e.g. a helm/**
+          # change landed without a Chart.yaml version bump); just skip it.
+          skip_existing: true
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
