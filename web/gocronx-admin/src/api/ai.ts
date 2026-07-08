@@ -107,7 +107,16 @@ export interface CreateProposal {
   protocol: number
   command: string
   http_method: number
+  http_body: string
+  http_headers: string
+  success_pattern: string
   timeout: number
+  multi: number
+  retry_times: number
+  retry_interval: number
+  tag: string
+  remark: string
+  log_retention_days: number
 }
 
 export interface StreamAiChatHandlers {
@@ -229,7 +238,16 @@ export async function streamAiChat(
           protocol: Number(data.protocol ?? 1),
           command: String(data.command ?? ''),
           http_method: Number(data.http_method ?? 1),
-          timeout: Number(data.timeout ?? 0)
+          http_body: String(data.http_body ?? ''),
+          http_headers: String(data.http_headers ?? ''),
+          success_pattern: String(data.success_pattern ?? ''),
+          timeout: Number(data.timeout ?? 0),
+          multi: Number(data.multi ?? 0),
+          retry_times: Number(data.retry_times ?? 0),
+          retry_interval: Number(data.retry_interval ?? 0),
+          tag: String(data.tag ?? ''),
+          remark: String(data.remark ?? ''),
+          log_retention_days: Number(data.log_retention_days ?? 0)
         })
         break
       case 'error':

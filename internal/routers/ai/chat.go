@@ -271,12 +271,21 @@ func proposeCreateTask(args string, isAdmin bool, sendEvent func(sseEvent), tool
 		return "Permission denied: creating a task requires an admin account. Nothing was created."
 	}
 	var in struct {
-		Name       string `json:"name"`
-		Spec       string `json:"spec"`
-		Protocol   int    `json:"protocol"`
-		Command    string `json:"command"`
-		HttpMethod int    `json:"http_method"`
-		Timeout    int    `json:"timeout"`
+		Name             string `json:"name"`
+		Spec             string `json:"spec"`
+		Protocol         int    `json:"protocol"`
+		Command          string `json:"command"`
+		HttpMethod       int    `json:"http_method"`
+		HttpBody         string `json:"http_body"`
+		HttpHeaders      string `json:"http_headers"`
+		SuccessPattern   string `json:"success_pattern"`
+		Timeout          int    `json:"timeout"`
+		Multi            int    `json:"multi"`
+		RetryTimes       int    `json:"retry_times"`
+		RetryInterval    int    `json:"retry_interval"`
+		Tag              string `json:"tag"`
+		Remark           string `json:"remark"`
+		LogRetentionDays int    `json:"log_retention_days"`
 	}
 	_ = json.Unmarshal([]byte(args), &in)
 	in.Name = strings.TrimSpace(in.Name)
@@ -293,15 +302,27 @@ func proposeCreateTask(args string, isAdmin bool, sendEvent func(sseEvent), tool
 	if in.Protocol == int(models.TaskHTTP) && in.HttpMethod != int(models.TaskHTTPMethodGet) && in.HttpMethod != int(models.TaskHttpMethodPost) {
 		in.HttpMethod = int(models.TaskHTTPMethodGet)
 	}
+	if in.Multi != 0 && in.Multi != 1 {
+		in.Multi = 0
+	}
 
 	emitResult(true)
 	sendEvent(sseEvent{event: "create_proposal", data: map[string]any{
-		"name":        in.Name,
-		"spec":        strings.TrimSpace(in.Spec),
-		"protocol":    in.Protocol,
-		"command":     in.Command,
-		"http_method": in.HttpMethod,
-		"timeout":     in.Timeout,
+		"name":               in.Name,
+		"spec":               strings.TrimSpace(in.Spec),
+		"protocol":           in.Protocol,
+		"command":            in.Command,
+		"http_method":        in.HttpMethod,
+		"http_body":          in.HttpBody,
+		"http_headers":       in.HttpHeaders,
+		"success_pattern":    in.SuccessPattern,
+		"timeout":            in.Timeout,
+		"multi":              in.Multi,
+		"retry_times":        in.RetryTimes,
+		"retry_interval":     in.RetryInterval,
+		"tag":                in.Tag,
+		"remark":             in.Remark,
+		"log_retention_days": in.LogRetentionDays,
 	}})
 	return fmt.Sprintf("Proposed a new task '%s' but did NOT create it. A pre-filled confirmation form is now shown to the user; tell them to review/edit and click create. Do not claim the task was created.", in.Name)
 }

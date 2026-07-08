@@ -157,12 +157,85 @@
                   size="small"
                 />
               </label>
+              <label v-if="pendingCreateByIndex[index].form.protocol === 1" class="ai-chat-field">
+                <span>{{ t('task.httpBody') }}</span>
+                <ElInput
+                  v-model="pendingCreateByIndex[index].form.http_body"
+                  type="textarea"
+                  :rows="2"
+                  size="small"
+                />
+              </label>
+              <label v-if="pendingCreateByIndex[index].form.protocol === 1" class="ai-chat-field">
+                <span>{{ t('task.httpHeaders') }}</span>
+                <ElInput
+                  v-model="pendingCreateByIndex[index].form.http_headers"
+                  type="textarea"
+                  :rows="2"
+                  size="small"
+                />
+              </label>
+              <label class="ai-chat-field">
+                <span>{{ t('task.successPattern') }}</span>
+                <ElInput
+                  v-model.trim="pendingCreateByIndex[index].form.success_pattern"
+                  size="small"
+                />
+              </label>
+              <label class="ai-chat-field">
+                <span>{{ t('task.tag') }}</span>
+                <ElInput v-model.trim="pendingCreateByIndex[index].form.tag" size="small" />
+              </label>
+              <label class="ai-chat-field">
+                <span>{{ t('task.description') }}</span>
+                <ElInput
+                  v-model="pendingCreateByIndex[index].form.remark"
+                  type="textarea"
+                  :rows="2"
+                  size="small"
+                />
+              </label>
               <label class="ai-chat-field">
                 <span>{{ t('task.timeout') }}</span>
                 <ElInputNumber
                   v-model="pendingCreateByIndex[index].form.timeout"
                   :min="0"
                   size="small"
+                />
+              </label>
+              <label class="ai-chat-field">
+                <span>{{ t('task.retryCount') }}</span>
+                <ElInputNumber
+                  v-model="pendingCreateByIndex[index].form.retry_times"
+                  :min="0"
+                  :max="10"
+                  size="small"
+                />
+              </label>
+              <label class="ai-chat-field">
+                <span>{{ t('task.retryInterval') }}</span>
+                <ElInputNumber
+                  v-model="pendingCreateByIndex[index].form.retry_interval"
+                  :min="0"
+                  :max="3600"
+                  size="small"
+                />
+              </label>
+              <label class="ai-chat-field">
+                <span>{{ t('task.logRetentionDays') }}</span>
+                <ElInputNumber
+                  v-model="pendingCreateByIndex[index].form.log_retention_days"
+                  :min="0"
+                  :max="3650"
+                  size="small"
+                />
+              </label>
+              <label class="ai-chat-field ai-chat-field-inline">
+                <span>{{ t('task.multi') }}</span>
+                <ElSwitch
+                  v-model="pendingCreateByIndex[index].form.multi"
+                  :active-value="1"
+                  :inactive-value="0"
                 />
               </label>
               <div class="ai-chat-create-actions">
@@ -230,6 +303,7 @@
     ElMessage,
     ElOption,
     ElSelect,
+    ElSwitch,
     ElTag
   } from 'element-plus'
   import { streamAiChat, confirmRunTask, type AiChatMessage, type CreateProposal } from '@/api/ai'
@@ -272,7 +346,16 @@
     protocol: number
     command: string
     http_method: number
+    http_body: string
+    http_headers: string
+    success_pattern: string
     timeout: number
+    multi: number
+    retry_times: number
+    retry_interval: number
+    tag: string
+    remark: string
+    log_retention_days: number
     host_ids: number[]
   }
   type PendingCreate = {
@@ -392,7 +475,16 @@
                 protocol: p.protocol,
                 command: p.command,
                 http_method: p.http_method || 1,
+                http_body: p.http_body || '',
+                http_headers: p.http_headers || '',
+                success_pattern: p.success_pattern || '',
                 timeout: p.timeout || 0,
+                multi: p.multi || 0,
+                retry_times: p.retry_times || 0,
+                retry_interval: p.retry_interval || 0,
+                tag: p.tag || '',
+                remark: p.remark || '',
+                log_retention_days: p.log_retention_days || 0,
                 host_ids: []
               },
               status: 'pending'
@@ -508,9 +600,17 @@
         command: f.command.trim(),
         // http_method 后端 binding 是 oneof=1 2,即使 Shell 任务也必须带一个合法值
         http_method: f.protocol === 1 ? f.http_method : 1,
+        http_body: f.protocol === 1 ? f.http_body : '',
+        http_headers: f.protocol === 1 ? f.http_headers : '',
+        success_pattern: f.success_pattern,
         timeout: f.timeout || undefined,
         level: 1,
-        multi: 0,
+        multi: f.multi,
+        retry_times: f.retry_times,
+        retry_interval: f.retry_interval,
+        tag: f.tag,
+        remark: f.remark,
+        log_retention_days: f.log_retention_days,
         // dependency_status 后端 binding 是 oneof=1 2,独立任务用弱依赖(2)
         dependency_status: 2,
         host_id: f.protocol === 2 ? f.host_ids : undefined
@@ -698,6 +798,10 @@
 
   .ai-chat-field > span {
     @apply text-xs text-g-500;
+  }
+
+  .ai-chat-field-inline {
+    @apply flex-row items-center gap-2;
   }
 
   .ai-chat-create-actions {

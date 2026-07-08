@@ -67,7 +67,7 @@ func AgentToolDefs() []llm.Tool {
 			},
 			"required": ["id"]
 		}`),
-		tool("create_task", "Propose a NEW scheduled task from the user's description (requires admin). This does NOT create the task directly; it opens a pre-filled, editable confirmation form for the user. Only call this when the user clearly asks to create/add a scheduled task.", `{
+		tool("create_task", "Propose a NEW scheduled task from the user's description (requires admin). This does NOT create the task directly; it opens a pre-filled, editable confirmation form for the user. Only call this when the user clearly asks to create/add a scheduled task. Fill only the fields you can infer from the request; leave the rest out and they take sensible defaults.", `{
 			"type": "object",
 			"properties": {
 				"name": {"type": "string", "description": "Short task name"},
@@ -75,7 +75,16 @@ func AgentToolDefs() []llm.Tool {
 				"protocol": {"type": "integer", "description": "1 = HTTP request, 2 = Shell command run on an execution node"},
 				"command": {"type": "string", "description": "For HTTP: the URL. For Shell: the shell command line."},
 				"http_method": {"type": "integer", "description": "HTTP only: 1 = GET, 2 = POST. Default 1."},
-				"timeout": {"type": "integer", "description": "Execution timeout in seconds, 0 = no limit. Optional."}
+				"http_body": {"type": "string", "description": "HTTP POST request body. Optional."},
+				"http_headers": {"type": "string", "description": "HTTP request headers as a JSON object string, e.g. {\"Authorization\":\"Bearer x\"}. Optional."},
+				"success_pattern": {"type": "string", "description": "Regex; if set, the run counts as success only when the output matches it. Optional."},
+				"timeout": {"type": "integer", "description": "Execution timeout in seconds, 0 = no limit. Optional."},
+				"multi": {"type": "integer", "description": "0 = single instance (skip if previous run still running), 1 = allow concurrent runs. Default 0."},
+				"retry_times": {"type": "integer", "description": "Retry count on failure, 0-10. Optional."},
+				"retry_interval": {"type": "integer", "description": "Seconds between retries, 0-3600 (0 = auto-increasing). Optional."},
+				"tag": {"type": "string", "description": "A tag/label for grouping. Optional."},
+				"remark": {"type": "string", "description": "A short human description of what the task does. Optional."},
+				"log_retention_days": {"type": "integer", "description": "Days to keep this task's logs, 0 = use global default. Optional."}
 			},
 			"required": ["name", "spec", "protocol", "command"]
 		}`),
