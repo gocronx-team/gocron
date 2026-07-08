@@ -33,6 +33,14 @@ export function updateLLMConfig(data: LLMConfigUpdate) {
   return request.post<null>({ url: '/api/system/llm/update', data })
 }
 
+/**
+ * POST /api/system/llm/test — 用当前表单配置发一句极短对话验证连通性。
+ * api_key 留空则用已保存的值。失败时后端把 provider 真实错误带在 message 里(已脱敏)。
+ */
+export function testLLMConfig(data: LLMConfigUpdate) {
+  return request.post<null>({ url: '/api/system/llm/test', data, timeout: AI_TIMEOUT })
+}
+
 // LLM 推理（尤其本地大模型）较慢，这两个接口单独放宽超时，避免前端 15s 默认超时提前断开。
 const AI_TIMEOUT = 120000
 

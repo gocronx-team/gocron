@@ -146,7 +146,10 @@ func Chat(c *gin.Context) {
 			})
 		if err != nil {
 			logger.Errorf("AI对话#调用LLM失败#轮次%d#%s", i, err)
-			sendEvent(sseEvent{event: "error", data: map[string]string{"message": i18n.T(c, "ai_chat_failed")}})
+			// 透出 provider 真实错误(err 已在 llm client 层对 api_key 脱敏),便于定位配置问题
+			sendEvent(sseEvent{event: "error", data: map[string]string{
+				"message": i18n.T(c, "ai_chat_failed") + ": " + err.Error(),
+			}})
 			return
 		}
 		logger.Infof("AI对话#轮次%d#内容长度%d#工具数%d", i, len(msg.Content), len(msg.ToolCalls))
@@ -216,7 +219,7 @@ func Chat(c *gin.Context) {
 
 	// 达到最大轮次仍未给出终答（模型一直在调工具/反复打转）。
 	logger.Errorf("AI对话#达到最大轮次%d仍无终答", maxIterations)
-	sendEvent(sseEvent{event: "error", data: map[string]string{"message": i18n.T(c, "ai_chat_failed")}})
+	sendEvent(sseEvent{event: "error", data: map[string]string{"message": i18n.T(c, "ai_chat_max_iterations")}})
 }
 
 // safeCallTool 执行工具调用并兜底 panic，避免单个工具异常中断整个 SSE 流。

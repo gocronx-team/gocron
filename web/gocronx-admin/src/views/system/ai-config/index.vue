@@ -43,6 +43,10 @@
           <ElButton type="primary" :loading="saving" @click="handleSave" v-ripple>
             {{ t('aiConfig.save') }}
           </ElButton>
+          <ElButton :loading="testing" @click="handleTest">
+            {{ t('aiConfig.test') }}
+          </ElButton>
+          <div class="hint">{{ t('aiConfig.testHint') }}</div>
         </ElFormItem>
       </ElForm>
     </ElCard>
@@ -53,13 +57,14 @@
   import { ref, reactive, computed, onMounted } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
-  import { fetchLLMConfig, updateLLMConfig } from '@/api/ai'
+  import { fetchLLMConfig, updateLLMConfig, testLLMConfig } from '@/api/ai'
 
   defineOptions({ name: 'AiConfig' })
 
   const { t } = useI18n()
 
   const saving = ref(false)
+  const testing = ref(false)
   const apiKeySet = ref(false)
 
   const form = reactive({
@@ -103,6 +108,25 @@
       // error toast handled by http interceptor
     } finally {
       saving.value = false
+    }
+  }
+
+  // 测试连接:用当前表单值发一句极短对话。api_key 留空则后端用已保存的值。
+  // 失败时 http 拦截器会弹出后端带回的真实原因(如 invalid api key / connection refused)。
+  async function handleTest() {
+    testing.value = true
+    try {
+      await testLLMConfig({
+        enable: form.enable,
+        base_url: form.base_url.trim(),
+        api_key: form.api_key,
+        model: form.model.trim()
+      })
+      ElMessage.success(t('aiConfig.testSuccess'))
+    } catch {
+      // 失败详情由 http 拦截器按后端 message 弹出
+    } finally {
+      testing.value = false
     }
   }
 

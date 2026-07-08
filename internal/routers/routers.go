@@ -171,6 +171,7 @@ func Register(r *gin.Engine) {
 		systemGroup.POST("/log-retention", manage.UpdateLogRetentionDays)
 		systemGroup.GET("/llm", manage.LLM)
 		systemGroup.POST("/llm/update", manage.UpdateLLM)
+		systemGroup.POST("/llm/test", manage.TestLLM)
 	}
 
 	// 统计

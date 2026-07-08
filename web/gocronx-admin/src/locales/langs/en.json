@@ -826,7 +826,10 @@
     "apiKeyConfigured": "Configured (leave blank to keep unchanged)",
     "model": "Model",
     "save": "Save",
-    "saveSuccess": "AI config saved"
+    "saveSuccess": "AI config saved",
+    "test": "Test Connection",
+    "testHint": "Sends one tiny request with the current config to verify the URL/key/model (no need to save first)",
+    "testSuccess": "Connection OK, the AI model config works"
   },
   "ai": {
     "nlToCron": "AI Generate",

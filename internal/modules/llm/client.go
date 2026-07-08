@@ -48,6 +48,14 @@ func New(baseURL, apiKey, model string) *Client {
 	}
 }
 
+// redact 从对外暴露的错误信息里抹掉 api_key,避免上游把 token 回显到错误里被透传泄露。
+func (c *Client) redact(s string) string {
+	if c.apiKey == "" {
+		return s
+	}
+	return strings.ReplaceAll(s, c.apiKey, "***")
+}
+
 type chatMessage struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
@@ -145,7 +153,7 @@ func (c *Client) Chat(ctx context.Context, system, user string) (string, error) 
 	}
 	if resp.StatusCode != http.StatusOK {
 		if parsed.Error != nil && parsed.Error.Message != "" {
-			return "", fmt.Errorf("llm error (status %d): %s", resp.StatusCode, parsed.Error.Message)
+			return "", fmt.Errorf("llm error (status %d): %s", resp.StatusCode, c.redact(parsed.Error.Message))
 		}
 		return "", fmt.Errorf("llm http status %d", resp.StatusCode)
 	}
@@ -292,7 +300,7 @@ func (c *Client) ChatStream(ctx context.Context, messages []Message, tools []Too
 		body, _ := io.ReadAll(resp.Body)
 		var parsed chatResponse
 		if json.Unmarshal(body, &parsed) == nil && parsed.Error != nil && parsed.Error.Message != "" {
-			return Message{}, fmt.Errorf("llm error (status %d): %s", resp.StatusCode, parsed.Error.Message)
+			return Message{}, fmt.Errorf("llm error (status %d): %s", resp.StatusCode, c.redact(parsed.Error.Message))
 		}
 		return Message{}, fmt.Errorf("llm http status %d", resp.StatusCode)
 	}

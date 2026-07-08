@@ -826,7 +826,10 @@
     "apiKeyConfigured": "已配置（留空则不修改）",
     "model": "模型名称",
     "save": "保存",
-    "saveSuccess": "AI 配置已保存"
+    "saveSuccess": "AI 配置已保存",
+    "test": "测试连接",
+    "testHint": "用当前配置发一次极短请求,验证地址/密钥/模型是否可用(不必先保存)",
+    "testSuccess": "连接成功,AI 模型配置可用"
   },
   "ai": {
     "nlToCron": "AI 生成",
