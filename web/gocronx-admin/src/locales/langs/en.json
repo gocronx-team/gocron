@@ -864,6 +864,14 @@
     "runStarted": "Task \"{name}\" started",
     "runDone": "Started",
     "runFailed": "Run failed",
-    "runCancelled": "Cancelled"
+    "runCancelled": "Cancelled",
+    "createTitle": "AI suggests a new task — edit before confirming:",
+    "create": "Create",
+    "creating": "Creating…",
+    "createMissingFields": "Please fill in task name, cron spec and command",
+    "createDone": "Task \"{name}\" created",
+    "createSuccess": "Created",
+    "createFailed": "Create failed",
+    "createCancelled": "Cancelled"
   }
 }

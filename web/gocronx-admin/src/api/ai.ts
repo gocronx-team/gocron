@@ -92,12 +92,23 @@ export interface ToolResult {
   ok: boolean
 }
 
+/** AI 建议新建的任务预览(用户可在前端编辑后再确认创建)。 */
+export interface CreateProposal {
+  name: string
+  spec: string
+  protocol: number
+  command: string
+  http_method: number
+  timeout: number
+}
+
 export interface StreamAiChatHandlers {
   onMessage: (delta: string) => void
   onReasoning: (delta: string) => void
   onToolCall: (t: ToolCall) => void
   onToolResult: (t: ToolResult) => void
   onConfirmRequired: (t: { taskId: number; taskName: string }) => void
+  onCreateProposal: (p: CreateProposal) => void
   onError: (msg: string) => void
   onDone: () => void
 }
@@ -201,6 +212,16 @@ export async function streamAiChat(
         handlers.onConfirmRequired({
           taskId: Number(data.task_id ?? 0),
           taskName: String(data.task_name ?? '')
+        })
+        break
+      case 'create_proposal':
+        handlers.onCreateProposal({
+          name: String(data.name ?? ''),
+          spec: String(data.spec ?? ''),
+          protocol: Number(data.protocol ?? 1),
+          command: String(data.command ?? ''),
+          http_method: Number(data.http_method ?? 1),
+          timeout: Number(data.timeout ?? 0)
         })
         break
       case 'error':

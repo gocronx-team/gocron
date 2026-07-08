@@ -67,6 +67,18 @@ func AgentToolDefs() []llm.Tool {
 			},
 			"required": ["id"]
 		}`),
+		tool("create_task", "Propose a NEW scheduled task from the user's description (requires admin). This does NOT create the task directly; it opens a pre-filled, editable confirmation form for the user. Only call this when the user clearly asks to create/add a scheduled task.", `{
+			"type": "object",
+			"properties": {
+				"name": {"type": "string", "description": "Short task name"},
+				"spec": {"type": "string", "description": "6-field second-level cron (second minute hour day month weekday), or @every/@daily style descriptor"},
+				"protocol": {"type": "integer", "description": "1 = HTTP request, 2 = Shell command run on an execution node"},
+				"command": {"type": "string", "description": "For HTTP: the URL. For Shell: the shell command line."},
+				"http_method": {"type": "integer", "description": "HTTP only: 1 = GET, 2 = POST. Default 1."},
+				"timeout": {"type": "integer", "description": "Execution timeout in seconds, 0 = no limit. Optional."}
+			},
+			"required": ["name", "spec", "protocol", "command"]
+		}`),
 	}
 }
 

@@ -49,7 +49,8 @@ Operating principles:
 - To analyze why runs failed, call query_task_logs (status=0 for failed) and analyze the returned "result" (the execution output) yourself — keep tool calls to a minimum (prefer one query that returns the data you need, then answer).
 - CRITICAL: never end your turn by only announcing an action (e.g. "let me check the tasks first"). In a single turn you must EITHER actually emit the tool call(s) you need, OR give the complete final answer. Do not stop after a preamble.
 - When you do use tools, look up real data before concluding — never fabricate task names, ids, statuses, or log contents.
-- NEVER invent HTTP API endpoints, URLs, request bodies, field names, curl examples, OR config-file sections (e.g. app.ini "[notify]"/"[webhook]" — these do not exist). To create a task, describe the Web UI flow (任务管理 → 新建任务: 名称、命令、Cron 表达式、协议、可选执行节点). Notifications (email/Slack/webhook) are configured in the Web UI under 系统管理 → 通知配置, NOT in any config file. If search_docs returns nothing for a topic, say it may not be documented and point to the relevant Web UI page — do NOT guess config keys or file sections.
+- Creating tasks: when the user clearly asks to create/add a scheduled task, call create_task with your best-guess fields (name, 6-field cron spec, protocol, command). This does NOT create it directly — it opens a pre-filled editable form for the user to review and confirm. Only admins can do this; for non-admins the tool will refuse. Do NOT claim a task was created — say the confirmation form is shown.
+- NEVER invent HTTP API endpoints, URLs, request bodies, field names, curl examples, OR config-file sections (e.g. app.ini "[notify]"/"[webhook]" — these do not exist). To create a task, either call create_task (preferred when they ask you to make one) or describe the Web UI flow (任务管理 → 新建任务: 名称、命令、Cron 表达式、协议、可选执行节点). Notifications (email/Slack/webhook) are configured in the Web UI under 系统管理 → 通知配置, NOT in any config file. If search_docs returns nothing for a topic, say it may not be documented and point to the relevant Web UI page — do NOT guess config keys or file sections.
 - For task-log execution status: 0 = failed, 1 = running, 2 = success (finished), 3 = cancelled.
 - Language: reason (think) AND answer in the SAME language as the user's latest message. If the user writes in Chinese, your reasoning/thinking must also be in Simplified Chinese, not English.
 - Be concise.
@@ -87,6 +88,7 @@ type sseEvent struct {
 //   - tool_call    {"id","name","arguments"}                    模型决定调用工具
 //   - tool_result  {"id","name","ok": true|false}               工具执行完成（不回传结果体）
 //   - confirm_required {"task_id","task_name"}                   模型请求执行任务，需用户确认（不自动执行）
+//   - create_proposal {name,spec,protocol,command,http_method,timeout}  模型建议新建任务，前端弹出可编辑确认表单（不自动创建）
 //   - error        {"message": "<msg>"}                          运行期错误
 //   - done         {}                                           始终最后发送
 //
@@ -170,6 +172,14 @@ func Chat(c *gin.Context) {
 				continue
 			}
 
+			// create_task 同理:不直接落库,发 create_proposal 让用户在前端可编辑确认表单里确认,
+			// 真正的创建走既有 /api/task/store(管理员 + 审计 + 名称唯一校验)。
+			if tc.Function.Name == "create_task" {
+				content := proposeCreateTask(tc.Function.Arguments, isAdmin, sendEvent, tc.ID)
+				messages = append(messages, llm.Message{Role: "tool", ToolCallID: tc.ID, Content: content})
+				continue
+			}
+
 			// search_docs 只真正检索一次：第二次起直接催模型作答，不再重搜（避免反复搜拖慢）。
 			if tc.Function.Name == "search_docs" {
 				searchCount++
@@ -245,6 +255,52 @@ func proposeRunTask(args string, isAdmin bool, sendEvent func(sseEvent), toolCal
 	emitResult(true)
 	sendEvent(sseEvent{event: "confirm_required", data: map[string]any{"task_id": task.Id, "task_name": task.Name}})
 	return fmt.Sprintf("Task '%s' (id %d) was NOT executed. Running a task needs explicit user confirmation; tell the user to click the confirm button if they want to run it.", task.Name, task.Id)
+}
+
+// proposeCreateTask 处理模型的 create_task 请求:不落库,只校验并向前端发 create_proposal
+// (携带 AI 预填的任务字段),由用户在可编辑表单里确认;真正创建走 /api/task/store。
+func proposeCreateTask(args string, isAdmin bool, sendEvent func(sseEvent), toolCallID string) string {
+	emitResult := func(ok bool) {
+		sendEvent(sseEvent{event: "tool_result", data: map[string]any{"id": toolCallID, "name": "create_task", "ok": ok}})
+	}
+	if !isAdmin {
+		emitResult(false)
+		return "Permission denied: creating a task requires an admin account. Nothing was created."
+	}
+	var in struct {
+		Name       string `json:"name"`
+		Spec       string `json:"spec"`
+		Protocol   int    `json:"protocol"`
+		Command    string `json:"command"`
+		HttpMethod int    `json:"http_method"`
+		Timeout    int    `json:"timeout"`
+	}
+	_ = json.Unmarshal([]byte(args), &in)
+	in.Name = strings.TrimSpace(in.Name)
+	in.Command = strings.TrimSpace(in.Command)
+	if in.Name == "" || in.Command == "" {
+		emitResult(false)
+		return "Missing task name or command. Nothing was created; ask the user for the missing detail."
+	}
+	if in.Protocol != int(models.TaskHTTP) && in.Protocol != int(models.TaskRPC) {
+		emitResult(false)
+		return "Invalid protocol (must be 1 for HTTP or 2 for Shell). Nothing was created."
+	}
+	// HTTP 默认 GET
+	if in.Protocol == int(models.TaskHTTP) && in.HttpMethod != int(models.TaskHTTPMethodGet) && in.HttpMethod != int(models.TaskHttpMethodPost) {
+		in.HttpMethod = int(models.TaskHTTPMethodGet)
+	}
+
+	emitResult(true)
+	sendEvent(sseEvent{event: "create_proposal", data: map[string]any{
+		"name":        in.Name,
+		"spec":        strings.TrimSpace(in.Spec),
+		"protocol":    in.Protocol,
+		"command":     in.Command,
+		"http_method": in.HttpMethod,
+		"timeout":     in.Timeout,
+	}})
+	return fmt.Sprintf("Proposed a new task '%s' but did NOT create it. A pre-filled confirmation form is now shown to the user; tell them to review/edit and click create. Do not claim the task was created.", in.Name)
 }
 
 // RunTask 是用户在聊天里点「确认执行」后真正触发任务的端点：仅管理员可用，且写审计。

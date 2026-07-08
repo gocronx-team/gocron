@@ -107,6 +107,88 @@
               {{ runStatusLabel(pendingRunByIndex[index].status) }}
             </ElTag>
           </div>
+
+          <!-- create_task 确认:AI 预填的可编辑建任务表单,用户确认后才真正创建 -->
+          <div
+            v-if="msg.role === 'assistant' && pendingCreateByIndex[index]"
+            class="ai-chat-create"
+          >
+            <div class="ai-chat-create-title">{{ t('aiChat.createTitle') }}</div>
+            <template v-if="pendingCreateByIndex[index].status === 'pending'">
+              <label class="ai-chat-field">
+                <span>{{ t('task.name') }}</span>
+                <ElInput v-model.trim="pendingCreateByIndex[index].form.name" size="small" />
+              </label>
+              <label class="ai-chat-field">
+                <span>{{ t('task.spec') }}</span>
+                <ElInput v-model.trim="pendingCreateByIndex[index].form.spec" size="small" />
+              </label>
+              <label class="ai-chat-field">
+                <span>{{ t('task.protocol') }}</span>
+                <ElSelect v-model="pendingCreateByIndex[index].form.protocol" size="small">
+                  <ElOption :label="t('task.protocolHttp')" :value="1" />
+                  <ElOption :label="t('task.protocolRpc')" :value="2" />
+                </ElSelect>
+              </label>
+              <label v-if="pendingCreateByIndex[index].form.protocol === 1" class="ai-chat-field">
+                <span>{{ t('task.httpMethod') }}</span>
+                <ElSelect v-model="pendingCreateByIndex[index].form.http_method" size="small">
+                  <ElOption label="GET" :value="1" />
+                  <ElOption label="POST" :value="2" />
+                </ElSelect>
+              </label>
+              <label v-if="pendingCreateByIndex[index].form.protocol === 2" class="ai-chat-field">
+                <span>{{ t('task.selectHosts') }}</span>
+                <ElSelect v-model="pendingCreateByIndex[index].form.host_ids" multiple size="small">
+                  <ElOption
+                    v-for="host in hostOptions"
+                    :key="host.id"
+                    :label="`${host.alias} - ${host.name}`"
+                    :value="host.id"
+                  />
+                </ElSelect>
+              </label>
+              <label class="ai-chat-field">
+                <span>{{ t('task.command') }}</span>
+                <ElInput
+                  v-model.trim="pendingCreateByIndex[index].form.command"
+                  type="textarea"
+                  :rows="2"
+                  size="small"
+                />
+              </label>
+              <label class="ai-chat-field">
+                <span>{{ t('task.timeout') }}</span>
+                <ElInputNumber
+                  v-model="pendingCreateByIndex[index].form.timeout"
+                  :min="0"
+                  size="small"
+                />
+              </label>
+              <div class="ai-chat-create-actions">
+                <ElButton type="primary" size="small" @click="confirmCreate(index)">
+                  {{ t('aiChat.create') }}
+                </ElButton>
+                <ElButton size="small" @click="cancelCreate(index)">
+                  {{ t('aiChat.cancel') }}
+                </ElButton>
+              </div>
+            </template>
+            <ElTag
+              v-else-if="pendingCreateByIndex[index].status === 'creating'"
+              size="small"
+              type="info"
+            >
+              {{ t('aiChat.creating') }}
+            </ElTag>
+            <ElTag
+              v-else
+              size="small"
+              :type="pendingCreateByIndex[index].status === 'done' ? 'success' : 'info'"
+            >
+              {{ createStatusLabel(pendingCreateByIndex[index].status) }}
+            </ElTag>
+          </div>
         </div>
       </div>
 
@@ -132,8 +214,19 @@
 
 <script setup lang="ts">
   import { useI18n } from 'vue-i18n'
-  import { ElButton, ElDrawer, ElInput, ElMessage, ElTag } from 'element-plus'
-  import { streamAiChat, confirmRunTask, type AiChatMessage } from '@/api/ai'
+  import {
+    ElButton,
+    ElDrawer,
+    ElInput,
+    ElInputNumber,
+    ElMessage,
+    ElOption,
+    ElSelect,
+    ElTag
+  } from 'element-plus'
+  import { streamAiChat, confirmRunTask, type AiChatMessage, type CreateProposal } from '@/api/ai'
+  import { fetchTaskStore } from '@/api/task'
+  import { fetchHostList, type HostItem } from '@/api/host'
   import { copyToClipboard } from '@/utils/clipboard'
   import { renderMarkdown } from '@/utils/markdown'
 
@@ -162,6 +255,22 @@
     status: 'pending' | 'done' | 'failed' | 'cancelled'
   }
   const pendingRunByIndex = ref<Record<number, PendingRun>>({})
+  // create_task 建议:模型想新建任务时,挂一个 AI 预填、用户可编辑的表单,确认后才真正创建。
+  type CreateForm = {
+    name: string
+    spec: string
+    protocol: number
+    command: string
+    http_method: number
+    timeout: number
+    host_ids: number[]
+  }
+  type PendingCreate = {
+    form: CreateForm
+    status: 'pending' | 'creating' | 'done' | 'failed' | 'cancelled'
+  }
+  const pendingCreateByIndex = ref<Record<number, PendingCreate>>({})
+  const hostOptions = ref<HostItem[]>([])
   const listRef = ref<HTMLElement>()
   // 进行中流的取消句柄，清空/关闭时用来中断，避免泄漏。
   let controller: AbortController | null = null
@@ -261,6 +370,26 @@
           }
           scrollToBottom()
         },
+        onCreateProposal: (p: CreateProposal) => {
+          // 模型想新建任务：不自动创建，挂一个 AI 预填、可编辑的确认表单。
+          pendingCreateByIndex.value = {
+            ...pendingCreateByIndex.value,
+            [assistantIndex]: {
+              form: {
+                name: p.name,
+                spec: p.spec,
+                protocol: p.protocol,
+                command: p.command,
+                http_method: p.http_method || 1,
+                timeout: p.timeout || 0,
+                host_ids: []
+              },
+              status: 'pending'
+            }
+          }
+          void loadHostOptions()
+          scrollToBottom()
+        },
         onError: (msg) => {
           ElMessage.error(msg)
           const target = messages.value[assistantIndex]
@@ -330,12 +459,72 @@
     return t('aiChat.runCancelled')
   }
 
+  // ── create_task 确认表单 ──────────────────────────────────────────────────
+  const loadHostOptions = async (): Promise<void> => {
+    if (hostOptions.value.length > 0) return
+    try {
+      const res = await fetchHostList({ page: 1, page_size: 1000 })
+      hostOptions.value = res?.data ?? []
+    } catch {
+      // 主机列表拉取失败不阻断表单;Shell 任务确认时后端仍会校验必须选主机
+    }
+  }
+
+  const setCreateStatus = (index: number, status: PendingCreate['status']): void => {
+    const cur = pendingCreateByIndex.value[index]
+    if (cur)
+      pendingCreateByIndex.value = { ...pendingCreateByIndex.value, [index]: { ...cur, status } }
+  }
+
+  const confirmCreate = async (index: number): Promise<void> => {
+    const pc = pendingCreateByIndex.value[index]
+    if (!pc || pc.status !== 'pending') return
+    const f = pc.form
+    if (!f.name.trim() || !f.command.trim() || !f.spec.trim()) {
+      ElMessage.warning(t('aiChat.createMissingFields'))
+      return
+    }
+    if (f.protocol === 2 && f.host_ids.length === 0) {
+      ElMessage.warning(t('task.selectHosts'))
+      return
+    }
+    setCreateStatus(index, 'creating')
+    try {
+      await fetchTaskStore({
+        name: f.name.trim(),
+        spec: f.spec.trim(),
+        protocol: f.protocol,
+        command: f.command.trim(),
+        http_method: f.protocol === 1 ? f.http_method : undefined,
+        timeout: f.timeout || undefined,
+        level: 1,
+        host_id: f.protocol === 2 ? f.host_ids : undefined
+      })
+      setCreateStatus(index, 'done')
+      ElMessage.success(t('aiChat.createDone', { name: f.name.trim() }))
+    } catch {
+      // 错误已由 http 拦截器提示(如名称重复、cron 非法)
+      setCreateStatus(index, 'failed')
+    }
+  }
+
+  const cancelCreate = (index: number): void => {
+    setCreateStatus(index, 'cancelled')
+  }
+
+  const createStatusLabel = (s: PendingCreate['status']): string => {
+    if (s === 'done') return t('aiChat.createSuccess')
+    if (s === 'failed') return t('aiChat.createFailed')
+    return t('aiChat.createCancelled')
+  }
+
   const clearConversation = (): void => {
     cancelStream()
     messages.value = []
     toolsByIndex.value = {}
     reasoningByIndex.value = {}
     pendingRunByIndex.value = {}
+    pendingCreateByIndex.value = {}
   }
 
   onBeforeUnmount(() => {
@@ -450,6 +639,29 @@
 
   .ai-chat-tools-label {
     @apply text-xs text-g-500;
+  }
+
+  .ai-chat-create {
+    @apply flex flex-col gap-2 mt-2 p-2 rounded-md;
+
+    background-color: var(--art-gray-100);
+    border: 1px solid var(--art-gray-300);
+  }
+
+  .ai-chat-create-title {
+    @apply text-xs text-g-700 mb-1;
+  }
+
+  .ai-chat-field {
+    @apply flex flex-col gap-1;
+  }
+
+  .ai-chat-field > span {
+    @apply text-xs text-g-500;
+  }
+
+  .ai-chat-create-actions {
+    @apply flex items-center gap-2 mt-1;
   }
 
   .ai-chat-input {

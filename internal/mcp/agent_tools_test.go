@@ -9,8 +9,8 @@ import (
 
 func TestAgentToolDefs(t *testing.T) {
 	defs := AgentToolDefs()
-	if len(defs) != 7 {
-		t.Fatalf("expected 7 tool defs, got %d", len(defs))
+	if len(defs) != 8 {
+		t.Fatalf("expected 8 tool defs, got %d", len(defs))
 	}
 	names := map[string]bool{}
 	for _, d := range defs {
@@ -22,7 +22,7 @@ func TestAgentToolDefs(t *testing.T) {
 		}
 		names[d.Function.Name] = true
 	}
-	for _, want := range []string{"list_tasks", "get_task", "query_task_logs", "list_hosts", "run_task", "list_templates", "search_docs"} {
+	for _, want := range []string{"list_tasks", "get_task", "query_task_logs", "list_hosts", "run_task", "create_task", "list_templates", "search_docs"} {
 		if !names[want] {
 			t.Errorf("missing tool def %q", want)
 		}

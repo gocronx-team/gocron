@@ -864,6 +864,14 @@
     "runStarted": "任务「{name}」已触发",
     "runDone": "已执行",
     "runFailed": "执行失败",
-    "runCancelled": "已取消"
+    "runCancelled": "已取消",
+    "createTitle": "AI 建议新建任务，确认前可修改：",
+    "create": "创建",
+    "creating": "创建中…",
+    "createMissingFields": "请填写任务名称、Cron 表达式和命令",
+    "createDone": "任务「{name}」已创建",
+    "createSuccess": "已创建",
+    "createFailed": "创建失败",
+    "createCancelled": "已取消"
   }
 }
