@@ -146,10 +146,14 @@ func Chat(c *gin.Context) {
 			})
 		if err != nil {
 			logger.Errorf("AI对话#调用LLM失败#轮次%d#%s", i, err)
-			// 透出 provider 真实错误(err 已在 llm client 层对 api_key 脱敏),便于定位配置问题
-			sendEvent(sseEvent{event: "error", data: map[string]string{
-				"message": i18n.T(c, "ai_chat_failed") + ": " + err.Error(),
-			}})
+			// 仅向管理员透出 provider 真实错误(便于定位配置);普通用户给通用文案,
+			// 避免把 LLM 端点地址/内网错误等基础设施细节泄露给非管理员。
+			// err 已在 llm client 层对 api_key 脱敏。
+			msg := i18n.T(c, "ai_chat_failed")
+			if isAdmin {
+				msg += ": " + err.Error()
+			}
+			sendEvent(sseEvent{event: "error", data: map[string]string{"message": msg}})
 			return
 		}
 		logger.Infof("AI对话#轮次%d#内容长度%d#工具数%d", i, len(msg.Content), len(msg.ToolCalls))
