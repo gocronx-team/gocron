@@ -874,6 +874,7 @@
     "createMissingFields": "请填写任务名称、Cron 表达式和命令",
     "createDone": "任务「{name}」已创建",
     "createSuccess": "已创建",
+    "viewTask": "查看任务 →",
     "createFailed": "创建失败",
     "createCancelled": "已取消"
   }

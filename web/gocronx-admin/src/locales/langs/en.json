@@ -874,6 +874,7 @@
     "createMissingFields": "Please fill in task name, cron spec and command",
     "createDone": "Task \"{name}\" created",
     "createSuccess": "Created",
+    "viewTask": "View task →",
     "createFailed": "Create failed",
     "createCancelled": "Cancelled"
   }

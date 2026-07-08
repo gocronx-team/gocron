@@ -181,11 +181,19 @@
             >
               {{ t('aiChat.creating') }}
             </ElTag>
-            <ElTag
-              v-else
-              size="small"
-              :type="pendingCreateByIndex[index].status === 'done' ? 'success' : 'info'"
-            >
+            <template v-else-if="pendingCreateByIndex[index].status === 'done'">
+              <ElTag size="small" type="success">{{ t('aiChat.createSuccess') }}</ElTag>
+              <ElButton
+                v-if="pendingCreateByIndex[index].createdId"
+                link
+                type="primary"
+                size="small"
+                @click="goToTask(pendingCreateByIndex[index].createdId!)"
+              >
+                {{ t('aiChat.viewTask') }}
+              </ElButton>
+            </template>
+            <ElTag v-else size="small" type="info">
               {{ createStatusLabel(pendingCreateByIndex[index].status) }}
             </ElTag>
           </div>
@@ -225,7 +233,8 @@
     ElTag
   } from 'element-plus'
   import { streamAiChat, confirmRunTask, type AiChatMessage, type CreateProposal } from '@/api/ai'
-  import { fetchTaskStore } from '@/api/task'
+  import { useRouter } from 'vue-router'
+  import { fetchTaskStore, fetchTaskList } from '@/api/task'
   import { fetchHostList, type HostItem } from '@/api/host'
   import { copyToClipboard } from '@/utils/clipboard'
   import { renderMarkdown } from '@/utils/markdown'
@@ -233,6 +242,7 @@
   defineOptions({ name: 'ArtAiChat' })
 
   const { t } = useI18n()
+  const router = useRouter()
 
   // 单条消息内展示的工具调用 chip：running → done/failed。
   type ToolChip = { id: string; name: string; status: 'running' | 'done' | 'failed' }
@@ -268,6 +278,7 @@
   type PendingCreate = {
     form: CreateForm
     status: 'pending' | 'creating' | 'done' | 'failed' | 'cancelled'
+    createdId?: number
   }
   const pendingCreateByIndex = ref<Record<number, PendingCreate>>({})
   const hostOptions = ref<HostItem[]>([])
@@ -504,7 +515,22 @@
         dependency_status: 2,
         host_id: f.protocol === 2 ? f.host_ids : undefined
       })
-      setCreateStatus(index, 'done')
+      // store 不回传 id;任务名唯一,按名查回 id 以便在对话里给出跳转链接
+      let createdId = 0
+      try {
+        const res = await fetchTaskList({ name: f.name.trim(), page: 1, page_size: 20 })
+        const match = (res?.data ?? []).find((tk) => tk.name === f.name.trim())
+        if (match) createdId = match.id
+      } catch {
+        // 链接是增强,查不到 id 也不影响创建成功
+      }
+      const cur = pendingCreateByIndex.value[index]
+      if (cur) {
+        pendingCreateByIndex.value = {
+          ...pendingCreateByIndex.value,
+          [index]: { ...cur, status: 'done', createdId }
+        }
+      }
       ElMessage.success(t('aiChat.createDone', { name: f.name.trim() }))
     } catch {
       // 错误已由 http 拦截器提示(如名称重复、cron 非法)
@@ -520,6 +546,12 @@
     if (s === 'done') return t('aiChat.createSuccess')
     if (s === 'failed') return t('aiChat.createFailed')
     return t('aiChat.createCancelled')
+  }
+
+  // 点击对话里的链接跳转到新建的任务(关闭抽屉便于查看)。
+  const goToTask = (id: number): void => {
+    visible.value = false
+    router.push({ name: 'TaskEdit', params: { id: String(id) } })
   }
 
   const clearConversation = (): void => {
@@ -592,6 +624,10 @@
 
     word-break: break-word;
     white-space: pre-wrap;
+    cursor: text;
+
+    /* 允许用户手动选中部分对话文本复制 */
+    user-select: text;
   }
 
   .is-user .ai-chat-bubble {
