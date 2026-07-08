@@ -495,9 +495,13 @@
         spec: f.spec.trim(),
         protocol: f.protocol,
         command: f.command.trim(),
-        http_method: f.protocol === 1 ? f.http_method : undefined,
+        // http_method 后端 binding 是 oneof=1 2,即使 Shell 任务也必须带一个合法值
+        http_method: f.protocol === 1 ? f.http_method : 1,
         timeout: f.timeout || undefined,
         level: 1,
+        multi: 0,
+        // dependency_status 后端 binding 是 oneof=1 2,独立任务用弱依赖(2)
+        dependency_status: 2,
         host_id: f.protocol === 2 ? f.host_ids : undefined
       })
       setCreateStatus(index, 'done')
