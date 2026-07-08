@@ -55,6 +55,8 @@ persistence:
   accessMode: ReadWriteOnce
   size: 1Gi
 
+# Setting limits.memory lets gocron auto-tune Go's GOMEMLIMIT to ~90% of it
+# (read from the cgroup at startup), reducing OOM kills. No extra config needed.
 resources: {}
   # limits:
   #   cpu: 500m
