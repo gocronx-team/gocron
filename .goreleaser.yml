@@ -77,8 +77,10 @@ changelog:
   sort: asc
   filters:
     exclude:
-      - "^docs:"
-      - "^style:"
+      # match both bare and scoped forms, e.g. "docs:" and "docs(helm):"
+      - "^docs(\\(.+\\))?:"
+      - "^style(\\(.+\\))?:"
+      - "^test(\\(.+\\))?:"
       - "^chore\\(deps\\):"
   groups:
     - title: "New Features"
