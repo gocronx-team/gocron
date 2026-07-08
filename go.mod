@@ -8,6 +8,7 @@ require (
 	github.com/go-sql-driver/mysql v1.10.0
 	github.com/goccy/go-yaml v1.19.2
 	github.com/gocronx-team/cron v0.1.3
+	github.com/gocronx-team/memlimit v0.1.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/lib/pq v1.12.3
 	github.com/modelcontextprotocol/go-sdk v1.6.1

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gocronx-team/memlimit"
 
 	"github.com/gocronx-team/gocron/internal/models"
 	"github.com/gocronx-team/gocron/internal/modules/app"
@@ -99,6 +100,14 @@ func runWeb(ctx *cli.Context) error {
 	// Initialize modules: DB, scheduled tasks, etc.
 	initModule()
 	fmt.Printf("Modules initialized\n")
+
+	// 容器内存感知:把 GOMEMLIMIT 设为 cgroup 内存上限的 90%,让 GC 在接近上限前
+	// 施压,减少被 OOM kill。非容器/无限额环境为安全 no-op。
+	if n, err := memlimit.SetFromCgroup(); err != nil {
+		logger.Warnf("memlimit: %v", err)
+	} else if n > 0 {
+		logger.Infof("GOMEMLIMIT set from cgroup memory limit: %d bytes", n)
+	}
 
 	// Security warning: agent gRPC channel unencrypted when TLS is off
 	if app.Installed && app.Setting != nil && !app.Setting.EnableTLS {

@@ -10,6 +10,7 @@ import (
 	"github.com/gocronx-team/gocron/internal/modules/rpc/auth"
 	"github.com/gocronx-team/gocron/internal/modules/rpc/server"
 	"github.com/gocronx-team/gocron/internal/modules/utils"
+	"github.com/gocronx-team/memlimit"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -44,6 +45,14 @@ func main() {
 	if version {
 		utils.PrintAppVersion(AppVersion, GitCommit, BuildDate)
 		return
+	}
+
+	// 容器内存感知:把 GOMEMLIMIT 设为 cgroup 内存上限的 90%,减少节点进程被 OOM kill。
+	// 非容器/无限额环境为安全 no-op。
+	if n, err := memlimit.SetFromCgroup(); err != nil {
+		log.Warnf("memlimit: %v", err)
+	} else if n > 0 {
+		log.Infof("GOMEMLIMIT set from cgroup memory limit: %d bytes", n)
 	}
 
 	if enableTLS {
