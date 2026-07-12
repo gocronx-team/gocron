@@ -37,6 +37,10 @@ type Setting struct {
 	CertFile  string
 	KeyFile   string
 
+	// RPCToken 为节点 RPC 共享令牌;非空时调度器会在每次节点调用附带该令牌,
+	// 节点侧配置相同令牌即可在明文通道上强制鉴权。为空保持旧行为。
+	RPCToken string
+
 	ConcurrencyQueue int
 	AuthSecret       string
 }
@@ -80,6 +84,7 @@ func Read(filename string) (*Setting, error) {
 	s.CAFile = section.Key("ca_file").MustString("")
 	s.CertFile = section.Key("cert_file").MustString("")
 	s.KeyFile = section.Key("key_file").MustString("")
+	s.RPCToken = section.Key("rpc_token").MustString("")
 
 	if s.EnableTLS {
 		if !utils.FileExist(s.CAFile) {

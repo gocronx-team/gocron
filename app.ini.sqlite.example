@@ -48,3 +48,9 @@ enable_tls=false
 ca_file=
 cert_file=
 key_file=
+
+# 节点 RPC 共享令牌(可选,强烈建议在非 TLS 部署下设置)
+# 为空时保持旧行为(明文且无鉴权,任何能连到节点 5921 端口的人都可执行任意命令)。
+# 设置后,需在每个节点以 -token 或环境变量 GOCRON_NODE_TOKEN 配置相同的值,
+# 调度器会在每次节点调用附带该令牌,节点侧强制校验。可与 TLS 叠加使用。
+rpc_token=
