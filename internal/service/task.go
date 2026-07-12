@@ -497,13 +497,84 @@ func (h *RPCHandler) Run(taskModel models.Task, taskUniqueId int64, secretEnv ma
 
 // loadSecretEnv 读取机密并解密为 name->明文 映射,用于注入任务执行环境。
 // 任务配置了机密白名单(SecretNames)时,仅解密注入白名单内的机密,实现任务级作用域隔离;
+// 解密后的全量机密进程内缓存(name -> 明文),按 CacheSignature 失效。
+// 高频任务(如每秒级)由此免去每次执行的全表查询 + 逐条 AES 解密。
+var (
+	secretCacheMu    sync.Mutex
+	secretCacheMap   map[string]string
+	secretCacheSig   string
+	secretCacheValid bool
+)
+
+// resetSecretCache 使缓存失效,仅供测试在切换 models.Db 后隔离状态使用。
+func resetSecretCache() {
+	secretCacheMu.Lock()
+	secretCacheValid = false
+	secretCacheMap = nil
+	secretCacheSig = ""
+	secretCacheMu.Unlock()
+}
+
+// decryptAllSecrets 全表拉取并逐条解密,构建 name -> 明文 映射(跳过受保护名与解密失败项)。
+func decryptAllSecrets() (map[string]string, error) {
+	all, err := new(models.Secret).All()
+	if err != nil {
+		return nil, err
+	}
+	m := make(map[string]string, len(all))
+	failed := 0
+	for _, s := range all {
+		// 纵深防御:跳过受保护的系统环境变量名,防止绕过 API 写入的坏数据覆盖 PATH/LD_PRELOAD 等
+		if models.IsReservedEnvName(s.Name) {
+			logger.Warnf("跳过受保护的机密名#%s(不允许覆盖系统环境变量)", s.Name)
+			continue
+		}
+		plain, err := crypto.Decrypt(s.Value)
+		if err != nil {
+			failed++
+			continue
+		}
+		m[s.Name] = plain
+	}
+	// 汇总告警:解密失败通常意味着 GOCRON_SECRET_KEY 已变更,否则任务会静默拿不到机密
+	if failed > 0 {
+		logger.Errorf("有 %d 条机密解密失败,可能 GOCRON_SECRET_KEY 已变更;相关任务将无法获取这些机密,请检查主密钥或重建机密", failed)
+	}
+	return m, nil
+}
+
+// cachedSecrets 返回全量解密机密映射,命中缓存则免去重复解密;签名变化时重建。
+// 返回的 map 为共享只读副本,调用方不得修改。
+func cachedSecrets() (map[string]string, error) {
+	sig, err := new(models.Secret).CacheSignature()
+	if err != nil {
+		// 签名查询失败:降级为直接解密(保持行为正确,只是不走缓存)
+		logger.Warnf("获取机密缓存签名失败,降级为直接解密: %v", err)
+		return decryptAllSecrets()
+	}
+
+	secretCacheMu.Lock()
+	defer secretCacheMu.Unlock()
+	if secretCacheValid && secretCacheSig == sig {
+		return secretCacheMap, nil
+	}
+	m, err := decryptAllSecrets()
+	if err != nil {
+		return nil, err
+	}
+	secretCacheMap = m
+	secretCacheSig = sig
+	secretCacheValid = true
+	return m, nil
+}
+
 // 未配置白名单的任务保持历史行为,注入全部机密。
 // 未配置加密或读取/解密失败时安全降级(返回 nil 或跳过失败项)。
 func loadSecretEnv(taskModel models.Task) map[string]string {
 	if !crypto.Configured() {
 		return nil
 	}
-	all, err := new(models.Secret).All()
+	all, err := cachedSecrets()
 	if err != nil {
 		logger.Warnf("加载机密失败: %v", err)
 		return nil
@@ -520,33 +591,18 @@ func loadSecretEnv(taskModel models.Task) map[string]string {
 		}
 	}
 	env := make(map[string]string, len(all))
-	failed := 0
-	for _, s := range all {
+	for name, plain := range all {
 		if allowed != nil {
-			if !allowed[s.Name] {
+			if !allowed[name] {
 				continue
 			}
-			delete(allowed, s.Name)
+			delete(allowed, name)
 		}
-		// 纵深防御:跳过受保护的系统环境变量名,防止绕过 API 写入的坏数据覆盖 PATH/LD_PRELOAD 等
-		if models.IsReservedEnvName(s.Name) {
-			logger.Warnf("跳过受保护的机密名#%s(不允许覆盖系统环境变量)", s.Name)
-			continue
-		}
-		plain, err := crypto.Decrypt(s.Value)
-		if err != nil {
-			failed++
-			continue
-		}
-		env[s.Name] = plain
+		env[name] = plain
 	}
 	// 白名单中引用了不存在的机密名:任务将拿不到该变量,给出告警便于排查
 	for name := range allowed {
 		logger.Warnf("任务#%d(%s)机密白名单引用了不存在的机密#%s", taskModel.Id, taskModel.Name, name)
-	}
-	// 汇总告警:解密失败通常意味着 GOCRON_SECRET_KEY 已变更,否则任务会静默拿不到机密
-	if failed > 0 {
-		logger.Errorf("有 %d 条机密解密失败,可能 GOCRON_SECRET_KEY 已变更;相关任务将无法获取这些机密,请检查主密钥或重建机密", failed)
 	}
 	return env
 }
