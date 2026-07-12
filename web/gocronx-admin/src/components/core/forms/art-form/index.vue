@@ -216,7 +216,7 @@
 
   const emit = defineEmits<FormEmits>()
 
-  const modelValue = defineModel<Record<string, any>>({ default: {} })
+  const modelValue = defineModel<Record<string, any>>({ default: () => ({}) })
 
   const rootProps = ['label', 'labelWidth', 'key', 'type', 'hidden', 'span', 'slots']
 

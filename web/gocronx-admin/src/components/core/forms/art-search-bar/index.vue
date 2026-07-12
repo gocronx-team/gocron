@@ -232,7 +232,7 @@
 
   const emit = defineEmits<SearchBarEmits>()
 
-  const modelValue = defineModel<Record<string, any>>({ default: {} })
+  const modelValue = defineModel<Record<string, any>>({ default: () => ({}) })
 
   /**
    * 是否展开状态
