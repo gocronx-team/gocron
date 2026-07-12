@@ -11,9 +11,9 @@
     "docs:preview": "vitepress preview"
   },
   "devDependencies": {
-    "vitepress": "^1.6.3"
+    "vitepress": "^1.6.4"
   },
   "dependencies": {
-    "vue": "^3.5.16"
+    "vue": "^3.5.39"
   }
 }
