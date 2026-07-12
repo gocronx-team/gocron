@@ -440,38 +440,35 @@ func RestoreToken(c *gin.Context) (string, error) {
 	if !ok {
 		return "", errors.New("invalid uid claim")
 	}
-	username, ok := claims["username"].(string)
-	if !ok {
-		return "", errors.New("invalid username claim")
-	}
-	isAdminF, ok := claims["is_admin"].(float64)
-	if !ok {
-		return "", errors.New("invalid is_admin claim")
-	}
 	expF, ok := claims["exp"].(float64)
 	if !ok {
 		return "", errors.New("invalid exp claim")
 	}
 
-	c.Set("uid", int(uidF))
-	c.Set("username", username)
-	c.Set("is_admin", int(isAdminF))
+	// 回查数据库中该用户的当前状态与角色，使禁用 / 降权 / 删除即时生效，
+	// 而不是信任 JWT 里固化的旧 claims（GOC-11）。
+	currentUser := &models.User{}
+	if err := currentUser.Find(int(uidF)); err != nil {
+		return "", errors.New("user not found")
+	}
+	if currentUser.Status != models.Enabled {
+		return "", errors.New("user disabled")
+	}
 
-	// 检查 token 是否即将过期（小于 1 小时）
+	c.Set("uid", currentUser.Id)
+	c.Set("username", currentUser.Name)
+	c.Set("is_admin", int(currentUser.IsAdmin))
+
+	// 检查 token 是否即将过期（小于 1 小时），用数据库里的最新角色重签，
+	// 避免自动续期把已被降权的旧权限无限延续下去。
 	exp := int64(expF)
 	if time.Until(time.Unix(exp, 0)) < time.Hour {
-		// 生成新 token
-		userModel := &models.User{
-			Id:      int(uidF),
-			Name:    username,
-			IsAdmin: int8(isAdminF),
-		}
-		newToken, err := generateToken(userModel)
+		newToken, err := generateToken(currentUser)
 		if err != nil {
 			logger.Warnf("刷新token失败: %v", err)
 			return "", nil
 		}
-		logger.Infof("用户 %s 的 token 已自动刷新", userModel.Name)
+		logger.Infof("用户 %s 的 token 已自动刷新", currentUser.Name)
 		return newToken, nil
 	}
 
