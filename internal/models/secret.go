@@ -2,6 +2,7 @@ package models
 
 import (
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -82,6 +83,24 @@ func (s *Secret) All() ([]Secret, error) {
 	list := make([]Secret, 0)
 	err := Db.Order("name ASC").Find(&list).Error
 	return list, err
+}
+
+// CacheSignature 返回一个轻量签名,用于进程内解密缓存的失效判定:
+// 机密条数 + 最新更新时间。任何新增/删除(改变条数)或更新(改变
+// updated_at,GORM 在 Updates 时自动维护)都会改变该签名。返回的字符串
+// 只用于相等比较,其具体格式无关紧要(同一进程内驱动表示一致即可)。
+func (s *Secret) CacheSignature() (string, error) {
+	var row struct {
+		Cnt        int64
+		MaxUpdated string
+	}
+	err := Db.Model(&Secret{}).
+		Select("COUNT(*) AS cnt, COALESCE(MAX(updated_at), '') AS max_updated").
+		Scan(&row).Error
+	if err != nil {
+		return "", err
+	}
+	return strconv.FormatInt(row.Cnt, 10) + "|" + row.MaxUpdated, nil
 }
 
 // Find 按 id 查找(含 Value)。

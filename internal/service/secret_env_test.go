@@ -11,6 +11,7 @@ import (
 )
 
 func TestLoadSecretEnvDecrypts(t *testing.T) {
+	resetSecretCache()
 	_ = os.Setenv(crypto.SecretKeyEnv, "svc-secret-test")
 	crypto.Init()
 	if !crypto.Configured() {
@@ -57,6 +58,7 @@ func TestSecretValuesEmpty(t *testing.T) {
 }
 
 func TestLoadSecretEnvSkipsReserved(t *testing.T) {
+	resetSecretCache()
 	_ = os.Setenv(crypto.SecretKeyEnv, "svc-reserved-test")
 	crypto.Init()
 	if !crypto.Configured() {
@@ -92,7 +94,82 @@ func TestLoadSecretEnvSkipsReserved(t *testing.T) {
 	}
 }
 
+func TestLoadSecretEnvCaching(t *testing.T) {
+	resetSecretCache()
+	_ = os.Setenv(crypto.SecretKeyEnv, "svc-cache-test")
+	crypto.Init()
+	if !crypto.Configured() {
+		t.Skip("crypto master key not configured")
+	}
+	db, err := gorm.Open(gormlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("open sqlite: %v", err)
+	}
+	original := models.Db
+	models.Db = db
+	defer func() { models.Db = original }()
+	if err := db.AutoMigrate(&models.Secret{}); err != nil {
+		t.Fatalf("migrate: %v", err)
+	}
+
+	enc := func(plain string) string {
+		ct, err := crypto.Encrypt(plain)
+		if err != nil {
+			t.Fatalf("encrypt: %v", err)
+		}
+		return ct
+	}
+
+	if _, err := (&models.Secret{Name: "FOO", Value: enc("v1")}).Create(); err != nil {
+		t.Fatalf("create FOO: %v", err)
+	}
+	if got := loadSecretEnv(models.Task{})["FOO"]; got != "v1" {
+		t.Fatalf("expected FOO=v1, got %q", got)
+	}
+
+	// UpdateColumn 不触发 updated_at、条数不变 => 签名不变 => 应命中缓存,仍返回旧值 v1
+	if err := models.Db.Model(&models.Secret{}).Where("name = ?", "FOO").
+		UpdateColumn("value", enc("v2")).Error; err != nil {
+		t.Fatalf("sneaky update: %v", err)
+	}
+	if got := loadSecretEnv(models.Task{})["FOO"]; got != "v1" {
+		t.Fatalf("expected cached v1 while signature unchanged, got %q", got)
+	}
+
+	// 新增一条机密 => 条数变化 => 签名变化 => 缓存失效并重新解密:
+	// 此时 FOO 应读到最新的 v2,新机密 BAR 也应出现。
+	if _, err := (&models.Secret{Name: "BAR", Value: enc("b1")}).Create(); err != nil {
+		t.Fatalf("create BAR: %v", err)
+	}
+	env := loadSecretEnv(models.Task{})
+	if env["FOO"] != "v2" {
+		t.Errorf("after invalidation FOO should refresh to v2, got %q", env["FOO"])
+	}
+	if env["BAR"] != "b1" {
+		t.Errorf("new secret BAR should appear after invalidation, got %q", env["BAR"])
+	}
+
+	// 删除 BAR => 条数变化 => 缓存失效 => BAR 消失。
+	if _, err := (&models.Secret{}).Delete(env2Id(t)); err != nil {
+		t.Fatalf("delete BAR: %v", err)
+	}
+	if _, ok := loadSecretEnv(models.Task{})["BAR"]; ok {
+		t.Error("BAR should disappear after deletion invalidates the cache")
+	}
+}
+
+// env2Id 返回 BAR 的主键 id(测试辅助)。
+func env2Id(t *testing.T) int {
+	t.Helper()
+	s := &models.Secret{}
+	if err := models.Db.Where("name = ?", "BAR").First(s).Error; err != nil {
+		t.Fatalf("lookup BAR id: %v", err)
+	}
+	return s.Id
+}
+
 func TestLoadSecretEnvWhitelistScoping(t *testing.T) {
+	resetSecretCache()
 	_ = os.Setenv(crypto.SecretKeyEnv, "svc-whitelist-test")
 	crypto.Init()
 	if !crypto.Configured() {
