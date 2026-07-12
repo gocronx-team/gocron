@@ -88,6 +88,7 @@ var enUS = map[string]string{
 	"log_no_result":                          "This log has no output to diagnose",
 	"select_at_least_one_receiver":           "Please select at least one notification receiver",
 	"notify_keyword_regex_invalid":           "The notification keyword regular expression is invalid",
+	"notify_keyword_exclude_regex_invalid":   "The notification exclude-keyword regular expression is invalid",
 	"select_hostname":                        "Please select hostname",
 	"select_dependency":                      "Please select dependency",
 	"host_in_use_cannot_delete":              "Host is in use by tasks and cannot be deleted",

@@ -20,27 +20,28 @@ const yamlExportVersion = 1
 // yamlTask 是任务的可移植表示:主机以 name 引用(便于跨实例迁移),
 // 不含执行历史、脚本版本与依赖关系(dependency_task_id 是本实例的 id,跨实例无意义)。
 type yamlTask struct {
-	Name               string   `yaml:"name"`
-	Level              int8     `yaml:"level"`
-	Spec               string   `yaml:"spec,omitempty"`
-	Protocol           int8     `yaml:"protocol"`
-	Command            string   `yaml:"command"`
-	HttpMethod         int8     `yaml:"http_method,omitempty"`
-	HttpBody           string   `yaml:"http_body,omitempty"`
-	HttpHeaders        string   `yaml:"http_headers,omitempty"`
-	SuccessPattern     string   `yaml:"success_pattern,omitempty"`
-	Timeout            int      `yaml:"timeout,omitempty"`
-	Multi              int8     `yaml:"multi,omitempty"`
-	RetryTimes         int8     `yaml:"retry_times,omitempty"`
-	RetryInterval      int16    `yaml:"retry_interval,omitempty"`
-	Tag                string   `yaml:"tag,omitempty"`
-	Remark             string   `yaml:"remark,omitempty"`
-	NotifyStatus       int8     `yaml:"notify_status,omitempty"`
-	NotifyType         int8     `yaml:"notify_type,omitempty"`
-	NotifyKeyword      string   `yaml:"notify_keyword,omitempty"`
-	NotifyKeywordRegex int8     `yaml:"notify_keyword_regex,omitempty"`
-	LogRetentionDays   int      `yaml:"log_retention_days,omitempty"`
-	Hosts              []string `yaml:"hosts,omitempty"` // RPC 任务的执行节点(host name)
+	Name                 string   `yaml:"name"`
+	Level                int8     `yaml:"level"`
+	Spec                 string   `yaml:"spec,omitempty"`
+	Protocol             int8     `yaml:"protocol"`
+	Command              string   `yaml:"command"`
+	HttpMethod           int8     `yaml:"http_method,omitempty"`
+	HttpBody             string   `yaml:"http_body,omitempty"`
+	HttpHeaders          string   `yaml:"http_headers,omitempty"`
+	SuccessPattern       string   `yaml:"success_pattern,omitempty"`
+	Timeout              int      `yaml:"timeout,omitempty"`
+	Multi                int8     `yaml:"multi,omitempty"`
+	RetryTimes           int8     `yaml:"retry_times,omitempty"`
+	RetryInterval        int16    `yaml:"retry_interval,omitempty"`
+	Tag                  string   `yaml:"tag,omitempty"`
+	Remark               string   `yaml:"remark,omitempty"`
+	NotifyStatus         int8     `yaml:"notify_status,omitempty"`
+	NotifyType           int8     `yaml:"notify_type,omitempty"`
+	NotifyKeyword        string   `yaml:"notify_keyword,omitempty"`
+	NotifyKeywordRegex   int8     `yaml:"notify_keyword_regex,omitempty"`
+	NotifyKeywordExclude string   `yaml:"notify_keyword_exclude,omitempty"`
+	LogRetentionDays     int      `yaml:"log_retention_days,omitempty"`
+	Hosts                []string `yaml:"hosts,omitempty"` // RPC 任务的执行节点(host name)
 }
 
 type yamlDoc struct {
@@ -67,26 +68,27 @@ func Export(c *gin.Context) {
 	doc := yamlDoc{Version: yamlExportVersion, Tasks: make([]yamlTask, 0, len(list))}
 	for _, t := range list {
 		yt := yamlTask{
-			Name:               t.Name,
-			Level:              int8(t.Level),
-			Spec:               t.Spec,
-			Protocol:           int8(t.Protocol),
-			Command:            t.Command,
-			HttpMethod:         int8(t.HttpMethod),
-			HttpBody:           t.HttpBody,
-			HttpHeaders:        t.HttpHeaders,
-			SuccessPattern:     t.SuccessPattern,
-			Timeout:            t.Timeout,
-			Multi:              t.Multi,
-			RetryTimes:         t.RetryTimes,
-			RetryInterval:      t.RetryInterval,
-			Tag:                t.Tag,
-			Remark:             t.Remark,
-			NotifyStatus:       t.NotifyStatus,
-			NotifyType:         t.NotifyType,
-			NotifyKeyword:      t.NotifyKeyword,
-			NotifyKeywordRegex: t.NotifyKeywordRegex,
-			LogRetentionDays:   t.LogRetentionDays,
+			Name:                 t.Name,
+			Level:                int8(t.Level),
+			Spec:                 t.Spec,
+			Protocol:             int8(t.Protocol),
+			Command:              t.Command,
+			HttpMethod:           int8(t.HttpMethod),
+			HttpBody:             t.HttpBody,
+			HttpHeaders:          t.HttpHeaders,
+			SuccessPattern:       t.SuccessPattern,
+			Timeout:              t.Timeout,
+			Multi:                t.Multi,
+			RetryTimes:           t.RetryTimes,
+			RetryInterval:        t.RetryInterval,
+			Tag:                  t.Tag,
+			Remark:               t.Remark,
+			NotifyStatus:         t.NotifyStatus,
+			NotifyType:           t.NotifyType,
+			NotifyKeyword:        t.NotifyKeyword,
+			NotifyKeywordRegex:   t.NotifyKeywordRegex,
+			NotifyKeywordExclude: t.NotifyKeywordExclude,
+			LogRetentionDays:     t.LogRetentionDays,
 		}
 		for _, h := range t.Hosts {
 			yt.Hosts = append(yt.Hosts, h.Name)
@@ -169,28 +171,29 @@ func Import(c *gin.Context) {
 		}
 
 		t := models.Task{
-			Name:               yt.Name,
-			Level:              models.TaskLevel(yt.Level),
-			Spec:               spec,
-			Protocol:           models.TaskProtocol(yt.Protocol),
-			Command:            yt.Command,
-			HttpMethod:         models.TaskHTTPMethod(yt.HttpMethod),
-			HttpBody:           yt.HttpBody,
-			HttpHeaders:        yt.HttpHeaders,
-			SuccessPattern:     yt.SuccessPattern,
-			Timeout:            yt.Timeout,
-			Multi:              yt.Multi,
-			RetryTimes:         yt.RetryTimes,
-			RetryInterval:      yt.RetryInterval,
-			Tag:                yt.Tag,
-			Remark:             yt.Remark,
-			NotifyStatus:       yt.NotifyStatus,
-			NotifyType:         yt.NotifyType,
-			NotifyKeyword:      yt.NotifyKeyword,
-			NotifyKeywordRegex: yt.NotifyKeywordRegex,
-			LogRetentionDays:   yt.LogRetentionDays,
-			DependencyStatus:   models.TaskDependencyStatusWeak, // 不导入依赖关系
-			Status:             models.Enabled,
+			Name:                 yt.Name,
+			Level:                models.TaskLevel(yt.Level),
+			Spec:                 spec,
+			Protocol:             models.TaskProtocol(yt.Protocol),
+			Command:              yt.Command,
+			HttpMethod:           models.TaskHTTPMethod(yt.HttpMethod),
+			HttpBody:             yt.HttpBody,
+			HttpHeaders:          yt.HttpHeaders,
+			SuccessPattern:       yt.SuccessPattern,
+			Timeout:              yt.Timeout,
+			Multi:                yt.Multi,
+			RetryTimes:           yt.RetryTimes,
+			RetryInterval:        yt.RetryInterval,
+			Tag:                  yt.Tag,
+			Remark:               yt.Remark,
+			NotifyStatus:         yt.NotifyStatus,
+			NotifyType:           yt.NotifyType,
+			NotifyKeyword:        yt.NotifyKeyword,
+			NotifyKeywordRegex:   yt.NotifyKeywordRegex,
+			NotifyKeywordExclude: yt.NotifyKeywordExclude,
+			LogRetentionDays:     yt.LogRetentionDays,
+			DependencyStatus:     models.TaskDependencyStatusWeak, // 不导入依赖关系
+			Status:               models.Enabled,
 		}
 
 		id, cerr := t.Create()

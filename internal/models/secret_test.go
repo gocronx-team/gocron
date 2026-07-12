@@ -190,6 +190,15 @@ func TestUpgradeFor170MigratesNotifyStatus(t *testing.T) {
 		}
 	}
 
+	// 真实的 <1.7.0 旧库没有 notify_keyword_regex 列;重映射只在首次加列时执行
+	// (列已存在时跳过,避免重复升级二次改写位掩码值)
+	if err := db.Migrator().DropColumn(&Task{}, "notify_keyword_regex"); err != nil {
+		t.Fatalf("drop task column: %v", err)
+	}
+	if err := db.Migrator().DropColumn(&TaskTemplate{}, "notify_keyword_regex"); err != nil {
+		t.Fatalf("drop template column: %v", err)
+	}
+
 	if err := (&Migration{}).upgradeFor170(db); err != nil {
 		t.Fatalf("upgrade: %v", err)
 	}

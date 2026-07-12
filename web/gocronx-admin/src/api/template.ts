@@ -30,6 +30,7 @@ export interface TemplateListItem {
   notify_type?: number
   notify_keyword?: string
   notify_keyword_regex?: number
+  notify_keyword_exclude?: string
   log_retention_days?: number
   is_builtin?: number
   created_at?: string
@@ -59,6 +60,7 @@ export interface TemplateStoreParams {
   notify_type?: number
   notify_keyword?: string
   notify_keyword_regex?: number
+  notify_keyword_exclude?: string
   log_retention_days?: number
 }
 
@@ -112,6 +114,8 @@ export function fetchTemplateStore(params: TemplateStoreParams) {
   if (params.notify_keyword !== undefined) form.append('notify_keyword', params.notify_keyword)
   if (params.notify_keyword_regex !== undefined)
     form.append('notify_keyword_regex', String(params.notify_keyword_regex))
+  if (params.notify_keyword_exclude !== undefined)
+    form.append('notify_keyword_exclude', params.notify_keyword_exclude)
   if (params.log_retention_days !== undefined)
     form.append('log_retention_days', String(params.log_retention_days))
 

@@ -348,6 +348,15 @@
             </ElFormItem>
           </ElCol>
           <ElCol :span="8" v-if="(form.notify_status & 4) !== 0">
+            <ElFormItem :label="t('task.notifyKeywordExclude')">
+              <ElInput
+                v-model.trim="form.notify_keyword_exclude"
+                :placeholder="t('task.notifyKeywordExcludePlaceholder')"
+                clearable
+              />
+            </ElFormItem>
+          </ElCol>
+          <ElCol :span="8" v-if="(form.notify_status & 4) !== 0">
             <ElFormItem :label="t('task.notifyKeywordRegex')">
               <ElSwitch v-model="form.notify_keyword_regex" :active-value="1" :inactive-value="0" />
               <span class="regex-hint">{{ t('task.notifyKeywordRegexHint') }}</span>
@@ -432,6 +441,7 @@
     notify_type: 0,
     notify_keyword: '',
     notify_keyword_regex: 0,
+    notify_keyword_exclude: '',
     log_retention_days: 0
   })
 
@@ -446,6 +456,7 @@
     }
     if ((form.notify_status & 4) === 0) {
       form.notify_keyword = ''
+      form.notify_keyword_exclude = ''
     }
   })
 
@@ -588,6 +599,7 @@
       form.notify_type = data.notify_type ?? 0
       form.notify_keyword = data.notify_keyword ?? ''
       form.notify_keyword_regex = data.notify_keyword_regex ?? 0
+      form.notify_keyword_exclude = data.notify_keyword_exclude ?? ''
       form.log_retention_days = data.log_retention_days ?? 0
 
       previewCron()
@@ -627,6 +639,7 @@
         notify_type: form.notify_type,
         notify_keyword: form.notify_keyword,
         notify_keyword_regex: form.notify_keyword_regex,
+        notify_keyword_exclude: form.notify_keyword_exclude,
         log_retention_days: form.log_retention_days
       })
       ElMessage.success(isEdit.value ? t('template.updateSuccess') : t('template.createSuccess'))
