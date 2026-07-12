@@ -27,6 +27,7 @@ func main() {
 	var keyFile string
 	var enableTLS bool
 	var logLevel string
+	var token string
 	flag.BoolVar(&allowRoot, "allow-root", false, "./gocron-node -allow-root")
 	flag.StringVar(&serverAddr, "s", "0.0.0.0:5921", "./gocron-node -s ip:port")
 	flag.BoolVar(&version, "v", false, "./gocron-node -v")
@@ -34,8 +35,14 @@ func main() {
 	flag.StringVar(&CAFile, "ca-file", "", "./gocron-node -ca-file path")
 	flag.StringVar(&certFile, "cert-file", "", "./gocron-node -cert-file path")
 	flag.StringVar(&keyFile, "key-file", "", "./gocron-node -key-file path")
+	flag.StringVar(&token, "token", "", "shared RPC token; when set, callers must present the same token")
 	flag.StringVar(&logLevel, "log-level", "info", "-log-level error")
 	flag.Parse()
+
+	// 令牌优先用命令行,其次读环境变量,避免在进程列表中暴露。
+	if token == "" {
+		token = strings.TrimSpace(os.Getenv("GOCRON_NODE_TOKEN"))
+	}
 	level, err := log.ParseLevel(logLevel)
 	if err != nil {
 		log.Fatal(err)
@@ -80,5 +87,5 @@ func main() {
 		return
 	}
 
-	server.Start(serverAddr, enableTLS, certificate)
+	server.Start(serverAddr, enableTLS, certificate, token)
 }

@@ -115,7 +115,7 @@ func (s *Server) Run(ctx context.Context, req *pb.TaskRequest) (*pb.TaskResponse
 	return resp, nil
 }
 
-func Start(addr string, enableTLS bool, certificate auth.Certificate) {
+func Start(addr string, enableTLS bool, certificate auth.Certificate, token string) {
 	l, err := net.Listen("tcp", addr)
 	if err != nil {
 		log.Fatal(err)
@@ -131,6 +131,14 @@ func Start(addr string, enableTLS bool, certificate auth.Certificate) {
 		}
 		opt := grpc.Creds(credentials.NewTLS(tlsConfig))
 		opts = append(opts, opt)
+	}
+	// 配置了共享令牌时,对每次调用强制校验(与 TLS 正交)。
+	if token != "" {
+		opts = append(opts, grpc.UnaryInterceptor(auth.TokenUnaryServerInterceptor(token)))
+	} else if !enableTLS {
+		log.Warn("gocron-node is running WITHOUT TLS and WITHOUT a shared token: " +
+			"anyone able to reach this address can execute arbitrary commands. " +
+			"Set -enable-tls or -token (env GOCRON_NODE_TOKEN) to secure it.")
 	}
 	server := grpc.NewServer(opts...)
 	pb.RegisterTaskServer(server, &Server{})
