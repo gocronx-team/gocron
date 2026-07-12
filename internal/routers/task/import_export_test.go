@@ -143,7 +143,7 @@ func TestExportRoundTrip(t *testing.T) {
 
 	if _, err := (&models.Task{Name: "exp-1", Level: models.TaskLevelParent, Spec: "0 0 0 1 1 *",
 		Protocol: models.TaskHTTP, Command: "http://z", HttpMethod: models.TaskHTTPMethodGet,
-		NotifyStatus: 5, NotifyKeyword: "ERR", NotifyKeywordRegex: 1,
+		NotifyStatus: 5, NotifyKeyword: "ERR", NotifyKeywordRegex: 1, NotifyKeywordExclude: "ERR: ignored",
 		DependencyStatus: models.TaskDependencyStatusWeak, Status: models.Enabled}).Create(); err != nil {
 		t.Fatalf("seed: %v", err)
 	}
@@ -162,9 +162,48 @@ func TestExportRoundTrip(t *testing.T) {
 	if len(doc.Tasks) != 1 || doc.Tasks[0].Name != "exp-1" {
 		t.Fatalf("unexpected export: %+v", doc.Tasks)
 	}
-	// 关键字段(含新的 notify 位掩码 + 正则)应完整保留
+	// 关键字段(含新的 notify 位掩码 + 正则 + 排除关键字)应完整保留
 	yt := doc.Tasks[0]
-	if yt.NotifyStatus != 5 || yt.NotifyKeyword != "ERR" || yt.NotifyKeywordRegex != 1 {
+	if yt.NotifyStatus != 5 || yt.NotifyKeyword != "ERR" || yt.NotifyKeywordRegex != 1 ||
+		yt.NotifyKeywordExclude != "ERR: ignored" {
 		t.Errorf("notify fields not preserved: %+v", yt)
+	}
+}
+
+func TestImportPreservesNotifyKeywordExclude(t *testing.T) {
+	r, cleanup := setupImportExportRouter(t)
+	defer cleanup()
+
+	body := `version: 1
+tasks:
+  - name: kw-task
+    level: 1
+    spec: "0 0 0 1 1 *"
+    protocol: 1
+    command: "http://x"
+    notify_status: 4
+    notify_keyword: "ERROR"
+    notify_keyword_regex: 1
+    notify_keyword_exclude: "ERROR: ignored"
+`
+	req := httptest.NewRequest(http.MethodPost, "/api/task/import", strings.NewReader(body))
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	var env envelope
+	_ = json.Unmarshal(w.Body.Bytes(), &env)
+	var res ImportResult
+	_ = json.Unmarshal(env.Data, &res)
+	if res.Created != 1 {
+		t.Fatalf("expected 1 created, got %d (msgs=%v)", res.Created, res.Messages)
+	}
+
+	var loaded models.Task
+	if err := models.Db.Where("name = ?", "kw-task").First(&loaded).Error; err != nil {
+		t.Fatalf("load imported task: %v", err)
+	}
+	if loaded.NotifyStatus != 4 || loaded.NotifyKeyword != "ERROR" ||
+		loaded.NotifyKeywordRegex != 1 || loaded.NotifyKeywordExclude != "ERROR: ignored" {
+		t.Errorf("imported notify fields wrong: %+v", loaded)
 	}
 }

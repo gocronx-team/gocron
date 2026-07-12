@@ -46,7 +46,7 @@ func (migration *Migration) Upgrade(oldVersionId int) {
 		return
 	}
 
-	versionIds := []int{110, 122, 130, 140, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 1510, 160, 163, 170, 180, 190}
+	versionIds := []int{110, 122, 130, 140, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 1510, 160, 163, 170, 180, 190, 1100}
 	upgradeFuncs := []func(*gorm.DB) error{
 		migration.upgradeFor110,
 		migration.upgradeFor122,
@@ -68,17 +68,10 @@ func (migration *Migration) Upgrade(oldVersionId int) {
 		migration.upgradeFor170,
 		migration.upgradeFor180,
 		migration.upgradeFor190,
+		migration.upgradeFor1100,
 	}
 
-	startIndex := -1
-	// 从当前版本的下一版本开始升级
-	for i, value := range versionIds {
-		if value > oldVersionId {
-			startIndex = i
-			break
-		}
-	}
-
+	startIndex := upgradeStartIndex(oldVersionId, versionIds)
 	if startIndex == -1 {
 		return
 	}
@@ -102,6 +95,27 @@ func (migration *Migration) Upgrade(oldVersionId int) {
 	if err != nil {
 		logger.Fatal("数据库升级失败", err)
 	}
+}
+
+// upgradeStartIndex 计算升级起点。优先精确匹配旧版本号在 versionIds 中的位置,从其
+// 下一项开始;未匹配到(如安装过无迁移的补丁版本)时退回「第一个大于旧版本号的项」。
+// 精确匹配不可省略:版本号是去点拼接的整数,1510(v1.5.10)大于其后的 160~190,
+// 若按大小扫描,>=v1.6 的库会被误判从 1510 重复迁移。
+func upgradeStartIndex(oldVersionId int, versionIds []int) int {
+	for i, value := range versionIds {
+		if value == oldVersionId {
+			if i+1 < len(versionIds) {
+				return i + 1
+			}
+			return -1
+		}
+	}
+	for i, value := range versionIds {
+		if value > oldVersionId {
+			return i
+		}
+	}
+	return -1
 }
 
 // 升级到v1.1版本
@@ -744,21 +758,23 @@ func (m *Migration) upgradeFor170(tx *gorm.DB) error {
 		}
 	}
 
-	// 通知增强:新增 notify_keyword_regex 列(关键字是否按正则匹配)
+	// 通知增强:新增 notify_keyword_regex 列(关键字是否按正则匹配)。
+	// notify_status 的单选值→位掩码重映射不可重入(迁移后 2/3 是合法的位组合值),
+	// 因此挂在列缺失判断内:仅在首次加列时执行,重复调用本迁移不会二次改写数据。
 	if !tx.Migrator().HasColumn(&Task{}, "notify_keyword_regex") {
 		if err := tx.Migrator().AddColumn(&Task{}, "NotifyKeywordRegex"); err != nil {
 			return err
 		}
-	}
 
-	// notify_status 由单选值迁移为位掩码(1=失败 2=成功 4=关键字)。
-	// 旧语义:1=仅失败(bit0,不变)、2=总是、3=关键字。
-	// 顺序:先 3→4,再 2→3,避免链式误转。
-	if err := tx.Model(&Task{}).Where("notify_status = ?", 3).Update("notify_status", 4).Error; err != nil {
-		return err
-	}
-	if err := tx.Model(&Task{}).Where("notify_status = ?", 2).Update("notify_status", 3).Error; err != nil {
-		return err
+		// notify_status 由单选值迁移为位掩码(1=失败 2=成功 4=关键字)。
+		// 旧语义:1=仅失败(bit0,不变)、2=总是、3=关键字。
+		// 顺序:先 3→4,再 2→3,避免链式误转。
+		if err := tx.Model(&Task{}).Where("notify_status = ?", 3).Update("notify_status", 4).Error; err != nil {
+			return err
+		}
+		if err := tx.Model(&Task{}).Where("notify_status = ?", 2).Update("notify_status", 3).Error; err != nil {
+			return err
+		}
 	}
 
 	// 任务模板同样迁移(apply 时会带入任务,需保持 notify 语义一致)
@@ -766,12 +782,12 @@ func (m *Migration) upgradeFor170(tx *gorm.DB) error {
 		if err := tx.Migrator().AddColumn(&TaskTemplate{}, "NotifyKeywordRegex"); err != nil {
 			return err
 		}
-	}
-	if err := tx.Model(&TaskTemplate{}).Where("notify_status = ?", 3).Update("notify_status", 4).Error; err != nil {
-		return err
-	}
-	if err := tx.Model(&TaskTemplate{}).Where("notify_status = ?", 2).Update("notify_status", 3).Error; err != nil {
-		return err
+		if err := tx.Model(&TaskTemplate{}).Where("notify_status = ?", 3).Update("notify_status", 4).Error; err != nil {
+			return err
+		}
+		if err := tx.Model(&TaskTemplate{}).Where("notify_status = ?", 2).Update("notify_status", 3).Error; err != nil {
+			return err
+		}
 	}
 
 	logger.Info("已升级到v1.7.0")
@@ -812,6 +828,28 @@ func (m *Migration) upgradeFor190(tx *gorm.DB) error {
 	}
 
 	logger.Info("已升级到v1.9.0")
+
+	return nil
+}
+
+func (m *Migration) upgradeFor1100(tx *gorm.DB) error {
+	logger.Info("开始升级到v1.10.0")
+
+	// 通知增强:新增 notify_keyword_exclude 列(排除关键字,命中则不通知)。
+	// 存量数据默认空串 = 不排除,旧任务行为不变。
+	if !tx.Migrator().HasColumn(&Task{}, "notify_keyword_exclude") {
+		if err := tx.Migrator().AddColumn(&Task{}, "NotifyKeywordExclude"); err != nil {
+			return err
+		}
+	}
+	// 任务模板同步(apply 时会带入任务,需保持 notify 语义一致)
+	if !tx.Migrator().HasColumn(&TaskTemplate{}, "notify_keyword_exclude") {
+		if err := tx.Migrator().AddColumn(&TaskTemplate{}, "NotifyKeywordExclude"); err != nil {
+			return err
+		}
+	}
+
+	logger.Info("已升级到v1.10.0")
 
 	return nil
 }

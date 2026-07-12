@@ -750,21 +750,46 @@ const (
 	notifyOnKeyword = 4 // bit2
 )
 
-// matchNotifyKeyword 按任务配置对输出做关键字匹配:子串包含或正则(标准库 RE2)。
+// matchOutputPattern 按模式对输出做匹配:子串包含或正则(标准库 RE2)。
+// 正则编译失败时返回 error,失败语义由调用方决定(匹配侧不通知/排除侧不排除)。
+func matchOutputPattern(pattern string, useRegex bool, output string) (bool, error) {
+	if useRegex {
+		re, err := regexp.Compile(pattern)
+		if err != nil {
+			return false, err
+		}
+		return re.MatchString(output), nil
+	}
+	return strings.Contains(output, pattern), nil
+}
+
+// matchNotifyKeyword 关键字触发条件:输出命中「关键字」且未命中「排除关键字」。
+// 两个字段共用 NotifyKeywordRegex 的匹配模式;排除关键字为空时不做排除。
 func matchNotifyKeyword(taskModel models.Task, output string) bool {
 	kw := taskModel.NotifyKeyword
 	if kw == "" {
 		return false
 	}
-	if taskModel.NotifyKeywordRegex == 1 {
-		re, err := regexp.Compile(kw)
-		if err != nil {
-			logger.Warnf("通知关键字正则编译失败#task-%d: %v", taskModel.Id, err)
-			return false
-		}
-		return re.MatchString(output)
+	useRegex := taskModel.NotifyKeywordRegex == 1
+	matched, err := matchOutputPattern(kw, useRegex, output)
+	if err != nil {
+		logger.Warnf("通知关键字正则编译失败#task-%d: %v", taskModel.Id, err)
+		return false
 	}
-	return strings.Contains(output, kw)
+	if !matched {
+		return false
+	}
+	excl := taskModel.NotifyKeywordExclude
+	if excl == "" {
+		return true
+	}
+	excluded, err := matchOutputPattern(excl, useRegex, output)
+	if err != nil {
+		// 排除模式编译失败:忽略排除、照常通知(宁可多发,不可静默漏发)
+		logger.Warnf("通知排除关键字正则编译失败#task-%d: %v", taskModel.Id, err)
+		return true
+	}
+	return !excluded
 }
 
 func SendNotification(taskModel models.Task, taskResult TaskResult) {

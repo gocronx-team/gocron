@@ -19,33 +19,34 @@ import (
 )
 
 type TaskForm struct {
-	Id                 int                         `form:"id" json:"id"`
-	Level              models.TaskLevel            `form:"level" json:"level" binding:"required,oneof=1 2"`
-	DependencyStatus   models.TaskDependencyStatus `form:"dependency_status" json:"dependency_status" binding:"oneof=1 2"`
-	DependencyTaskId   string                      `form:"dependency_task_id" json:"dependency_task_id"`
-	Name               string                      `form:"name" json:"name" binding:"required,max=32"`
-	Spec               string                      `form:"spec" json:"spec"`
-	Protocol           models.TaskProtocol         `form:"protocol" json:"protocol" binding:"oneof=1 2"`
-	Command            string                      `form:"command" json:"command" binding:"required,max=65535"`
-	HttpMethod         models.TaskHTTPMethod       `form:"http_method" json:"http_method" binding:"oneof=1 2"`
-	HttpBody           string                      `form:"http_body" json:"http_body" binding:"max=65535"`
-	HttpHeaders        string                      `form:"http_headers" json:"http_headers" binding:"max=4096"`
-	SuccessPattern     string                      `form:"success_pattern" json:"success_pattern" binding:"max=512"`
-	SecretNames        string                      `form:"secret_names" json:"secret_names" binding:"max=512"`
-	Timeout            int                         `form:"timeout" json:"timeout" binding:"min=0,max=86400"`
-	Multi              int8                        `form:"multi" json:"multi" binding:"oneof=0 1"`
-	RetryTimes         int8                        `form:"retry_times" json:"retry_times"`
-	RetryInterval      int16                       `form:"retry_interval" json:"retry_interval"`
-	HostId             string                      `form:"host_id" json:"host_id"`
-	Tag                string                      `form:"tag" json:"tag"`
-	Remark             string                      `form:"remark" json:"remark"`
-	NotifyStatus       int8                        `form:"notify_status" json:"notify_status" binding:"min=0,max=7"` // 位掩码:1=失败 2=成功 4=关键字
-	NotifyType         int8                        `form:"notify_type" json:"notify_type" binding:"oneof=0 1 2"`
-	NotifyReceiverId   string                      `form:"notify_receiver_id" json:"notify_receiver_id"`
-	NotifyKeyword      string                      `form:"notify_keyword" json:"notify_keyword"`
-	NotifyKeywordRegex int8                        `form:"notify_keyword_regex" json:"notify_keyword_regex" binding:"oneof=0 1"`
-	NotifyDiagnosis    int8                        `form:"notify_diagnosis" json:"notify_diagnosis" binding:"oneof=0 1"`
-	LogRetentionDays   int                         `form:"log_retention_days" json:"log_retention_days" binding:"min=0,max=3650"`
+	Id                   int                         `form:"id" json:"id"`
+	Level                models.TaskLevel            `form:"level" json:"level" binding:"required,oneof=1 2"`
+	DependencyStatus     models.TaskDependencyStatus `form:"dependency_status" json:"dependency_status" binding:"oneof=1 2"`
+	DependencyTaskId     string                      `form:"dependency_task_id" json:"dependency_task_id"`
+	Name                 string                      `form:"name" json:"name" binding:"required,max=32"`
+	Spec                 string                      `form:"spec" json:"spec"`
+	Protocol             models.TaskProtocol         `form:"protocol" json:"protocol" binding:"oneof=1 2"`
+	Command              string                      `form:"command" json:"command" binding:"required,max=65535"`
+	HttpMethod           models.TaskHTTPMethod       `form:"http_method" json:"http_method" binding:"oneof=1 2"`
+	HttpBody             string                      `form:"http_body" json:"http_body" binding:"max=65535"`
+	HttpHeaders          string                      `form:"http_headers" json:"http_headers" binding:"max=4096"`
+	SuccessPattern       string                      `form:"success_pattern" json:"success_pattern" binding:"max=512"`
+	SecretNames          string                      `form:"secret_names" json:"secret_names" binding:"max=512"`
+	Timeout              int                         `form:"timeout" json:"timeout" binding:"min=0,max=86400"`
+	Multi                int8                        `form:"multi" json:"multi" binding:"oneof=0 1"`
+	RetryTimes           int8                        `form:"retry_times" json:"retry_times"`
+	RetryInterval        int16                       `form:"retry_interval" json:"retry_interval"`
+	HostId               string                      `form:"host_id" json:"host_id"`
+	Tag                  string                      `form:"tag" json:"tag"`
+	Remark               string                      `form:"remark" json:"remark"`
+	NotifyStatus         int8                        `form:"notify_status" json:"notify_status" binding:"min=0,max=7"` // 位掩码:1=失败 2=成功 4=关键字
+	NotifyType           int8                        `form:"notify_type" json:"notify_type" binding:"oneof=0 1 2"`
+	NotifyReceiverId     string                      `form:"notify_receiver_id" json:"notify_receiver_id"`
+	NotifyKeyword        string                      `form:"notify_keyword" json:"notify_keyword"`
+	NotifyKeywordRegex   int8                        `form:"notify_keyword_regex" json:"notify_keyword_regex" binding:"oneof=0 1"`
+	NotifyKeywordExclude string                      `form:"notify_keyword_exclude" json:"notify_keyword_exclude"`
+	NotifyDiagnosis      int8                        `form:"notify_diagnosis" json:"notify_diagnosis" binding:"oneof=0 1"`
+	LogRetentionDays     int                         `form:"log_retention_days" json:"log_retention_days" binding:"min=0,max=3650"`
 }
 
 // 首页
@@ -93,6 +94,25 @@ func Detail(c *gin.Context) {
 	c.String(http.StatusOK, result)
 }
 
+// validateNotifyKeywordRegex 校验关键字/排除关键字在正则模式下可编译,
+// 返回错误的 i18n key,空串表示通过。仅在勾选关键字条件且开启正则时校验。
+func validateNotifyKeywordRegex(taskModel models.Task) string {
+	if taskModel.NotifyStatus&4 == 0 || taskModel.NotifyKeywordRegex != 1 {
+		return ""
+	}
+	if taskModel.NotifyKeyword != "" {
+		if _, err := regexp.Compile(taskModel.NotifyKeyword); err != nil {
+			return "notify_keyword_regex_invalid"
+		}
+	}
+	if taskModel.NotifyKeywordExclude != "" {
+		if _, err := regexp.Compile(taskModel.NotifyKeywordExclude); err != nil {
+			return "notify_keyword_exclude_regex_invalid"
+		}
+	}
+	return ""
+}
+
 // 保存任务
 func Store(c *gin.Context) {
 	var form TaskForm
@@ -138,6 +158,7 @@ func Store(c *gin.Context) {
 	taskModel.NotifyReceiverId = form.NotifyReceiverId
 	taskModel.NotifyKeyword = form.NotifyKeyword
 	taskModel.NotifyKeywordRegex = form.NotifyKeywordRegex
+	taskModel.NotifyKeywordExclude = form.NotifyKeywordExclude
 	taskModel.NotifyDiagnosis = form.NotifyDiagnosis
 	taskModel.LogRetentionDays = form.LogRetentionDays
 	taskModel.Spec = form.Spec
@@ -149,11 +170,9 @@ func Store(c *gin.Context) {
 		return
 	}
 	// 关键字条件启用正则时,校验正则合法(防止运行期编译失败导致静默不通知)
-	if taskModel.NotifyStatus&4 != 0 && taskModel.NotifyKeywordRegex == 1 && taskModel.NotifyKeyword != "" {
-		if _, err := regexp.Compile(taskModel.NotifyKeyword); err != nil {
-			base.RespondError(c, i18n.T(c, "notify_keyword_regex_invalid"))
-			return
-		}
+	if key := validateNotifyKeywordRegex(taskModel); key != "" {
+		base.RespondError(c, i18n.T(c, key))
+		return
 	}
 	taskModel.HttpMethod = form.HttpMethod
 	// 校验 HttpHeaders（JSON 格式 + 黑名单检查）
@@ -539,6 +558,7 @@ func buildTaskDiff(old, new models.Task) string {
 	add("secret_names", old.SecretNames, new.SecretNames)
 	add("notify_status", strconv.Itoa(int(old.NotifyStatus)), strconv.Itoa(int(new.NotifyStatus)))
 	add("notify_keyword", old.NotifyKeyword, new.NotifyKeyword)
+	add("notify_keyword_exclude", old.NotifyKeywordExclude, new.NotifyKeywordExclude)
 	add("log_retention_days", strconv.Itoa(old.LogRetentionDays), strconv.Itoa(new.LogRetentionDays))
 
 	if len(changes) == 0 {

@@ -502,14 +502,23 @@
             </ElCol>
           </ElRow>
 
-          <!-- keyword match + regex mode (when keyword trigger enabled) -->
+          <!-- keyword match + exclude + regex mode (when keyword trigger enabled) -->
           <ElRow :gutter="24" v-if="(form.notify_status & 4) !== 0">
-            <ElCol :span="12">
+            <ElCol :span="8">
               <ElFormItem :label="t('task.notifyKeyword')" prop="notify_keyword">
                 <ElInput v-model.trim="form.notify_keyword" clearable />
               </ElFormItem>
             </ElCol>
-            <ElCol :span="12">
+            <ElCol :span="8">
+              <ElFormItem :label="t('task.notifyKeywordExclude')">
+                <ElInput
+                  v-model.trim="form.notify_keyword_exclude"
+                  :placeholder="t('task.notifyKeywordExcludePlaceholder')"
+                  clearable
+                />
+              </ElFormItem>
+            </ElCol>
+            <ElCol :span="8">
               <ElFormItem :label="t('task.notifyKeywordRegex')">
                 <ElSwitch
                   v-model="form.notify_keyword_regex"
@@ -718,6 +727,7 @@
     notify_type: 0,
     notify_keyword: '',
     notify_keyword_regex: 0,
+    notify_keyword_exclude: '',
     notify_diagnosis: 0,
     notify_receiver_id: ''
   })
@@ -733,6 +743,7 @@
     }
     if ((form.notify_status & 4) === 0) {
       form.notify_keyword = ''
+      form.notify_keyword_exclude = ''
       formRef.value?.clearValidate('notify_keyword')
     }
   })
@@ -943,6 +954,7 @@
     form.notify_type = data.notify_type ?? 0
     form.notify_keyword = data.notify_keyword || ''
     form.notify_keyword_regex = data.notify_keyword_regex ?? 0
+    form.notify_keyword_exclude = data.notify_keyword_exclude || ''
     form.notify_diagnosis = data.notify_diagnosis ?? 0
     form.notify_receiver_id = data.notify_receiver_id || ''
 
@@ -1253,6 +1265,7 @@
         notify_type: form.notify_type,
         notify_keyword: form.notify_keyword,
         notify_keyword_regex: form.notify_keyword_regex,
+        notify_keyword_exclude: form.notify_keyword_exclude,
         notify_receiver_id: notifyReceiverIds,
         remark: form.remark
       })
@@ -1350,6 +1363,7 @@
         notify_type: 0,
         notify_keyword: '',
         notify_keyword_regex: 0,
+        notify_keyword_exclude: '',
         notify_receiver_id: ''
       })
       notifyConditions.value = []
