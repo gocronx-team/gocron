@@ -35,6 +35,7 @@ var zhCN = map[string]string{
 	"secret_value_required":                  "请输入机密值",
 	"secret_key_not_configured":              "服务端未配置加密主密钥（GOCRON_SECRET_KEY），无法保存机密",
 	"secret_encrypt_failed":                  "机密加密失败",
+	"secret_names_invalid":                   "机密白名单包含非法名称，仅允许字母、数字和下划线，且不能以数字开头",
 	"password_same_as_old":                   "原密码与新密码不能相同",
 	"old_password_error":                     "原密码输入错误",
 	"username_password_empty":                "用户名或密码不能为空",

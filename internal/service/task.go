@@ -495,9 +495,11 @@ func (h *RPCHandler) Run(taskModel models.Task, taskUniqueId int64, secretEnv ma
 	return resultBuilder.String(), aggregationErr
 }
 
-// loadSecretEnv 读取全部机密并解密为 name->明文 映射,用于注入任务执行环境。
+// loadSecretEnv 读取机密并解密为 name->明文 映射,用于注入任务执行环境。
+// 任务配置了机密白名单(SecretNames)时,仅解密注入白名单内的机密,实现任务级作用域隔离;
+// 未配置白名单的任务保持历史行为,注入全部机密。
 // 未配置加密或读取/解密失败时安全降级(返回 nil 或跳过失败项)。
-func loadSecretEnv() map[string]string {
+func loadSecretEnv(taskModel models.Task) map[string]string {
 	if !crypto.Configured() {
 		return nil
 	}
@@ -509,9 +511,23 @@ func loadSecretEnv() map[string]string {
 	if len(all) == 0 {
 		return nil
 	}
+	// 白名单集合;nil 表示未配置白名单(注入全部)
+	var allowed map[string]bool
+	if names := taskModel.SecretNameList(); names != nil {
+		allowed = make(map[string]bool, len(names))
+		for _, name := range names {
+			allowed[name] = true
+		}
+	}
 	env := make(map[string]string, len(all))
 	failed := 0
 	for _, s := range all {
+		if allowed != nil {
+			if !allowed[s.Name] {
+				continue
+			}
+			delete(allowed, s.Name)
+		}
 		// 纵深防御:跳过受保护的系统环境变量名,防止绕过 API 写入的坏数据覆盖 PATH/LD_PRELOAD 等
 		if models.IsReservedEnvName(s.Name) {
 			logger.Warnf("跳过受保护的机密名#%s(不允许覆盖系统环境变量)", s.Name)
@@ -523,6 +539,10 @@ func loadSecretEnv() map[string]string {
 			continue
 		}
 		env[s.Name] = plain
+	}
+	// 白名单中引用了不存在的机密名:任务将拿不到该变量,给出告警便于排查
+	for name := range allowed {
+		logger.Warnf("任务#%d(%s)机密白名单引用了不存在的机密#%s", taskModel.Id, taskModel.Name, name)
 	}
 	// 汇总告警:解密失败通常意味着 GOCRON_SECRET_KEY 已变更,否则任务会静默拿不到机密
 	if failed > 0 {
@@ -618,8 +638,8 @@ func createJob(taskModel models.Task) cron.FuncJob {
 		concurrencyQueue.Add()
 		defer concurrencyQueue.Done()
 
-		// 一次性加载本次执行的机密快照:注入与后续脱敏复用同一份,避免二次查询与不一致窗口
-		secretEnv := loadSecretEnv()
+		// 一次性加载本次执行的机密快照(按任务白名单过滤):注入与后续脱敏复用同一份,避免二次查询与不一致窗口
+		secretEnv := loadSecretEnv(taskModel)
 		logger.Infof("Starting task execution#%s#Command-%s", taskModel.Name, taskModel.Command)
 		taskResult := execJob(handler, taskModel, taskLogId, secretEnv)
 		logger.Infof("Task completed#%s#Command-%s", taskModel.Name, taskModel.Command)

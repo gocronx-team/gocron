@@ -1,6 +1,7 @@
 package models
 
 import (
+	"regexp"
 	"strings"
 	"time"
 )
@@ -23,6 +24,14 @@ var reservedEnvNames = map[string]bool{
 // IsReservedEnvName 判断机密名是否为受保护的系统环境变量(大小写不敏感)。
 func IsReservedEnvName(name string) bool {
 	return reservedEnvNames[strings.ToUpper(strings.TrimSpace(name))]
+}
+
+// envNamePattern 限定机密名为合法的环境变量名(字母/下划线开头,后接字母数字下划线)。
+var envNamePattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
+
+// IsValidEnvName 判断名称是否为合法的环境变量名,用于机密名及任务机密白名单项校验。
+func IsValidEnvName(name string) bool {
+	return envNamePattern.MatchString(name)
 }
 
 // Secret 机密(类 GitHub Secrets):值以 AES-GCM 密文存储,写入后不可读取,

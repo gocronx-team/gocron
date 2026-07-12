@@ -31,6 +31,7 @@ type TaskForm struct {
 	HttpBody           string                      `form:"http_body" json:"http_body" binding:"max=65535"`
 	HttpHeaders        string                      `form:"http_headers" json:"http_headers" binding:"max=4096"`
 	SuccessPattern     string                      `form:"success_pattern" json:"success_pattern" binding:"max=512"`
+	SecretNames        string                      `form:"secret_names" json:"secret_names" binding:"max=512"`
 	Timeout            int                         `form:"timeout" json:"timeout" binding:"min=0,max=86400"`
 	Multi              int8                        `form:"multi" json:"multi" binding:"oneof=0 1"`
 	RetryTimes         int8                        `form:"retry_times" json:"retry_times"`
@@ -163,6 +164,13 @@ func Store(c *gin.Context) {
 	taskModel.HttpBody = form.HttpBody
 	taskModel.HttpHeaders = form.HttpHeaders
 	taskModel.SuccessPattern = form.SuccessPattern
+	// 机密白名单:规范化为去重后的逗号分隔名称列表;空串表示注入全部机密(兼容旧任务)
+	secretNames, ok := normalizeSecretNames(form.SecretNames)
+	if !ok {
+		base.RespondError(c, i18n.T(c, "secret_names_invalid"))
+		return
+	}
+	taskModel.SecretNames = secretNames
 	if taskModel.Protocol == models.TaskHTTP {
 		command := strings.ToLower(taskModel.Command)
 		if !strings.HasPrefix(command, "http://") && !strings.HasPrefix(command, "https://") {
@@ -283,6 +291,32 @@ func Store(c *gin.Context) {
 	}
 
 	base.RespondSuccess(c, i18n.T(c, "save_success"), nil)
+}
+
+// normalizeSecretNames 规范化任务机密白名单:按逗号拆分、去空白、去重后重新拼接。
+// 任一名称不是合法环境变量名时返回 ok=false;空输入返回空串(表示注入全部机密)。
+func normalizeSecretNames(raw string) (string, bool) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return "", true
+	}
+	seen := make(map[string]bool)
+	names := make([]string, 0)
+	for _, part := range strings.Split(raw, ",") {
+		name := strings.TrimSpace(part)
+		if name == "" {
+			continue
+		}
+		if !models.IsValidEnvName(name) {
+			return "", false
+		}
+		if seen[name] {
+			continue
+		}
+		seen[name] = true
+		names = append(names, name)
+	}
+	return strings.Join(names, ","), true
 }
 
 // 删除任务
@@ -502,6 +536,7 @@ func buildTaskDiff(old, new models.Task) string {
 	add("http_body", old.HttpBody, new.HttpBody)
 	add("http_headers", old.HttpHeaders, new.HttpHeaders)
 	add("success_pattern", old.SuccessPattern, new.SuccessPattern)
+	add("secret_names", old.SecretNames, new.SecretNames)
 	add("notify_status", strconv.Itoa(int(old.NotifyStatus)), strconv.Itoa(int(new.NotifyStatus)))
 	add("notify_keyword", old.NotifyKeyword, new.NotifyKeyword)
 	add("log_retention_days", strconv.Itoa(old.LogRetentionDays), strconv.Itoa(new.LogRetentionDays))

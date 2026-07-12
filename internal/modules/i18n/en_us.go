@@ -35,6 +35,7 @@ var enUS = map[string]string{
 	"secret_value_required":                  "Please enter the secret value",
 	"secret_key_not_configured":              "Server has no encryption master key (GOCRON_SECRET_KEY) configured; cannot store secrets",
 	"secret_encrypt_failed":                  "Failed to encrypt secret",
+	"secret_names_invalid":                   "Secret whitelist contains an invalid name: only letters, digits and underscore are allowed, and it cannot start with a digit",
 	"password_same_as_old":                   "New password cannot be the same as old password",
 	"old_password_error":                     "Old password is incorrect",
 	"username_password_empty":                "Username or password cannot be empty",

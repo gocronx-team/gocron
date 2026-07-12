@@ -80,14 +80,17 @@ type Task struct {
 	HttpBody         string               `json:"http_body" gorm:"type:text"`
 	HttpHeaders      string               `json:"http_headers" gorm:"type:text"`
 	SuccessPattern   string               `json:"success_pattern" gorm:"type:varchar(512);not null;default:''"`
-	Timeout          int                  `json:"timeout" gorm:"not null;default:0"`
-	Multi            int8                 `json:"multi" gorm:"not null;default:0"`
-	RetryTimes       int8                 `json:"retry_times" gorm:"not null;default:0"`
-	RetryInterval    int16                `json:"retry_interval" gorm:"type:smallint;not null;default:0"`
-	NotifyStatus     int8                 `json:"notify_status" gorm:"not null;default:0"`
-	NotifyType       int8                 `json:"notify_type" gorm:"not null;default:0"`
-	NotifyReceiverId string               `json:"notify_receiver_id" gorm:"type:varchar(256);not null;default:''"`
-	NotifyKeyword    string               `json:"notify_keyword" gorm:"type:varchar(128);not null;default:''"`
+	// SecretNames 任务级机密白名单:逗号分隔的机密名列表,执行时仅注入列出的机密;
+	// 空串表示不限制,注入全部机密(兼容白名单功能之前创建的任务)。
+	SecretNames      string `json:"secret_names" gorm:"type:varchar(512);not null;default:''"`
+	Timeout          int    `json:"timeout" gorm:"not null;default:0"`
+	Multi            int8   `json:"multi" gorm:"not null;default:0"`
+	RetryTimes       int8   `json:"retry_times" gorm:"not null;default:0"`
+	RetryInterval    int16  `json:"retry_interval" gorm:"type:smallint;not null;default:0"`
+	NotifyStatus     int8   `json:"notify_status" gorm:"not null;default:0"`
+	NotifyType       int8   `json:"notify_type" gorm:"not null;default:0"`
+	NotifyReceiverId string `json:"notify_receiver_id" gorm:"type:varchar(256);not null;default:''"`
+	NotifyKeyword    string `json:"notify_keyword" gorm:"type:varchar(128);not null;default:''"`
 	// NotifyKeywordRegex 关键字匹配模式:0=子串包含,1=正则(标准库 regexp/RE2)
 	NotifyKeywordRegex int8 `json:"notify_keyword_regex" gorm:"not null;default:0"`
 	// NotifyDiagnosis 失败通知是否附带 AI 根因诊断:0=否,1=是(需配置 LLM)
@@ -110,7 +113,7 @@ func (task *Task) Create() (insertId int, err error) {
 	result := Db.Select(
 		"name", "level", "dependency_task_id", "dependency_status",
 		"spec", "protocol", "command", "http_method", "http_body",
-		"http_headers", "success_pattern", "timeout", "multi",
+		"http_headers", "success_pattern", "secret_names", "timeout", "multi",
 		"retry_times", "retry_interval", "notify_status", "notify_type",
 		"notify_receiver_id", "notify_keyword", "notify_keyword_regex", "tag", "log_retention_days",
 		"remark", "status",
@@ -128,7 +131,7 @@ func (task *Task) UpdateBean(id int) (int64, error) {
 			"retry_times", "retry_interval", "remark", "notify_status",
 			"notify_type", "notify_receiver_id", "dependency_task_id",
 			"dependency_status", "tag", "http_method", "http_body",
-			"http_headers", "success_pattern", "notify_keyword", "notify_keyword_regex",
+			"http_headers", "success_pattern", "secret_names", "notify_keyword", "notify_keyword_regex",
 			"log_retention_days").
 		UpdateColumns(map[string]interface{}{
 			"name":                 task.Name,
@@ -150,12 +153,33 @@ func (task *Task) UpdateBean(id int) (int64, error) {
 			"http_body":            task.HttpBody,
 			"http_headers":         task.HttpHeaders,
 			"success_pattern":      task.SuccessPattern,
+			"secret_names":         task.SecretNames,
 			"notify_keyword":       task.NotifyKeyword,
 			"notify_keyword_regex": task.NotifyKeywordRegex,
 			"notify_diagnosis":     task.NotifyDiagnosis,
 			"log_retention_days":   task.LogRetentionDays,
 		})
 	return result.RowsAffected, result.Error
+}
+
+// SecretNameList 解析机密白名单为名称列表(去除空白项)。
+// 返回 nil 表示任务未配置白名单,执行时注入全部机密(历史兼容行为)。
+func (task *Task) SecretNameList() []string {
+	raw := strings.TrimSpace(task.SecretNames)
+	if raw == "" {
+		return nil
+	}
+	parts := strings.Split(raw, ",")
+	names := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if name := strings.TrimSpace(p); name != "" {
+			names = append(names, name)
+		}
+	}
+	if len(names) == 0 {
+		return nil
+	}
+	return names
 }
 
 // 更新
