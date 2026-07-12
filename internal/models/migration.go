@@ -46,7 +46,7 @@ func (migration *Migration) Upgrade(oldVersionId int) {
 		return
 	}
 
-	versionIds := []int{110, 122, 130, 140, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 1510, 160, 163, 170, 180}
+	versionIds := []int{110, 122, 130, 140, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 1510, 160, 163, 170, 180, 190}
 	upgradeFuncs := []func(*gorm.DB) error{
 		migration.upgradeFor110,
 		migration.upgradeFor122,
@@ -67,6 +67,7 @@ func (migration *Migration) Upgrade(oldVersionId int) {
 		migration.upgradeFor163,
 		migration.upgradeFor170,
 		migration.upgradeFor180,
+		migration.upgradeFor190,
 	}
 
 	startIndex := -1
@@ -795,6 +796,22 @@ func (m *Migration) upgradeFor180(tx *gorm.DB) error {
 	}
 
 	logger.Info("已升级到v1.8.0")
+
+	return nil
+}
+
+// 升级到v1.9.0版本:任务新增 secret_names 列(任务级机密白名单)。
+// 空串表示注入全部机密,与旧行为一致,存量任务无需回填。
+func (m *Migration) upgradeFor190(tx *gorm.DB) error {
+	logger.Info("开始升级到v1.9.0")
+
+	if !tx.Migrator().HasColumn(&Task{}, "secret_names") {
+		if err := tx.Migrator().AddColumn(&Task{}, "SecretNames"); err != nil {
+			return err
+		}
+	}
+
+	logger.Info("已升级到v1.9.0")
 
 	return nil
 }

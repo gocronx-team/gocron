@@ -5,7 +5,6 @@
 package secret
 
 import (
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -16,9 +15,6 @@ import (
 	"github.com/gocronx-team/gocron/internal/modules/utils"
 	"github.com/gocronx-team/gocron/internal/routers/base"
 )
-
-// envNamePattern 限定机密名为合法的环境变量名(字母/下划线开头,后接字母数字下划线)。
-var envNamePattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 
 // SecretForm 机密表单。
 type SecretForm struct {
@@ -53,7 +49,7 @@ func Store(c *gin.Context) {
 	form.Name = strings.TrimSpace(form.Name)
 	form.Remark = strings.TrimSpace(form.Remark)
 
-	if !envNamePattern.MatchString(form.Name) {
+	if !models.IsValidEnvName(form.Name) {
 		base.RespondError(c, i18n.T(c, "secret_name_invalid"))
 		return
 	}

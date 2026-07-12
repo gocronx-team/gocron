@@ -28,6 +28,8 @@ export interface TaskListItem {
   http_body?: string
   http_headers?: string
   success_pattern?: string
+  /** Comma-separated secret whitelist; empty = inject all secrets (legacy). */
+  secret_names?: string
   command: string
   timeout: number
   multi: number
@@ -68,6 +70,7 @@ export interface TaskStoreParams {
   http_body?: string
   http_headers?: string
   success_pattern?: string
+  secret_names?: string
   level?: number
   dependency_status?: number
   dependency_task_id?: string

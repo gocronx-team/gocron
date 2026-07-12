@@ -322,6 +322,27 @@
             </ElCol>
           </ElRow>
 
+          <!-- Secret whitelist (shell only): empty = inject all secrets (legacy behavior) -->
+          <ElRow :gutter="24" v-if="form.protocol === 2">
+            <ElCol :span="16">
+              <ElFormItem :label="t('task.secretNames')">
+                <ElSelect
+                  v-model="form.secret_names"
+                  multiple
+                  filterable
+                  allow-create
+                  default-first-option
+                  clearable
+                  :placeholder="t('task.secretNamesPlaceholder')"
+                  style="width: 100%"
+                >
+                  <ElOption v-for="s in secretOptions" :key="s" :label="s" :value="s" />
+                </ElSelect>
+                <span class="regex-hint">{{ t('task.secretNamesHint') }}</span>
+              </ElFormItem>
+            </ElCol>
+          </ElRow>
+
           <!-- HTTP body (POST only) -->
           <ElRow :gutter="24" v-if="form.protocol === 1 && form.http_method === 2">
             <ElCol :span="18">
@@ -656,6 +677,7 @@
     type CronRun
   } from '@/api/task'
   import { fetchHostList, type HostItem } from '@/api/host'
+  import { fetchSecretList } from '@/api/secret'
   import { fetchTemplateList, fetchTemplateDetail, fetchTemplateSaveFromTask } from '@/api/template'
   import { fetchMail, fetchSlack, fetchWebhook } from '@/api/notification'
   import type { MailUser, SlackChannel, WebhookUrl } from '@/api/notification'
@@ -687,6 +709,7 @@
     success_pattern: '',
     command: '',
     host_ids: [] as number[],
+    secret_names: [] as string[],
     timeout: 3600,
     multi: 0,
     retry_times: 0,
@@ -722,6 +745,7 @@
   // Drop-down data sources
   const tagOptions = ref<string[]>([])
   const hostOptions = ref<HostItem[]>([])
+  const secretOptions = ref<string[]>([])
   const mailUsers = ref<MailUser[]>([])
   const slackChannels = ref<SlackChannel[]>([])
   const webhookUrls = ref<WebhookUrl[]>([])
@@ -836,6 +860,16 @@
     }
   }
 
+  async function loadSecretOptions() {
+    try {
+      const res = await fetchSecretList()
+      const list = (res as any)?.data ?? []
+      secretOptions.value = Array.isArray(list) ? list.map((s: any) => s.name) : []
+    } catch {
+      // ignore — select still works via allow-create
+    }
+  }
+
   async function loadNotificationOptions() {
     try {
       const mailRes = await fetchMail()
@@ -915,6 +949,9 @@
     // Shell host IDs
     const taskHosts: any[] = data.hosts || []
     form.host_ids = form.protocol === 2 ? taskHosts.map((h: any) => h.host_id) : []
+
+    // Secret whitelist (comma-separated names; empty = all secrets)
+    form.secret_names = data.secret_names ? data.secret_names.split(',').filter(Boolean) : []
 
     // Notify receivers
     selectedMailIds.value = []
@@ -1207,6 +1244,7 @@
         success_pattern: form.success_pattern,
         command: form.command,
         host_id: hostIdString,
+        secret_names: form.secret_names.join(','),
         timeout: form.timeout,
         multi: form.multi,
         retry_times: form.retry_times,
@@ -1265,6 +1303,7 @@
     await Promise.all([
       loadHostOptions(),
       loadTagOptions(),
+      loadSecretOptions(),
       loadNotificationOptions(),
       loadTemplateOptions()
     ])
@@ -1302,6 +1341,7 @@
         success_pattern: '',
         command: '',
         host_ids: [],
+        secret_names: [],
         timeout: 3600,
         multi: 0,
         retry_times: 0,
