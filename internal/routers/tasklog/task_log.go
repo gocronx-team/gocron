@@ -116,14 +116,11 @@ func parseQueryParams(c *gin.Context) models.CommonMap {
 	var params models.CommonMap = models.CommonMap{}
 	taskId, _ := strconv.Atoi(c.Query("task_id"))
 	protocol, _ := strconv.Atoi(c.Query("protocol"))
-	status, _ := strconv.Atoi(c.Query("status"))
 	params["TaskId"] = taskId
 	params["Protocol"] = protocol
 	params["Keyword"] = strings.TrimSpace(c.Query("keyword"))
-	if status >= 0 {
-		status -= 1
-	}
-	params["Status"] = status
+	// 前端直接传状态枚举值(失败=0/运行中=1/成功=2/取消=3),空值表示不过滤。
+	params["Status"] = base.ParseStatusFilter(c.Query("status"))
 	base.ParsePageAndPageSize(c, params)
 
 	return params
