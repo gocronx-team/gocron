@@ -46,7 +46,7 @@ func (migration *Migration) Upgrade(oldVersionId int) {
 		return
 	}
 
-	versionIds := []int{110, 122, 130, 140, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 1510, 160, 163, 170, 180, 190, 1100}
+	versionIds := []int{110, 122, 130, 140, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 1510, 160, 163, 170, 180, 190}
 	upgradeFuncs := []func(*gorm.DB) error{
 		migration.upgradeFor110,
 		migration.upgradeFor122,
@@ -68,7 +68,6 @@ func (migration *Migration) Upgrade(oldVersionId int) {
 		migration.upgradeFor170,
 		migration.upgradeFor180,
 		migration.upgradeFor190,
-		migration.upgradeFor1100,
 	}
 
 	startIndex := upgradeStartIndex(oldVersionId, versionIds)
@@ -821,19 +820,12 @@ func (m *Migration) upgradeFor180(tx *gorm.DB) error {
 func (m *Migration) upgradeFor190(tx *gorm.DB) error {
 	logger.Info("开始升级到v1.9.0")
 
+	// 任务级机密白名单:新增 secret_names 列(空串=注入全部,兼容旧行为)。
 	if !tx.Migrator().HasColumn(&Task{}, "secret_names") {
 		if err := tx.Migrator().AddColumn(&Task{}, "SecretNames"); err != nil {
 			return err
 		}
 	}
-
-	logger.Info("已升级到v1.9.0")
-
-	return nil
-}
-
-func (m *Migration) upgradeFor1100(tx *gorm.DB) error {
-	logger.Info("开始升级到v1.10.0")
 
 	// 通知增强:新增 notify_keyword_exclude 列(排除关键字,命中则不通知)。
 	// 存量数据默认空串 = 不排除,旧任务行为不变。
@@ -849,7 +841,7 @@ func (m *Migration) upgradeFor1100(tx *gorm.DB) error {
 		}
 	}
 
-	logger.Info("已升级到v1.10.0")
+	logger.Info("已升级到v1.9.0")
 
 	return nil
 }
