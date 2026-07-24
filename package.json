@@ -32,7 +32,7 @@
     "cz-git": "^1.13.1",
     "eslint": "^10.7.0",
     "husky": "^9.1.7",
-    "lint-staged": "^17.0.8",
-    "prettier": "^3.9.5"
+    "lint-staged": "^17.2.0",
+    "prettier": "^3.9.6"
   }
 }
