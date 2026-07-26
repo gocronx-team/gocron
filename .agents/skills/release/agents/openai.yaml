@@ -1,0 +1,4 @@
+interface:
+  display_name: "Release gocron"
+  short_description: "Prepare and safely publish a gocron release"
+  default_prompt: "Use $release to prepare and publish the next safe gocron release."

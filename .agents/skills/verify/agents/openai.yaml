@@ -1,0 +1,4 @@
+interface:
+  display_name: "Verify gocron"
+  short_description: "Run every local check required by gocron CI"
+  default_prompt: "Use $verify to run the complete gocron CI verification suite and summarize the results."

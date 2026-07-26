@@ -20,7 +20,7 @@ go test -race ./...                # backend tests (CI uses -race)
 
 CI (`.github/workflows/ci.yml`) does more than `go test` — **lint is a separate
 gate**. Passing `go build`/`go test` locally is NOT enough. Run all of these
-(Claude Code users: just run `/verify`):
+(Claude Code users: run `/verify`; Codex users: invoke `$verify`):
 
 ```bash
 gofmt -l .                 # must print nothing
@@ -43,4 +43,13 @@ cd web/gocronx-admin && pnpm build-only && pnpm exec vue-tsc --noEmit && pnpm li
   `web/gocronx-admin/src/locales/langs/{zh,en}.json` — keep both languages in sync.
 - Do not develop directly on `master`; branch and merge.
 
-More detail: `CLAUDE.md`, plus `.claude/skills/` and `.claude/commands/`.
+## Repository workflows
+
+- Codex: `.agents/skills/verify` and `.agents/skills/release`
+- Claude Code: `.claude/commands/verify.md` and `.claude/skills/release`
+
+Use `$verify` before a Codex-assisted commit or release. Use `$release` for
+version bumps and release publication; it will require the full verification
+gate before tagging.
+
+More project detail lives in `CLAUDE.md`.
