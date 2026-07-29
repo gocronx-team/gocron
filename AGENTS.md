@@ -45,11 +45,17 @@ cd web/gocronx-admin && pnpm build-only && pnpm exec vue-tsc --noEmit && pnpm li
 
 ## Repository workflows
 
-- Codex: `.agents/skills/verify` and `.agents/skills/release`
+- Codex project skills:
+  - `$verify`: reproduce every CI gate before commit, merge, or release
+  - `$release`: prepare and publish a version safely
+  - `$migration`: implement and validate cross-database schema/data migrations
+  - `$api-feature`: keep routes, permissions, clients, types, i18n, docs, and tests aligned
+  - `$scheduler-change`: protect execution semantics and race-sensitive scheduler state
+  - `$security-check`: audit dependencies, trust boundaries, secrets, and exposed inputs
+  - `$dependency-update`: assess and verify Dependabot or manual dependency upgrades
 - Claude Code: `.claude/commands/verify.md` and `.claude/skills/release`
 
-Use `$verify` before a Codex-assisted commit or release. Use `$release` for
-version bumps and release publication; it will require the full verification
-gate before tagging.
+Use the narrow project skill while implementing or reviewing a change, then
+use `$verify` as the final gate. `$release` requires that gate before tagging.
 
 More project detail lives in `CLAUDE.md`.

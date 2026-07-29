@@ -1,0 +1,4 @@
+interface:
+  display_name: "gocron Dependency Update"
+  short_description: "Review and apply safe dependency updates"
+  default_prompt: "Use $dependency-update to review and safely apply this dependency update."

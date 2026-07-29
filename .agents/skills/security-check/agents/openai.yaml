@@ -1,0 +1,4 @@
+interface:
+  display_name: "gocron Security Check"
+  short_description: "Run actionable gocron security checks"
+  default_prompt: "Use $security-check to audit this repository and report actionable security risks."

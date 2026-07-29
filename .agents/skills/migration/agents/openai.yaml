@@ -1,0 +1,4 @@
+interface:
+  display_name: "gocron Migration"
+  short_description: "Create and verify safe gocron migrations"
+  default_prompt: "Use $migration to implement and verify this gocron database migration."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "gocron API Feature"
+  short_description: "Implement and review gocron API changes"
+  default_prompt: "Use $api-feature to implement this gocron API change end to end."

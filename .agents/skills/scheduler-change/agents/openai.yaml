@@ -1,0 +1,4 @@
+interface:
+  display_name: "gocron Scheduler Change"
+  short_description: "Safely change the gocron scheduler core"
+  default_prompt: "Use $scheduler-change to implement and stress-check this scheduler change."
