@@ -94,3 +94,36 @@ Use the narrow project skill while implementing or reviewing a change, then
 use `$verify` as the final gate. `$release` requires that gate before tagging.
 
 More project detail lives in `CLAUDE.md`.
+
+## Vibe Coding & Agent Autonomy Guidelines
+
+### 1. Codebase Feature Map
+- **New Notification Channel**:
+  - Backend sender: `internal/modules/notify/`
+  - Backend Task model field: `NotifyType` in `internal/models/task.go`
+  - Backend & Frontend i18n: `internal/modules/i18n/{zh_cn,en_us}.go` & `web/gocronx-admin/src/locales/langs/{zh,en}.json`
+  - Frontend View & API: `web/gocronx-admin/src/views/system/notification/` & `web/gocronx-admin/src/api/notification.ts`
+- **Database Schema Change**:
+  - Model: `internal/models/<model>.go`
+  - Migration (MANDATORY): `internal/models/migration.go` (Add model to `Install` tables + append new `versionId` & `upgradeForNNN` + add test).
+- **New HTTP API Route**:
+  - Backend Router: `internal/routers/<domain>/`
+  - Backend Logic: `internal/service/`
+  - Frontend Client: `web/gocronx-admin/src/api/<domain>.ts`
+
+### 2. Autonomous Decision Boundaries
+- **Auto-Approve (Proceed without prompting)**:
+  - Adding/updating unit & integration tests.
+  - Internal refactoring, fixing linter/go vet issues, code formatting.
+  - Adding missing i18n key-values (must keep zh/en in sync).
+  - Minor UI styling, Element Plus component wrapping, TailwindCSS adjustments.
+- **Must Ask User First**:
+  - Breaking HTTP/gRPC contracts, removing response fields, changing HTTP status codes.
+  - Modifying scheduler execution semantics, lock mechanisms, or status transitions.
+  - Database schema drops/renames or breaking previous minor version (N-1) compatibility.
+  - Adding new heavy external infrastructure dependencies (e.g., Redis, Kafka).
+
+### 3. Self-Healing & Clean Commit Rules
+- **Fix Order**: Format (`gofmt`) -> Lint (`golangci-lint` / `pnpm lint`) -> Type Check (`vue-tsc`) -> Tests (`go test -race`).
+- **Hygiene**: Remove temporary scratch scripts, debug `fmt.Println`s, and clean git untracked artifacts before requesting review or committing.
+
