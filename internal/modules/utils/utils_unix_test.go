@@ -24,11 +24,11 @@ func TestExecShellSuccess(t *testing.T) {
 }
 
 func TestExecShellTimeout(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
 	// 运行一个会产生输出然后睡眠的命令
-	output, err := ExecShell(ctx, "echo 'partial output'; sleep 1; echo 'should not see this'")
+	output, err := ExecShell(ctx, "echo 'partial output'; sleep 5; echo 'should not see this'")
 
 	if err == nil {
 		t.Fatal("Expected timeout error")
@@ -49,11 +49,11 @@ func TestExecShellCancel(t *testing.T) {
 
 	// 启动一个长时间运行的命令
 	go func() {
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(300 * time.Millisecond)
 		cancel() // 手动取消
 	}()
 
-	output, err := ExecShell(ctx, "echo 'before cancel'; sleep 1; echo 'after cancel'")
+	output, err := ExecShell(ctx, "echo 'before cancel'; sleep 5; echo 'after cancel'")
 
 	if err == nil {
 		t.Fatal("Expected cancel error")
