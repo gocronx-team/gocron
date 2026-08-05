@@ -8,6 +8,33 @@ description: Safely implement, diagnose, or review changes to gocron scheduling 
 Assume scheduler bugs can duplicate, lose, or overlap production jobs. Make the
 execution semantics explicit before editing.
 
+## Compatibility invariants
+
+- When wire behavior changes, test `N` gocron with `N-1` gocron-node and the
+  reverse. Preserve execution, output, cancellation, and terminal status.
+- Evolve protobuf/gRPC additively: never renumber or reuse field numbers,
+  remove a supported field, or change an existing RPC's semantics. Reserve
+  removed identifiers.
+- Keep the previous RPC/execution path during the compatibility window. Check
+  capability and use a deterministic fallback before invoking new behavior.
+- Never retry or reroute after an ambiguous remote acceptance; that can run a
+  user's job twice. Preserve retry counts and status transitions on fallback.
+- When distributed ownership or state changes, verify temporary `N`/`N-1` HA
+  mixtures do not duplicate dispatch, stick in `Running`, or falsely cancel.
+
+## Performance invariants
+
+- Establish a baseline for materially affected hot paths with representative
+  task/node counts and measure applicable scheduler metrics.
+- Bound goroutines, queues, retries, log buffers, streams, timers, and retained
+  execution state. Define backpressure and overload behavior explicitly.
+- Do not hold locks during database/network/filesystem/command/notification I/O
+  or serialize unrelated tasks behind one global lock.
+- Batch or coalesce high-frequency status/log writes when semantics permit.
+  Verify SQLite concurrent read/write and busy/lock behavior separately.
+- Add a benchmark or deterministic load regression test for material hot-path
+  changes. Compare before/after under the same workload and report the result.
+
 ## Define invariants
 
 Write down which behavior the change must preserve:
@@ -52,6 +79,7 @@ subset of:
 - repeated callback or retry;
 - leader handoff and stale leader behavior;
 - remote execution accepted but response lost;
+- `N-1` protocol doubles in both client/server directions and fallback paths;
 - panic/error cleanup and counter consistency.
 
 Avoid sleep-based assertions where a channel, fake clock, barrier, or polling
@@ -66,5 +94,5 @@ go test -race -count=10 <changed-package>
 
 Adapt package paths if the changed execution path differs. Invoke `$verify`
 before committing. Report the promised execution semantics, race-sensitive
-state touched, failure cases tested, and any behavior that remains
-best-effort.
+state touched, failure cases tested, performance evidence when relevant, and
+any behavior that remains best-effort.

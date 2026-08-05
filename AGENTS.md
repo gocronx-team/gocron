@@ -43,6 +43,41 @@ cd web/gocronx-admin && pnpm build-only && pnpm exec vue-tsc --noEmit && pnpm li
   `web/gocronx-admin/src/locales/langs/{zh,en}.json` — keep both languages in sync.
 - Do not develop directly on `master`; branch and merge.
 
+## Compatibility policy (MANDATORY)
+
+Backward compatibility is the default and is not optional.
+
+- Release `N` must interoperate with the previous minor `N-1` wherever a change
+  crosses frontend/backend, gocron/gocron-node, schema, protocol, or HA boundaries.
+- Existing installations must upgrade in place without data loss on SQLite,
+  MySQL, and PostgreSQL; never require a clean install.
+- Keep HTTP/SSE contracts and scheduler semantics stable. Evolve protobuf/gRPC
+  additively and use capability detection plus fallback for new behavior.
+- Test affected boundaries with previous-version fixtures, contracts, or protocol
+  doubles. Current-only and fresh-install-only tests are insufficient evidence.
+- A breaking change requires explicit user approval before implementation, a
+  major version, and migration, rollout, and rollback plans. Never hide one in
+  a minor or patch release. If compatibility is uncertain, stop and ask.
+
+## Performance policy (MANDATORY)
+
+Material performance risk requires evidence, not intuition.
+
+- For scheduler hot paths, high-volume APIs/logs/streams, large queries, or
+  populated-table migrations, define a representative workload and compare
+  applicable before/after metrics. Report the command, data size, and result.
+- Do not introduce N+1 queries, unbounded reads, responses, logs, goroutines,
+  queues, retries, polling, caches, or in-memory accumulation. Require limits,
+  pagination/batching, cancellation, cleanup, and backpressure where relevant.
+- Keep locks out of network, database, filesystem, command, and notification
+  I/O. Avoid global contention and per-event goroutines on scheduler hot paths.
+- Test SQLite write frequency, transaction duration, indexes, and lock behavior
+  when database concurrency or volume is affected. Assess large migrations on
+  all three databases and batch or resume backfills when necessary.
+- Add a regression test or benchmark for a material performance fix or risk.
+  Do not merge an unexplained material regression; approved tradeoffs must be
+  documented.
+
 ## Repository workflows
 
 - Codex project skills:
