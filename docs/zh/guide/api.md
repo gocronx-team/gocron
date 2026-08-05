@@ -25,7 +25,7 @@ gocron 提供了两类 API 接口：
 
 **签名公式**：
 ```
-sign = MD5(api.key + time + url_path + api.secret)
+sign = HMAC-SHA256(key = api.secret, message = api.key + time + url_path)
 ```
 
 ### 接口列表

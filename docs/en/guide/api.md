@@ -25,7 +25,7 @@ Configure `api.key` and `api.secret` in `conf/app.ini` before use.
 
 **Signature Formula**:
 ```
-sign = MD5(api.key + time + url_path + api.secret)
+sign = HMAC-SHA256(key = api.secret, message = api.key + time + url_path)
 ```
 
 ### Interface List

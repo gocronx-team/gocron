@@ -715,16 +715,9 @@ func apiAuth(c *gin.Context) {
 	message := apiKey + strconv.FormatInt(timeParam, 10) + strings.TrimSpace(c.Request.URL.Path)
 	mac := hmac.New(sha256.New, []byte(apiSecret))
 	mac.Write([]byte(message))
-	hmacSign := hex.EncodeToString(mac.Sum(nil))
+	expectedSign := hex.EncodeToString(mac.Sum(nil))
 
-	valid := subtle.ConstantTimeCompare([]byte(sign), []byte(hmacSign)) == 1
-	if !valid {
-		legacySum := sha256.Sum256([]byte(message + apiSecret))
-		legacySign := hex.EncodeToString(legacySum[:])
-		valid = subtle.ConstantTimeCompare([]byte(sign), []byte(legacySign)) == 1
-	}
-
-	if !valid {
+	if subtle.ConstantTimeCompare([]byte(sign), []byte(expectedSign)) != 1 {
 		msg := json.CommonFailure(i18n.T(c, "sign_verify_failed"))
 		c.String(http.StatusOK, msg)
 		c.Abort()
