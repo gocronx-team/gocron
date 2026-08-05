@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"os"
 	"regexp"
@@ -700,7 +701,8 @@ func (h *RPCHandler) RunWithProgress(taskModel models.Task, taskUniqueId int64, 
 			// (rpcClient.Exec 内部会改写 Timeout)产生数据竞态。Env 为只读共享,安全。
 			req := &pb.TaskRequest{
 				Command: taskModel.Command,
-				Timeout: int32(taskModel.Timeout),
+				//nolint:gosec // G115: min() clamps to math.MaxInt32, so int32 cast is safe
+				Timeout: int32(min(taskModel.Timeout, math.MaxInt32)),
 				Id:      taskUniqueId,
 				Env:     secretEnv,
 			}

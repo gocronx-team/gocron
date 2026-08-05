@@ -118,6 +118,7 @@ func Write(config []string, filename string) error {
 	if err != nil {
 		return err
 	}
+	//nolint:gosec // G602 false positive: len(config)%2 guard above ensures even length, config[i+1] is always in bounds
 	for i := 0; i < len(config); {
 		_, err = section.NewKey(config[i], config[i+1])
 		if err != nil {
