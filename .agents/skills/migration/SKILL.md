@@ -8,6 +8,33 @@ description: Create, review, or verify gocron database migrations across SQLite,
 Treat migrations as compatibility code. Preserve existing installations and all
 three supported databases; do not optimize only for a fresh SQLite database.
 
+## Compatibility invariants
+
+- Upgrade existing installations in place; never require recreating the
+  database or discarding tasks, configuration, users, or logs.
+- Validate from an `N-1` schema/data fixture and every older schema directly
+  affected by the change. A fresh database alone is not evidence.
+- Prefer additive, idempotent changes and compatible defaults on SQLite,
+  MySQL, and PostgreSQL. Do not drop or reinterpret persisted data in a minor
+  or patch release.
+- Do not advance the migration version until all work succeeds. A failed
+  migration must remain diagnosable and safely retryable.
+- Document downgrade safety and backup/recovery steps. If downgrade can lose or
+  corrupt data, stop and obtain explicit approval before implementation.
+
+## Performance invariants
+
+- Test against a representative populated database, not only a tiny fixture.
+  Record row counts and migration duration for performance-sensitive changes.
+- For populated-table changes, assess full scans, lock/transaction duration,
+  temporary disk, and write amplification on SQLite, MySQL, and PostgreSQL.
+- On SQLite, keep write transactions short and avoid per-row commits. Use safe
+  bounded batches for large backfills and test busy/lock behavior with readers.
+- Add indexes only for demonstrated query patterns; inspect the query plan and
+  account for index build time, disk growth, and write overhead.
+- Prefer resumable/idempotent batches when a single transaction could block
+  startup or exceed reasonable memory or disk. State the interruption behavior.
+
 ## Establish the change
 
 - Inspect `cmd/gocron/gocron.go`, `internal/models/migration.go`, the affected
@@ -33,9 +60,9 @@ For a new persisted model or schema change:
    corrupt values on a second run.
 6. Avoid database-specific SQL. When unavoidable, branch on the GORM dialect
    and implement SQLite, MySQL, and PostgreSQL behavior explicitly.
-7. Add a focused migration test that builds the pre-upgrade schema, runs the
-   upgrade, checks the resulting schema/data, and exercises a second run when
-   idempotency is expected.
+7. Add a focused migration test that builds the `N-1` pre-upgrade schema (and
+   older affected schemas), runs the upgrade, proves existing rows and values
+   survive, and exercises a second run when idempotency is expected.
 
 Do not rely only on GORM `AutoMigrate` when data must be renamed, remapped,
 backfilled, deduplicated, or constrained.
@@ -58,4 +85,4 @@ python3 .agents/skills/migration/scripts/check_migration.py 191
 
 Then invoke `$verify` before committing. Report the migration id, affected
 tables, upgrade path, downgrade/backup implications, database-specific risks,
-and exact tests run.
+exact tests run, and performance evidence when the change has material risk.

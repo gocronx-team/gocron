@@ -9,6 +9,34 @@ Keep preparation separate from publication. A version-bump request authorizes
 the local version edit and verification, but not a push, merge, or tag unless
 the user also asks to publish the release.
 
+## Compatibility evidence (required)
+
+Before tagging, record evidence for every affected case:
+
+- `N` frontend/client with `N-1` and `N` backend;
+- `N` backend with `N-1` and `N` frontend/client;
+- `N` gocron with `N-1` and `N` gocron-node, in both directions;
+- `N` upgrading an existing SQLite, MySQL, and PostgreSQL database;
+- rolling upgrade with temporary `N`/`N-1` HA members when HA is affected.
+
+Use automated compatibility tests, previous-version fixtures, or a documented
+reproducible check. Current/current tests and a fresh install are not enough.
+If a case cannot remain compatible, stop before tagging: obtain explicit
+approval, use a major version, and document migration, deployment order,
+rollback limits, and recovery.
+
+## Performance evidence (required when affected)
+
+- Identify affected hot paths and record the workload, data size, environment,
+  command, baseline, and release-candidate result.
+- Compare latency, throughput, memory/allocations, goroutines, query count,
+  database writes, and migration duration as applicable.
+- Include SQLite concurrent read/write and lock behavior when database write
+  frequency, logging, polling, migrations, or scheduler state changed.
+- Require a benchmark or regression test for a material fix or risk. Do not
+  publish a material unexplained regression; an accepted tradeoff needs the
+  user's explicit approval and release-note disclosure.
+
 ## 1. Establish the release
 
 - Inspect the current branch, working tree, latest `v*` tag, `AppVersion`, and
