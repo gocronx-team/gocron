@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	stdlog "log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -106,7 +107,15 @@ func CreateDb() *gorm.DB {
 
 	// 开发模式下开启日志
 	if gin.Mode() == gin.DebugMode {
-		config.Logger = logger.Default.LogMode(logger.Info)
+		config.Logger = logger.New(
+			stdlog.New(os.Stdout, "\r\n", stdlog.LstdFlags),
+			logger.Config{
+				SlowThreshold:        200 * time.Millisecond,
+				LogLevel:             logger.Info,
+				Colorful:             true,
+				ParameterizedQueries: true,
+			},
+		)
 	}
 
 	db, err := gorm.Open(dialector, config)

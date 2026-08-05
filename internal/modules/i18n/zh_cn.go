@@ -57,6 +57,8 @@ var zhCN = map[string]string{
 	"only_shell_task_can_stop":               "仅支持SHELL任务手动停止",
 	"task_node_list_empty":                   "任务节点列表为空",
 	"stop_task_sent":                         "已执行停止操作, 请等待任务退出",
+	"stop_task_failed":                       "停止任务失败，任务可能已退出或节点不可用",
+	"stop_task_reconciled":                   "任务已不在运行，日志状态已自动修正为已取消",
 	"param_range_1_12":                       "参数取值范围1-12",
 	"delete_failed":                          "删除失败",
 	"delete_success":                         "删除成功",

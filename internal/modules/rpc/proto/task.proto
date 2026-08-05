@@ -6,6 +6,9 @@ option go_package = "github.com/gocronx-team/gocron/internal/modules/rpc/proto";
 
 service Task {
     rpc Run(TaskRequest) returns (TaskResponse) {}
+    // RunStream incrementally returns stdout/stderr. Schedulers fall back to
+    // Run when an older node reports UNIMPLEMENTED.
+    rpc RunStream(TaskRequest) returns (stream TaskResponse) {}
 }
 
 message TaskRequest {

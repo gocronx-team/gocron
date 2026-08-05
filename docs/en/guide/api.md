@@ -163,7 +163,20 @@ Interfaces used by the management dashboard, providing full functionality. Requi
 
 #### Stop Task Execution
 - **Endpoint**: `/api/task/log/stop`
+- **Semantics**: Success means every target node acknowledged the stop signal. The log remains `Running` briefly and changes to `Cancelled` only after the process exits and the scheduler finalizes the run. If every node confirms that the execution ID is no longer present, a stale `Running` log is reconciled to `Cancelled` automatically. An unavailable node returns an error and does not change the stored state.
 - **Method**: `POST`
 - **Parameters**:
   - `id`: Log ID
   - `task_id`: Task ID
+
+#### Stream Task Output
+- **Endpoint**: `/api/task/log/:id/stream`
+- **Method**: `GET`
+- **Authentication**: Same login token as the admin UI
+- **Parameters**:
+  - `id`: Log ID
+  - `seq`: Last received chunk sequence (optional, defaults to 0; used to resume after reconnecting)
+- **Response**: `text/event-stream`
+  - `log`: `{"content":"...","seq":12,"status":1}`; `reset=true` tells the client to replace its local content
+  - `done`: Sent when the task reaches a success, failure, or cancelled state, then the connection closes
+- **Compatibility**: New nodes stream output; older nodes automatically fall back to returning output when the task finishes.

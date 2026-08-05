@@ -13,7 +13,7 @@ type Migration struct{}
 func (migration *Migration) Install(dbName string) error {
 	setting := new(Setting)
 	tables := []interface{}{
-		&User{}, &Task{}, &TaskLog{}, &Host{}, setting, &LoginLog{}, &TaskHost{}, &AgentToken{}, &AuditLog{}, &TaskScriptVersion{}, &TaskTemplate{}, &ApiToken{}, &Secret{},
+		&User{}, &Task{}, &TaskLog{}, &TaskLogChunk{}, &Host{}, setting, &LoginLog{}, &TaskHost{}, &AgentToken{}, &AuditLog{}, &TaskScriptVersion{}, &TaskTemplate{}, &ApiToken{}, &Secret{},
 	}
 
 	for _, table := range tables {
@@ -46,7 +46,7 @@ func (migration *Migration) Upgrade(oldVersionId int) {
 		return
 	}
 
-	versionIds := []int{110, 122, 130, 140, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 1510, 160, 163, 170, 180, 190}
+	versionIds := []int{110, 122, 130, 140, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 1510, 160, 163, 170, 180, 190, 1100}
 	upgradeFuncs := []func(*gorm.DB) error{
 		migration.upgradeFor110,
 		migration.upgradeFor122,
@@ -68,6 +68,7 @@ func (migration *Migration) Upgrade(oldVersionId int) {
 		migration.upgradeFor170,
 		migration.upgradeFor180,
 		migration.upgradeFor190,
+		migration.upgradeFor1100,
 	}
 
 	startIndex := upgradeStartIndex(oldVersionId, versionIds)
@@ -107,6 +108,16 @@ func upgradeStartIndex(oldVersionId int, versionIds []int) int {
 				return i + 1
 			}
 			return -1
+		}
+	}
+	// v1.10.0 的拼接 id 为 1100，数值小于历史的 v1.5.10(1510)。
+	// 已发布的 v1.9.1 未单独登记迁移，必须按发布顺序直接定位到 1100，
+	// 不能落入下面的纯数值 fallback，否则会重复执行 1510 及后续迁移。
+	if oldVersionId == 191 {
+		for i, value := range versionIds {
+			if value == 1100 {
+				return i
+			}
 		}
 	}
 	for i, value := range versionIds {
@@ -843,5 +854,18 @@ func (m *Migration) upgradeFor190(tx *gorm.DB) error {
 
 	logger.Info("已升级到v1.9.0")
 
+	return nil
+}
+
+// 升级到 v1.10.0：新增运行期任务日志分片表。终态日志仍保存在 task_log.result，
+// 因此旧数据无需回填，旧查询接口保持兼容。
+func (m *Migration) upgradeFor1100(tx *gorm.DB) error {
+	logger.Info("开始升级到v1.10.0")
+	if !tx.Migrator().HasTable(&TaskLogChunk{}) {
+		if err := tx.AutoMigrate(&TaskLogChunk{}); err != nil {
+			return err
+		}
+	}
+	logger.Info("已升级到v1.10.0")
 	return nil
 }

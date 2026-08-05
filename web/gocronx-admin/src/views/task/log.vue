@@ -36,6 +36,7 @@
       width="680px"
       align-center
       destroy-on-close
+      @closed="handleOutputDialogClosed"
     >
       <div v-if="currentLog">
         <div v-if="currentLog.hostname" style="margin-bottom: 12px">
@@ -79,7 +80,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed, h, onMounted } from 'vue'
+  import { ref, computed, h, onMounted, onBeforeUnmount } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useRoute, useRouter } from 'vue-router'
   import { ElButton, ElMessage, ElMessageBox, ElTag, ElIcon } from 'element-plus'
@@ -90,6 +91,7 @@
     fetchTaskLogList,
     fetchTaskLogClear,
     fetchTaskLogStop,
+    streamTaskLog,
     type TaskLogListItem
   } from '@/api/task-log'
   import { fetchTaskList } from '@/api/task'
@@ -211,6 +213,57 @@
   // ── Output dialog ─────────────────────────────────────────────────────────
   const outputDialogVisible = ref(false)
   const currentLog = ref<TaskLogListItem | null>(null)
+  let outputStreamController: AbortController | null = null
+
+  function stopOutputStream() {
+    outputStreamController?.abort()
+    outputStreamController = null
+  }
+
+  function handleOutputDialogClosed() {
+    stopOutputStream()
+    currentLog.value = null
+    void refreshData()
+  }
+
+  function startOutputStream() {
+    if (!currentLog.value) return
+    stopOutputStream()
+    const controller = new AbortController()
+    outputStreamController = controller
+    void (async () => {
+      let seq = 0
+      while (!controller.signal.aborted && currentLog.value) {
+        try {
+          await streamTaskLog(
+            currentLog.value.id,
+            seq,
+            {
+              onLog: (event) => {
+                if (!currentLog.value) return
+                const output = currentLog.value.result || currentLog.value.output || ''
+                currentLog.value.result = event.reset ? event.content : output + event.content
+                currentLog.value.output = ''
+                currentLog.value.status = event.status
+                seq = event.seq
+              },
+              onDone: (event) => {
+                if (currentLog.value) currentLog.value.status = event.status
+              },
+              onError: () => {
+                // A reconnect below resumes from the persisted chunk sequence.
+              }
+            },
+            controller.signal
+          )
+          if (!currentLog.value || currentLog.value.status !== 1) return
+        } catch {
+          if (controller.signal.aborted) return
+        }
+        await new Promise((resolve) => setTimeout(resolve, 1000))
+      }
+    })()
+  }
 
   function showOutput(row: TaskLogListItem) {
     // Decode HTML entities in command
@@ -225,6 +278,7 @@
     currentLog.value = { ...row, command: cmd }
     diagnosis.value = null
     outputDialogVisible.value = true
+    startOutputStream()
   }
 
   // ── AI failure diagnosis ──────────────────────────────────────────────────────
@@ -409,8 +463,9 @@
           formatter: (row: TaskLogListItem) => {
             const btns = []
 
-            // View output: available for finished runs (failed=0, success=2, cancelled=3)
-            if (row.status === 0 || row.status === 2 || row.status === 3) {
+            // Persisted output can be opened while a run is still active; SSE
+            // appends new chunks and reconnects from the last chunk sequence.
+            if (row.status === 0 || row.status === 1 || row.status === 2 || row.status === 3) {
               btns.push(
                 h(
                   ElButton,
@@ -482,11 +537,23 @@
   }
 
   // ── Kill running job ──────────────────────────────────────────────────────
+  const killRefreshTimers = new Set<number>()
+
+  function scheduleKillRefresh() {
+    for (const delay of [300, 1000, 2000]) {
+      const timer = window.setTimeout(() => {
+        killRefreshTimers.delete(timer)
+        void refreshData()
+      }, delay)
+      killRefreshTimers.add(timer)
+    }
+  }
+
   async function handleKill(row: TaskLogListItem) {
     try {
       await fetchTaskLogStop(row.id, row.task_id)
       ElMessage.success(t('task.log.killSuccess'))
-      refreshData()
+      scheduleKillRefresh()
     } catch {
       // error already handled by http interceptor
     }
@@ -536,6 +603,12 @@
       Object.assign(searchParams, { task_id: numId })
       getData()
     }
+  })
+
+  onBeforeUnmount(() => {
+    stopOutputStream()
+    for (const timer of killRefreshTimers) window.clearTimeout(timer)
+    killRefreshTimers.clear()
   })
 </script>
 

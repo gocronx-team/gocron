@@ -133,3 +133,19 @@ func TestExecShellWithEnvNilEnv(t *testing.T) {
 		t.Errorf("unexpected output: %q", output)
 	}
 }
+
+func TestExecShellWithEnvStreamReportsPartialOutput(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	var chunks strings.Builder
+	output, err := ExecShellWithEnvStream(ctx, "printf first; sleep 0.1; printf second", nil, func(chunk string) error {
+		chunks.WriteString(chunk)
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("ExecShellWithEnvStream error: %v", err)
+	}
+	if output != "firstsecond" || chunks.String() != output {
+		t.Fatalf("output=%q chunks=%q", output, chunks.String())
+	}
+}

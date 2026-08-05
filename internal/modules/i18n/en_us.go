@@ -57,6 +57,8 @@ var enUS = map[string]string{
 	"only_shell_task_can_stop":               "Only SHELL tasks can be stopped manually",
 	"task_node_list_empty":                   "Task node list is empty",
 	"stop_task_sent":                         "Stop command sent, please wait for task to exit",
+	"stop_task_failed":                       "Failed to stop job; it may have already exited or the node is unavailable",
+	"stop_task_reconciled":                   "Job was no longer running; its status was updated to cancelled",
 	"param_range_1_12":                       "Parameter value range: 1-12",
 	"delete_failed":                          "Delete failed",
 	"delete_success":                         "Deleted successfully",

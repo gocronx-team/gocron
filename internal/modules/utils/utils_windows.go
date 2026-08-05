@@ -35,6 +35,12 @@ func ExecShell(ctx context.Context, command string) (string, error) {
 
 // ExecShellWithEnv 执行命令,并在父进程环境基础上追加 env(机密等),仅本次执行可见。
 func ExecShellWithEnv(ctx context.Context, command string, env []string) (string, error) {
+	return ExecShellWithEnvStream(ctx, command, env, nil)
+}
+
+// ExecShellWithEnvStream executes a command and reports stdout/stderr chunks
+// as they arrive. onChunk is serialized across the two pipes.
+func ExecShellWithEnvStream(ctx context.Context, command string, env []string, onChunk func(string) error) (string, error) {
 	// 清理可能存在的 HTML 实体编码,防止 &quot; 等导致命令执行失败
 	// 例如: del &quot;C:\file.txt&quot; -> del "C:\file.txt"
 	command = CleanHTMLEntities(command)
@@ -123,6 +129,9 @@ func ExecShellWithEnv(ctx context.Context, command string, env []string) (string
 			if n > 0 {
 				mu.Lock()
 				outputBuffer.Write(buf[:n])
+				if onChunk != nil {
+					_ = onChunk(ConvertEncoding(string(buf[:n])))
+				}
 				mu.Unlock()
 			}
 			if err != nil {
@@ -138,6 +147,9 @@ func ExecShellWithEnv(ctx context.Context, command string, env []string) (string
 			if n > 0 {
 				mu.Lock()
 				outputBuffer.Write(buf[:n])
+				if onChunk != nil {
+					_ = onChunk(ConvertEncoding(string(buf[:n])))
+				}
 				mu.Unlock()
 			}
 			if err != nil {

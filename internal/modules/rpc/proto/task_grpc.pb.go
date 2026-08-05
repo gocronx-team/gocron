@@ -19,7 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Task_Run_FullMethodName = "/rpc.Task/Run"
+	Task_Run_FullMethodName       = "/rpc.Task/Run"
+	Task_RunStream_FullMethodName = "/rpc.Task/RunStream"
 )
 
 // TaskClient is the client API for Task service.
@@ -27,6 +28,9 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TaskClient interface {
 	Run(ctx context.Context, in *TaskRequest, opts ...grpc.CallOption) (*TaskResponse, error)
+	// RunStream incrementally returns stdout/stderr. Schedulers fall back to
+	// Run when an older node reports UNIMPLEMENTED.
+	RunStream(ctx context.Context, in *TaskRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[TaskResponse], error)
 }
 
 type taskClient struct {
@@ -47,11 +51,33 @@ func (c *taskClient) Run(ctx context.Context, in *TaskRequest, opts ...grpc.Call
 	return out, nil
 }
 
+func (c *taskClient) RunStream(ctx context.Context, in *TaskRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[TaskResponse], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &Task_ServiceDesc.Streams[0], Task_RunStream_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[TaskRequest, TaskResponse]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Task_RunStreamClient = grpc.ServerStreamingClient[TaskResponse]
+
 // TaskServer is the server API for Task service.
 // All implementations must embed UnimplementedTaskServer
 // for forward compatibility.
 type TaskServer interface {
 	Run(context.Context, *TaskRequest) (*TaskResponse, error)
+	// RunStream incrementally returns stdout/stderr. Schedulers fall back to
+	// Run when an older node reports UNIMPLEMENTED.
+	RunStream(*TaskRequest, grpc.ServerStreamingServer[TaskResponse]) error
 	mustEmbedUnimplementedTaskServer()
 }
 
@@ -64,6 +90,9 @@ type UnimplementedTaskServer struct{}
 
 func (UnimplementedTaskServer) Run(context.Context, *TaskRequest) (*TaskResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Run not implemented")
+}
+func (UnimplementedTaskServer) RunStream(*TaskRequest, grpc.ServerStreamingServer[TaskResponse]) error {
+	return status.Error(codes.Unimplemented, "method RunStream not implemented")
 }
 func (UnimplementedTaskServer) mustEmbedUnimplementedTaskServer() {}
 func (UnimplementedTaskServer) testEmbeddedByValue()              {}
@@ -104,6 +133,17 @@ func _Task_Run_Handler(srv interface{}, ctx context.Context, dec func(interface{
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Task_RunStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(TaskRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(TaskServer).RunStream(m, &grpc.GenericServerStream[TaskRequest, TaskResponse]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Task_RunStreamServer = grpc.ServerStreamingServer[TaskResponse]
+
 // Task_ServiceDesc is the grpc.ServiceDesc for Task service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -116,6 +156,12 @@ var Task_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Task_Run_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "RunStream",
+			Handler:       _Task_RunStream_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "task.proto",
 }

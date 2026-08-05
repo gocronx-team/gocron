@@ -29,7 +29,8 @@ Full documentation is available at: **[document](https://gocron-docs.pages.dev/e
 - **AI Assist**: Natural-language to cron expression, AI-powered failure-log diagnosis, and an in-app AI ops chat assistant (query tasks/logs/hosts/templates, diagnose failures), backed by any OpenAI-compatible model (configurable endpoint, also works with self-hosted/local models)
 - **Multi-Database**: MySQL / PostgreSQL / SQLite support
 - **Container-Aware Memory**: Automatically sets `GOMEMLIMIT` from the container's cgroup memory limit to reduce OOM kills in Docker/Kubernetes
-- **Log Management**: Complete execution logs with auto-cleanup
+- **Real-Time Task Output**: Stream Shell (RPC) stdout/stderr in the Execution Output dialog while a job is running, with reconnect catch-up and acknowledged cancellation
+- **Log Management**: Complete execution logs with auto-cleanup; live output is redacted, size-limited, and persisted efficiently across MySQL / PostgreSQL / SQLite
 - **Notifications**: Email, Slack, Webhook support
 
 ## 🚀 Quick Start

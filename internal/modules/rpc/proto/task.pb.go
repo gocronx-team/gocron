@@ -157,9 +157,10 @@ const file_task_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"<\n" +
 	"\fTaskResponse\x12\x16\n" +
 	"\x06output\x18\x01 \x01(\tR\x06output\x12\x14\n" +
-	"\x05error\x18\x02 \x01(\tR\x05error24\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error2j\n" +
 	"\x04Task\x12,\n" +
-	"\x03Run\x12\x10.rpc.TaskRequest\x1a\x11.rpc.TaskResponse\"\x00B;Z9github.com/gocronx-team/gocron/internal/modules/rpc/protob\x06proto3"
+	"\x03Run\x12\x10.rpc.TaskRequest\x1a\x11.rpc.TaskResponse\"\x00\x124\n" +
+	"\tRunStream\x12\x10.rpc.TaskRequest\x1a\x11.rpc.TaskResponse\"\x000\x01B;Z9github.com/gocronx-team/gocron/internal/modules/rpc/protob\x06proto3"
 
 var (
 	file_task_proto_rawDescOnce sync.Once
@@ -182,9 +183,11 @@ var file_task_proto_goTypes = []any{
 var file_task_proto_depIdxs = []int32{
 	2, // 0: rpc.TaskRequest.env:type_name -> rpc.TaskRequest.EnvEntry
 	0, // 1: rpc.Task.Run:input_type -> rpc.TaskRequest
-	1, // 2: rpc.Task.Run:output_type -> rpc.TaskResponse
-	2, // [2:3] is the sub-list for method output_type
-	1, // [1:2] is the sub-list for method input_type
+	0, // 2: rpc.Task.RunStream:input_type -> rpc.TaskRequest
+	1, // 3: rpc.Task.Run:output_type -> rpc.TaskResponse
+	1, // 4: rpc.Task.RunStream:output_type -> rpc.TaskResponse
+	3, // [3:5] is the sub-list for method output_type
+	1, // [1:3] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
 	1, // [1:1] is the sub-list for extension extendee
 	0, // [0:1] is the sub-list for field type_name

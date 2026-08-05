@@ -90,7 +90,10 @@ func (p *GRPCPool) factory(addr string) (*Client, error) {
 
 	// 配置了共享令牌时,为每次调用附带该令牌(与 TLS 正交)。
 	if app.Setting.RPCToken != "" {
-		opts = append(opts, grpc.WithUnaryInterceptor(auth.TokenUnaryClientInterceptor(app.Setting.RPCToken)))
+		opts = append(opts,
+			grpc.WithUnaryInterceptor(auth.TokenUnaryClientInterceptor(app.Setting.RPCToken)),
+			grpc.WithStreamInterceptor(auth.TokenStreamClientInterceptor(app.Setting.RPCToken)),
+		)
 	}
 
 	if !app.Setting.EnableTLS {

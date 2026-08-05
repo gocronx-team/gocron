@@ -48,7 +48,7 @@ func TestExecJobWithPartialOutput_Timeout(t *testing.T) {
 		RetryTimes: 0, // 不重试，直接测试超时
 	}
 
-	result := execJob(handler, task, 1, nil)
+	result := execJob(handler, task, 1, nil, nil)
 
 	if result.Err == nil {
 		t.Fatal("Expected timeout error")
@@ -79,7 +79,7 @@ func TestExecJobWithPartialOutput_ManualStop(t *testing.T) {
 		RetryTimes: 0,
 	}
 
-	result := execJob(handler, task, 2, nil)
+	result := execJob(handler, task, 2, nil, nil)
 
 	if result.Err == nil {
 		t.Fatal("Expected manual stop error")
@@ -107,7 +107,7 @@ func TestExecJobWithPartialOutput_NormalError(t *testing.T) {
 		RetryTimes: 0,
 	}
 
-	result := execJob(handler, task, 3, nil)
+	result := execJob(handler, task, 3, nil, nil)
 
 	if result.Err == nil {
 		t.Fatal("Expected normal error")
@@ -136,7 +136,7 @@ func TestExecJobWithPartialOutput_Success(t *testing.T) {
 		RetryTimes: 0,
 	}
 
-	result := execJob(handler, task, 4, nil)
+	result := execJob(handler, task, 4, nil, nil)
 
 	if result.Err != nil {
 		t.Fatalf("Expected no error for success, got: %v", result.Err)
@@ -188,7 +188,7 @@ func TestExecJobWithPartialOutput_RetryWithTimeout(t *testing.T) {
 	}
 	defer func() { sleepFunc = originalSleep }()
 
-	result := execJob(handler, task, 5, nil)
+	result := execJob(handler, task, 5, nil, nil)
 
 	if result.Err != nil {
 		t.Fatalf("Expected success after retry, got: %v", result.Err)

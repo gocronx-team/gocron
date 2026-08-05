@@ -547,7 +547,7 @@
       "viewOutput": "View Output",
       "outputTitle": "Execution Output",
       "kill": "Kill",
-      "killSuccess": "Job terminated",
+      "killSuccess": "Stop request acknowledged; waiting for the job to exit",
       "clearAll": "Clear All Logs",
       "clearSuccess": "All logs cleared",
       "confirmClear": "Are you sure you want to clear ALL task logs? This cannot be undone.",

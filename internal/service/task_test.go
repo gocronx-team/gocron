@@ -387,7 +387,7 @@ func TestExecJobRetriesUntilSuccess(t *testing.T) {
 		},
 	}
 	task := models.Task{Id: 1, RetryTimes: 1, RetryInterval: 1}
-	result := execJob(handler, task, 1, nil)
+	result := execJob(handler, task, 1, nil, nil)
 	if result.Result != "second" || result.Err != nil {
 		t.Fatalf("unexpected result: %+v", result)
 	}
@@ -418,7 +418,7 @@ func TestExecJobReturnsErrorAfterRetriesExhausted(t *testing.T) {
 		},
 	}
 	task := models.Task{Id: 2, RetryTimes: 2, RetryInterval: 1}
-	result := execJob(handler, task, 1, nil)
+	result := execJob(handler, task, 1, nil, nil)
 	if result.Err == nil {
 		t.Fatal("expected error")
 	}

@@ -13,6 +13,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"github.com/gocronx-team/cron"
 	"github.com/gocronx-team/gocron/internal/models"
@@ -333,8 +334,36 @@ func (task Task) NextRunTime(taskModel models.Task) time.Time {
 }
 
 // 停止运行中的任务
-func (task Task) Stop(ip string, port int, id int64) {
-	rpcClient.Stop(ip, port, id)
+func (task Task) Stop(ip string, port int, id int64) error {
+	return rpcClient.Stop(ip, port, id)
+}
+
+// ReconcileStoppedLog finalizes a stale Running row after every target node
+// has authoritatively reported that the execution ID is no longer present.
+func (task Task) ReconcileStoppedLog(id int64) error {
+	var output strings.Builder
+	var seq int64
+	for {
+		chunks, err := new(models.TaskLogChunk).ListAfter(id, seq, 100)
+		if err != nil {
+			return err
+		}
+		for _, chunk := range chunks {
+			output.WriteString(chunk.Content)
+			seq = chunk.Seq
+		}
+		if len(chunks) < 100 {
+			break
+		}
+	}
+	result := limitTaskLog(output.String(), false)
+	rows, err := new(models.TaskLog).FinalizeIfRunning(id, models.CommonMap{
+		"status": models.Cancel, "result": result, "end_time": time.Now(),
+	})
+	if err != nil || rows == 0 {
+		return err
+	}
+	return new(models.TaskLogChunk).DeleteByTaskLogId(id)
 }
 
 func (task Task) Remove(id int) {
@@ -364,6 +393,217 @@ type Handler interface {
 	// secretEnv 为本次执行需注入的机密环境变量(name->明文);由调用方一次性加载并复用,
 	// 保证注入与后续脱敏用的是同一份快照。HTTP 任务忽略该参数。
 	Run(taskModel models.Task, taskUniqueId int64, secretEnv map[string]string) (string, error)
+}
+
+type progressHandler interface {
+	RunWithProgress(taskModel models.Task, taskUniqueId int64, secretEnv map[string]string, onChunk func(string)) (string, error)
+}
+
+const (
+	taskLogFlushInterval = time.Second
+	maxTaskLogBytes      = 1 << 20
+	taskLogTruncatedMark = "\n...[task output truncated at 1 MiB]"
+)
+
+type liveLogAccumulator struct {
+	mu        sync.Mutex
+	taskLogID int64
+	masker    *streamingSecretMasker
+	batch     strings.Builder
+	seq       int64
+	total     int
+	truncated bool
+	dirty     bool
+	stop      chan struct{}
+	done      chan struct{}
+}
+
+func newLiveLogAccumulator(taskLogID int64, secretEnv map[string]string) *liveLogAccumulator {
+	a := &liveLogAccumulator{
+		taskLogID: taskLogID, masker: newStreamingSecretMasker(secretValues(secretEnv)),
+		stop: make(chan struct{}), done: make(chan struct{}),
+	}
+	go a.run()
+	return a
+}
+
+func (a *liveLogAccumulator) run() {
+	ticker := time.NewTicker(taskLogFlushInterval)
+	defer ticker.Stop()
+	defer close(a.done)
+	for {
+		select {
+		case <-ticker.C:
+			a.flush()
+		case <-a.stop:
+			a.flush()
+			return
+		}
+	}
+}
+
+func (a *liveLogAccumulator) close() {
+	a.mu.Lock()
+	a.appendSanitizedLocked(a.masker.flush())
+	a.mu.Unlock()
+	close(a.stop)
+	<-a.done
+}
+
+func (a *liveLogAccumulator) append(chunk string) {
+	if chunk == "" {
+		return
+	}
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.appendSanitizedLocked(a.masker.write(chunk))
+	if a.batch.Len() >= 32*1024 {
+		a.flushLocked()
+	}
+}
+
+func (a *liveLogAccumulator) appendSanitizedLocked(content string) {
+	if content == "" || a.truncated {
+		return
+	}
+	payloadLimit := maxTaskLogBytes - len(taskLogTruncatedMark)
+	remaining := payloadLimit - a.total
+	if len(content) > remaining {
+		if remaining < 0 {
+			remaining = 0
+		}
+		if len(content) > remaining {
+			content = content[:remaining]
+		}
+		for len(content) > 0 && !utf8.ValidString(content) {
+			content = content[:len(content)-1]
+		}
+		content += taskLogTruncatedMark
+		a.truncated = true
+	}
+	if content != "" {
+		a.batch.WriteString(content)
+		a.total += len(content)
+		a.dirty = true
+	}
+}
+
+func (a *liveLogAccumulator) flush() {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.flushLocked()
+}
+
+func (a *liveLogAccumulator) flushLocked() {
+	if !a.dirty {
+		return
+	}
+	content := a.batch.String()
+	item := models.TaskLogChunk{TaskLogId: a.taskLogID, Seq: a.seq + 1, Content: content}
+	if err := new(models.TaskLogChunk).Append([]models.TaskLogChunk{item}); err != nil {
+		logger.Errorf("实时任务日志刷新失败#log-%d#%v", a.taskLogID, err)
+		return
+	}
+	a.seq++
+	a.batch.Reset()
+	a.dirty = false
+}
+
+type streamingSecretMasker struct {
+	secrets []string
+	pending string
+}
+
+func newStreamingSecretMasker(values []string) *streamingSecretMasker {
+	m := &streamingSecretMasker{}
+	for _, value := range values {
+		if value == "" {
+			continue
+		}
+		m.secrets = append(m.secrets, value)
+	}
+	return m
+}
+
+func (m *streamingSecretMasker) write(chunk string) string {
+	m.pending += chunk
+	return m.drain(false)
+}
+
+func (m *streamingSecretMasker) flush() string {
+	return m.drain(true)
+}
+
+func (m *streamingSecretMasker) drain(final bool) string {
+	if m.pending == "" {
+		return ""
+	}
+	var out strings.Builder
+	pos := 0
+	for pos < len(m.pending) {
+		matchAt, match := -1, ""
+		for _, secret := range m.secrets {
+			idx := strings.Index(m.pending[pos:], secret)
+			if idx < 0 {
+				continue
+			}
+			idx += pos
+			if matchAt < 0 || idx < matchAt || (idx == matchAt && len(secret) > len(match)) {
+				matchAt, match = idx, secret
+			}
+		}
+		if matchAt < 0 {
+			break
+		}
+		out.WriteString(m.pending[pos:matchAt])
+		out.WriteString("***")
+		pos = matchAt + len(match)
+	}
+	remaining := m.pending[pos:]
+	if final {
+		out.WriteString(remaining)
+		m.pending = ""
+		return out.String()
+	}
+
+	// Only retain a suffix that could become a secret when the next fragment
+	// arrives. Ordinary short output is released immediately instead of being
+	// delayed by the length of the longest configured secret.
+	keep := 0
+	for _, secret := range m.secrets {
+		maxPrefix := len(secret) - 1
+		if maxPrefix > len(remaining) {
+			maxPrefix = len(remaining)
+		}
+		for n := maxPrefix; n > keep; n-- {
+			if strings.HasSuffix(remaining, secret[:n]) {
+				keep = n
+				break
+			}
+		}
+	}
+	out.WriteString(remaining[:len(remaining)-keep])
+	m.pending = remaining[len(remaining)-keep:]
+	return out.String()
+}
+
+func limitTaskLog(result string, alreadyTruncated bool) string {
+	limit := maxTaskLogBytes
+	truncated := alreadyTruncated || len(result) > limit
+	if truncated {
+		limit -= len(taskLogTruncatedMark)
+		if limit < 0 {
+			limit = 0
+		}
+		if len(result) > limit {
+			result = result[:limit]
+			for len(result) > 0 && !utf8.ValidString(result) {
+				result = result[:len(result)-1]
+			}
+		}
+		result += taskLogTruncatedMark
+	}
+	return result
 }
 
 // HTTP任务
@@ -444,6 +684,10 @@ func compactJSON(s string) string {
 type RPCHandler struct{}
 
 func (h *RPCHandler) Run(taskModel models.Task, taskUniqueId int64, secretEnv map[string]string) (result string, err error) {
+	return h.RunWithProgress(taskModel, taskUniqueId, secretEnv, nil)
+}
+
+func (h *RPCHandler) RunWithProgress(taskModel models.Task, taskUniqueId int64, secretEnv map[string]string, onChunk func(string)) (result string, err error) {
 	logger.Infof("RPC task execution started#Task ID-%d#Host count-%d", taskModel.Id, len(taskModel.Hosts))
 	if len(taskModel.Hosts) == 0 {
 		return "", fmt.Errorf("task is not associated with any host")
@@ -460,7 +704,11 @@ func (h *RPCHandler) Run(taskModel models.Task, taskUniqueId int64, secretEnv ma
 				Id:      taskUniqueId,
 				Env:     secretEnv,
 			}
-			output, err := rpcClient.Exec(th.Name, th.Port, req)
+			header := fmt.Sprintf("Host: [%s-%s:%d]\n", th.Alias, th.Name, th.Port)
+			if onChunk != nil {
+				onChunk(header)
+			}
+			output, err := rpcClient.ExecStream(th.Name, th.Port, req, onChunk)
 			errorMessage := ""
 			if err != nil {
 				// 如果是手动停止错误，保留原始错误以便后续判断，但显示翻译后的文本
@@ -474,9 +722,10 @@ func (h *RPCHandler) Run(taskModel models.Task, taskUniqueId int64, secretEnv ma
 			if errorMessage != "" {
 				errorMessage = strings.TrimSpace(errorMessage) + "\n"
 			}
-			outputMessage := fmt.Sprintf("Host: [%s-%s:%d]\n%s%s",
-				th.Alias, th.Name, th.Port, errorMessage, output,
-			)
+			if errorMessage != "" && onChunk != nil {
+				onChunk(errorMessage)
+			}
+			outputMessage := header + errorMessage + output
 			logger.Infof("RPC call completed#Host-%s:%d#Output length-%d#Error-%v", th.Name, th.Port, len(output), err)
 			resultChan <- TaskResult{Err: err, Result: outputMessage}
 		}(taskHost)
@@ -696,8 +945,10 @@ func createJob(taskModel models.Task) cron.FuncJob {
 
 		// 一次性加载本次执行的机密快照(按任务白名单过滤):注入与后续脱敏复用同一份,避免二次查询与不一致窗口
 		secretEnv := loadSecretEnv(taskModel)
+		liveLog := newLiveLogAccumulator(taskLogId, secretEnv)
 		logger.Infof("Starting task execution#%s#Command-%s", taskModel.Name, taskModel.Command)
-		taskResult := execJob(handler, taskModel, taskLogId, secretEnv)
+		taskResult := execJob(handler, taskModel, taskLogId, secretEnv, liveLog.append)
+		liveLog.close()
 		logger.Infof("Task completed#%s#Command-%s", taskModel.Name, taskModel.Command)
 		afterExecJob(taskModel, taskResult, taskLogId, secretEnv)
 	}
@@ -748,9 +999,12 @@ func afterExecJob(taskModel models.Task, taskResult TaskResult, taskLogId int64,
 	if values := secretValues(secretEnv); len(values) > 0 {
 		taskResult.Result = crypto.MaskSecrets(taskResult.Result, values)
 	}
+	taskResult.Result = limitTaskLog(taskResult.Result, false)
 	_, err := updateTaskLog(taskLogId, taskResult)
 	if err != nil {
 		logger.Error("Task ended#Failed to update task log-", err)
+	} else if err := new(models.TaskLogChunk).DeleteByTaskLogId(taskLogId); err != nil {
+		logger.Errorf("清理任务日志分片失败#log-%d#%v", taskLogId, err)
 	}
 
 	// 发送邮件
@@ -976,7 +1230,7 @@ func diagnoseForNotify(taskModel models.Task, output string) string {
 }
 
 // 执行具体任务
-func execJob(handler Handler, taskModel models.Task, taskUniqueId int64, secretEnv map[string]string) (result TaskResult) {
+func execJob(handler Handler, taskModel models.Task, taskUniqueId int64, secretEnv map[string]string, onChunk func(string)) (result TaskResult) {
 	defer func() {
 		if err := recover(); err != nil {
 			logger.Error("panic#service/task.go:execJob#", err)
@@ -993,7 +1247,11 @@ func execJob(handler Handler, taskModel models.Task, taskUniqueId int64, secretE
 	var output string
 	var err error
 	for i < execTimes {
-		output, err = handler.Run(taskModel, taskUniqueId, secretEnv)
+		if streaming, ok := handler.(progressHandler); ok {
+			output, err = streaming.RunWithProgress(taskModel, taskUniqueId, secretEnv, onChunk)
+		} else {
+			output, err = handler.Run(taskModel, taskUniqueId, secretEnv)
+		}
 		if err == nil {
 			return TaskResult{Result: output, Err: err, RetryTimes: i}
 		}

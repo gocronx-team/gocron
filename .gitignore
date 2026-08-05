@@ -39,6 +39,7 @@ profile/*
 /dist
 
 node_modules
+.pnpm-store/
 tmp/
 build-errors.log
 .gocache

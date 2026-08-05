@@ -547,7 +547,7 @@
       "viewOutput": "查看输出",
       "outputTitle": "执行输出",
       "kill": "终止",
-      "killSuccess": "任务已终止",
+      "killSuccess": "停止请求已确认，正在等待任务退出",
       "clearAll": "清空所有日志",
       "clearSuccess": "日志已全部清空",
       "confirmClear": "确定要清空所有任务日志吗？此操作不可撤销。",

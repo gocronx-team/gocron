@@ -39,6 +39,25 @@ var keepAliveParams = keepalive.ServerParameters{
 }
 
 func (s *Server) Run(ctx context.Context, req *pb.TaskRequest) (*pb.TaskResponse, error) {
+	return s.execute(ctx, req, nil)
+}
+
+// RunStream streams stdout/stderr and finishes with an optional error frame.
+// The original Run method is retained for older schedulers.
+func (s *Server) RunStream(req *pb.TaskRequest, stream grpc.ServerStreamingServer[pb.TaskResponse]) error {
+	resp, err := s.execute(stream.Context(), req, func(chunk string) error {
+		return stream.Send(&pb.TaskResponse{Output: chunk})
+	})
+	if err != nil {
+		return err
+	}
+	if resp.Error != "" {
+		return stream.Send(&pb.TaskResponse{Error: resp.Error})
+	}
+	return nil
+}
+
+func (s *Server) execute(ctx context.Context, req *pb.TaskRequest, onChunk func(string) error) (*pb.TaskResponse, error) {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Error(err)
@@ -50,13 +69,11 @@ func (s *Server) Run(ctx context.Context, req *pb.TaskRequest) (*pb.TaskResponse
 
 	// 检测是否是停止信号
 	if cleanedCmd == "__STOP__" {
-		if ch, ok := s.stopChans.Load(req.Id); ok {
+		if ch, ok := s.stopChans.LoadAndDelete(req.Id); ok {
 			close(ch.(chan struct{}))
+			return &pb.TaskResponse{}, nil
 		}
-		return &pb.TaskResponse{
-			Output: "",
-			Error:  "",
-		}, nil
+		return &pb.TaskResponse{Error: "task not running"}, nil
 	}
 
 	// 使用任务超时创建独立的 context
@@ -93,7 +110,7 @@ func (s *Server) Run(ctx context.Context, req *pb.TaskRequest) (*pb.TaskResponse
 	}()
 
 	// 执行命令,注入随请求下发的环境变量(机密等)
-	output, execErr := utils.ExecShellWithEnv(taskCtx, cleanedCmd, envSlice(req.Env))
+	output, execErr := utils.ExecShellWithEnvStream(taskCtx, cleanedCmd, envSlice(req.Env), onChunk)
 	outputBuf.WriteString(output)
 
 	resp := new(pb.TaskResponse)
@@ -134,7 +151,10 @@ func Start(addr string, enableTLS bool, certificate auth.Certificate, token stri
 	}
 	// 配置了共享令牌时,对每次调用强制校验(与 TLS 正交)。
 	if token != "" {
-		opts = append(opts, grpc.UnaryInterceptor(auth.TokenUnaryServerInterceptor(token)))
+		opts = append(opts,
+			grpc.UnaryInterceptor(auth.TokenUnaryServerInterceptor(token)),
+			grpc.StreamInterceptor(auth.TokenStreamServerInterceptor(token)),
+		)
 	} else if !enableTLS {
 		log.Warn("gocron-node is running WITHOUT TLS and WITHOUT a shared token: " +
 			"anyone able to reach this address can execute arbitrary commands. " +

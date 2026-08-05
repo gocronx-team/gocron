@@ -86,6 +86,17 @@ func (taskLog *TaskLog) Update(id int64, data CommonMap) (int64, error) {
 	return result.RowsAffected, result.Error
 }
 
+// FinalizeIfRunning writes a terminal state without overwriting a result that
+// may have been finalized concurrently by the normal execution path.
+func (taskLog *TaskLog) FinalizeIfRunning(id int64, data CommonMap) (int64, error) {
+	updateData := make(map[string]interface{}, len(data))
+	for key, value := range data {
+		updateData[key] = value
+	}
+	result := Db.Model(&TaskLog{}).Where("id = ? AND status = ?", id, Running).UpdateColumns(updateData)
+	return result.RowsAffected, result.Error
+}
+
 func (taskLog *TaskLog) List(params CommonMap) ([]TaskLog, error) {
 	taskLog.parsePageAndPageSize(params)
 	list := make([]TaskLog, 0)
@@ -109,8 +120,18 @@ func (taskLog *TaskLog) List(params CommonMap) ([]TaskLog, error) {
 
 // 清空表
 func (taskLog *TaskLog) Clear() (int64, error) {
-	result := Db.Where("1=1").Delete(&TaskLog{})
-	return result.RowsAffected, result.Error
+	var affected int64
+	err := Db.Transaction(func(tx *gorm.DB) error {
+		if tx.Migrator().HasTable(&TaskLogChunk{}) {
+			if err := tx.Where("1=1").Delete(&TaskLogChunk{}).Error; err != nil {
+				return err
+			}
+		}
+		result := tx.Where("1=1").Delete(&TaskLog{})
+		affected = result.RowsAffected
+		return result.Error
+	})
+	return affected, err
 }
 
 // 清空指定任务的日志(批量删除)
@@ -120,6 +141,12 @@ func (taskLog *TaskLog) ClearByTaskId(taskId int) (int64, error) {
 	}
 	var totalAffected int64
 	batchSize := 1000
+	if Db.Migrator().HasTable(&TaskLogChunk{}) {
+		if err := Db.Where("task_log_id IN (?)", Db.Model(&TaskLog{}).Select("id").Where("task_id = ?", taskId)).
+			Delete(&TaskLogChunk{}).Error; err != nil {
+			return 0, err
+		}
+	}
 	for {
 		result := Db.Where("task_id = ?", taskId).Limit(batchSize).Delete(&TaskLog{})
 		if result.Error != nil {

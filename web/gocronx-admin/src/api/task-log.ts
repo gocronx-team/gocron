@@ -1,4 +1,5 @@
 import request from '@/utils/http'
+import { useUserStore } from '@/store/modules/user'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -69,4 +70,68 @@ export function fetchTaskLogStop(id: number, taskId: number) {
     url: '/api/task/log/stop',
     data: { id, task_id: taskId }
   })
+}
+
+export interface TaskLogStreamEvent {
+  content: string
+  seq: number
+  status: number
+  reset?: boolean
+}
+
+export async function streamTaskLog(
+  id: number,
+  seq: number,
+  handlers: {
+    onLog: (event: TaskLogStreamEvent) => void
+    onDone: (event: TaskLogStreamEvent) => void
+    onError: (message: string) => void
+  },
+  signal?: AbortSignal
+): Promise<void> {
+  const res = await fetch(`/api/task/log/${id}/stream?seq=${seq}`, {
+    headers: {
+      'Auth-Token': useUserStore().accessToken,
+      'Accept-Language': useUserStore().language
+    },
+    signal
+  })
+  if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`)
+
+  const reader = res.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  let eventType = ''
+  let data = ''
+
+  const dispatch = () => {
+    if (!eventType || !data) return
+    try {
+      const event = JSON.parse(data) as TaskLogStreamEvent
+      if (eventType === 'log') handlers.onLog(event)
+      if (eventType === 'done') handlers.onDone(event)
+    } catch {
+      handlers.onError('invalid stream event')
+    }
+    eventType = ''
+    data = ''
+  }
+
+  while (true) {
+    const { value, done } = await reader.read()
+    buffer += decoder.decode(value, { stream: !done })
+    let newline = buffer.indexOf('\n')
+    while (newline >= 0) {
+      const line = buffer.slice(0, newline).replace(/\r$/, '')
+      buffer = buffer.slice(newline + 1)
+      if (line === '') dispatch()
+      else if (line.startsWith('event:')) eventType = line.slice(6).trim()
+      else if (line.startsWith('data:')) data += line.slice(5).trimStart()
+      newline = buffer.indexOf('\n')
+    }
+    if (done) {
+      dispatch()
+      return
+    }
+  }
 }

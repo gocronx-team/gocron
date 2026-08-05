@@ -28,7 +28,7 @@ import (
 )
 
 var (
-	AppVersion           = "1.9.1"
+	AppVersion           = "1.10.0"
 	BuildDate, GitCommit string
 
 	// leaderElection 全局选举实例，用于 graceful shutdown 时释放锁
@@ -365,5 +365,11 @@ func ensureTables() {
 	}
 	if err := models.Db.AutoMigrate(&models.TaskTemplate{}); err != nil {
 		logger.Error("Failed to migrate task_template table", err)
+	}
+	// Keep the live-output catch-up table available even if a development or
+	// interrupted upgrade wrote the version file before the schema migration
+	// completed. AutoMigrate is idempotent on all supported databases.
+	if err := models.Db.AutoMigrate(&models.TaskLogChunk{}); err != nil {
+		logger.Error("Failed to migrate task_log_chunk table", err)
 	}
 }
