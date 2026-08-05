@@ -2,7 +2,10 @@ package routers
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
 	"crypto/subtle"
+	"encoding/hex"
 	"io"
 	"io/fs"
 	"net/http"
@@ -709,9 +712,19 @@ func apiAuth(c *gin.Context) {
 		c.Abort()
 		return
 	}
-	raw := apiKey + strconv.FormatInt(timeParam, 10) + strings.TrimSpace(c.Request.URL.Path) + apiSecret
-	realSign := utils.Sha256(raw)
-	if subtle.ConstantTimeCompare([]byte(sign), []byte(realSign)) != 1 {
+	message := apiKey + strconv.FormatInt(timeParam, 10) + strings.TrimSpace(c.Request.URL.Path)
+	mac := hmac.New(sha256.New, []byte(apiSecret))
+	mac.Write([]byte(message))
+	hmacSign := hex.EncodeToString(mac.Sum(nil))
+
+	valid := subtle.ConstantTimeCompare([]byte(sign), []byte(hmacSign)) == 1
+	if !valid {
+		legacySum := sha256.Sum256([]byte(message + apiSecret))
+		legacySign := hex.EncodeToString(legacySum[:])
+		valid = subtle.ConstantTimeCompare([]byte(sign), []byte(legacySign)) == 1
+	}
+
+	if !valid {
 		msg := json.CommonFailure(i18n.T(c, "sign_verify_failed"))
 		c.String(http.StatusOK, msg)
 		c.Abort()

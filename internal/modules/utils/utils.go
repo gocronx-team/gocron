@@ -71,11 +71,10 @@ func VerifyPassword(hashedPassword, password, salt string) bool {
 	return hashedPassword == Md5(password+salt)
 }
 
-// Sha256 生成SHA256哈希（用于API签名等非密码场景）
+// Sha256 生成SHA256哈希（仅用于校验和等非密码敏感场景）
 func Sha256(str string) string {
-	h := sha256.New()
-	h.Write([]byte(str))
-	return hex.EncodeToString(h.Sum(nil))
+	h := sha256.Sum256([]byte(str))
+	return hex.EncodeToString(h[:])
 }
 
 // 生成0-max之间随机数

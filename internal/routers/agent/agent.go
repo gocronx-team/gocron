@@ -326,25 +326,30 @@ func Download(c *gin.Context) {
 		return
 	}
 
-	// 安全检查: 白名单验证,防止路径遍历攻击
-	validOS := map[string]bool{
-		"linux":   true,
-		"darwin":  true,
-		"windows": true,
-	}
-	validArch := map[string]bool{
-		"amd64": true,
-		"arm64": true,
-		"386":   true,
-	}
-
-	if !validOS[osName] {
+	// 安全检查: 白名单验证，映射为内部安全常量字符串以消除路径注入风险
+	var safeOS string
+	switch osName {
+	case "linux":
+		safeOS = "linux"
+	case "darwin":
+		safeOS = "darwin"
+	case "windows":
+		safeOS = "windows"
+	default:
 		logger.Warnf("非法的 os 参数: %s", osName)
 		c.String(http.StatusBadRequest, "invalid os parameter")
 		return
 	}
 
-	if !validArch[arch] {
+	var safeArch string
+	switch arch {
+	case "amd64":
+		safeArch = "amd64"
+	case "arm64":
+		safeArch = "arm64"
+	case "386":
+		safeArch = "386"
+	default:
 		logger.Warnf("非法的 arch 参数: %s", arch)
 		c.String(http.StatusBadRequest, "invalid arch parameter")
 		return
@@ -352,11 +357,11 @@ func Download(c *gin.Context) {
 
 	// 根据操作系统选择文件扩展名
 	ext := ".tar.gz"
-	if osName == "windows" {
+	if safeOS == "windows" {
 		ext = ".zip"
 	}
 
-	filename := fmt.Sprintf("gocron-node-%s-%s%s", osName, arch, ext)
+	filename := fmt.Sprintf("gocron-node-%s-%s%s", safeOS, safeArch, ext)
 
 	// 获取可执行文件所在目录
 	execPath, err := os.Executable()
@@ -375,7 +380,7 @@ func Download(c *gin.Context) {
 	packageDir := filepath.Join(execDir, "gocron-node-package")
 	localPath := filepath.Join(packageDir, filename)
 
-	logger.Infof("下载请求: os=%s, arch=%s, 查找路径: %s", osName, arch, localPath)
+	logger.Infof("下载请求: os=%s, arch=%s, 查找路径: %s", safeOS, safeArch, localPath)
 
 	// 安全检查: 确保最终路径在 packageDir 内,防止路径遍历
 	cleanPath := filepath.Clean(localPath)

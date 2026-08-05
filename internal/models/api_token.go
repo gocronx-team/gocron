@@ -1,9 +1,9 @@
 package models
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"time"
-
-	"github.com/gocronx-team/gocron/internal/modules/utils"
 )
 
 // ApiToken MCP/API 远程访问令牌。
@@ -20,7 +20,8 @@ type ApiToken struct {
 
 // HashToken 计算 token 明文的存储哈希。
 func HashToken(plain string) string {
-	return utils.Sha256(plain)
+	h := sha256.Sum256([]byte(plain))
+	return hex.EncodeToString(h[:])
 }
 
 func (t *ApiToken) Create() error {
