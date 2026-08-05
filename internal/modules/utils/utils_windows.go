@@ -76,11 +76,12 @@ func ExecShellWithEnvStream(ctx context.Context, command string, env []string, o
 		return "", fmt.Errorf("刷新批处理文件失败: %w", err)
 	}
 
-	// 确保文件内容写入磁盘
+	// 确保文件内容写入磁盘并显式关闭句柄
 	err = batFile.Sync()
 	if err != nil {
 		return "", fmt.Errorf("同步批处理文件失败: %w", err)
 	}
+	_ = batFile.Close()
 
 	// 使用 cmd.exe 执行批处理文件
 	cmd := exec.Command("cmd")

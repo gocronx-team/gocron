@@ -26,6 +26,9 @@ func detectBashPath() string {
 	if path, err := exec.LookPath("bash"); err == nil {
 		return path
 	}
+	if path, err := exec.LookPath("sh"); err == nil {
+		return path
+	}
 	return "/bin/bash"
 }
 
@@ -79,6 +82,9 @@ func ExecShellWithEnvStream(ctx context.Context, command string, env []string, o
 	if err != nil {
 		return "", fmt.Errorf("设置脚本执行权限失败: %w", err)
 	}
+
+	// 显式关闭写句柄，避免 Unix/Linux 下写句柄未关闭导致的进程执行异常
+	_ = tmpFile.Close()
 
 	// 根据当前系统环境检测 bash 路径，执行脚本文件
 	scriptPath := tmpFile.Name()
