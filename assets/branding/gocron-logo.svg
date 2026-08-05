@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">gocron logo</title>
+  <desc id="desc">A geometric G shaped scheduling ring with a clock hand and connected node.</desc>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path
+      d="M 369 143 A 160 160 0 1 0 413 286"
+      stroke="#2563EB"
+      stroke-width="54"
+    />
+    <path d="M 413 286 H 286" stroke="#2563EB" stroke-width="54" />
+    <path d="M 286 286 V 198" stroke="#06B6D4" stroke-width="22" />
+  </g>
+  <circle cx="286" cy="286" r="13" fill="#06B6D4" />
+</svg>

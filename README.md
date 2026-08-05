@@ -1,10 +1,14 @@
-# gocron - Distributed scheduled Task Scheduler
-
-[![Release](https://img.shields.io/github/release/gocronx-team/gocron.svg?label=Release)](https://github.com/gocronx-team/gocron/releases) [![Downloads](https://img.shields.io/github/downloads/gocronx-team/gocron/total.svg)](https://github.com/gocronx-team/gocron/releases) [![License](https://img.shields.io/github/license/gocronx-team/gocron.svg)](https://github.com/gocronx-team/gocron/blob/master/LICENSE)
-
-English | [简体中文](README_ZH.md)
-
-A lightweight distributed scheduled task management system developed in Go, designed to replace Linux-crontab.
+<div align="center">
+  <img src="assets/branding/gocron-logo.svg" alt="gocron logo" width="128" height="128">
+  <h1>gocron</h1>
+  <p>A lightweight distributed scheduled task management system developed in Go, designed to replace Linux-crontab.</p>
+  <p>
+    <a href="https://github.com/gocronx-team/gocron/releases"><img src="https://img.shields.io/github/release/gocronx-team/gocron.svg?label=Release" alt="Release"></a>
+    <a href="https://github.com/gocronx-team/gocron/releases"><img src="https://img.shields.io/github/downloads/gocronx-team/gocron/total.svg" alt="Downloads"></a>
+    <a href="https://github.com/gocronx-team/gocron/blob/master/LICENSE"><img src="https://img.shields.io/github/license/gocronx-team/gocron.svg" alt="License"></a>
+  </p>
+  <p>English · <a href="README_ZH.md">简体中文</a></p>
+</div>
 
 ## 📖 Documentation
 
