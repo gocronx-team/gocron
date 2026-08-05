@@ -10,6 +10,7 @@ overrides:
   flatted: '>=3.4.2'
   js-yaml: '>=5.2.2'
   lodash: '>=4.18.0'
+  postcss: '>=8.5.23'
   tmp: '>=0.2.6'
 
 importers:

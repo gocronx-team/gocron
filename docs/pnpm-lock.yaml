@@ -24,7 +24,7 @@ importers:
     devDependencies:
       vitepress:
         specifier: ^1.6.4
-        version: 1.6.4(@algolia/client-search@5.55.2)(postcss@8.5.19)(search-insights@2.17.3)
+        version: 1.6.4(@algolia/client-search@5.55.2)(postcss@8.5.25)(search-insights@2.17.3)
 
 packages:
 
@@ -723,8 +723,8 @@ packages:
     resolution: {integrity: sha512-RvwwcruNjI1ncT5xRakeyS9Lf8lcItv34KD+aif+VH9kduAyfYBipGh12274xtenIPZ119/R9BdTBa8gAwSh0A==}
     engines: {node: '>=12'}
 
-  postcss@8.5.19:
-    resolution: {integrity: sha512-Mz8SaolMd8nB+G13WkORcxQKHZ/NE4xXevtkJHVuG+guo9/wYKlIMTKAqGdEmYOXR2ijPjTYNHssizdaVSUNdQ==}
+  postcss@8.5.25:
+    resolution: {integrity: sha512-DTPx3RWSSnWyzLxQnlH0rJP+EW5ekl16ZU4/psbIhA0e53kJfdgaN5vKM+xP7yJtXVu+nfdVFmlgFDEKAe4Pyw==}
     engines: {node: ^10 || ^12 || >=14}
 
   preact@10.29.7:
@@ -1278,7 +1278,7 @@ snapshots:
       '@vue/shared': 3.5.40
       estree-walker: 2.0.2
       magic-string: 0.30.21
-      postcss: 8.5.19
+      postcss: 8.5.25
       source-map-js: 1.2.1
 
   '@vue/compiler-ssr@3.5.40':
@@ -1519,7 +1519,7 @@ snapshots:
 
   picomatch@4.0.5: {}
 
-  postcss@8.5.19:
+  postcss@8.5.25:
     dependencies:
       nanoid: 3.3.16
       picocolors: 1.1.1
@@ -1647,13 +1647,13 @@ snapshots:
       esbuild: 0.25.12
       fdir: 6.5.0(picomatch@4.0.5)
       picomatch: 4.0.5
-      postcss: 8.5.19
+      postcss: 8.5.25
       rollup: 4.62.2
       tinyglobby: 0.2.17
     optionalDependencies:
       fsevents: 2.3.3
 
-  vitepress@1.6.4(@algolia/client-search@5.55.2)(postcss@8.5.19)(search-insights@2.17.3):
+  vitepress@1.6.4(@algolia/client-search@5.55.2)(postcss@8.5.25)(search-insights@2.17.3):
     dependencies:
       '@docsearch/css': 3.8.2
       '@docsearch/js': 3.8.2(@algolia/client-search@5.55.2)(search-insights@2.17.3)
@@ -1674,7 +1674,7 @@ snapshots:
       vite: 6.4.3
       vue: 3.5.40
     optionalDependencies:
-      postcss: 8.5.19
+      postcss: 8.5.25
     transitivePeerDependencies:
       - '@algolia/client-search'
       - '@types/node'
