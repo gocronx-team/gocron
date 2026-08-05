@@ -13,8 +13,8 @@ overrides:
   minimatch: '>=9.0.7'
   immutable: '>=5.1.5'
   flatted: '>=3.4.2'
-  fast-uri: '>=3.1.4'
-  brace-expansion: '>=5.0.8'
+  fast-uri: '>=4.1.2'
+  brace-expansion: '>=5.0.9'
   defu: '>=6.1.5'
   # esbuild <0.28.1：两条 advisory（dev server 任意文件读取 / 二进制完整性校验缺失）
   esbuild: '>=0.28.1'
