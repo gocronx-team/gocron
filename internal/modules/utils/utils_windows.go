@@ -38,6 +38,28 @@ func ExecShellWithEnv(ctx context.Context, command string, env []string) (string
 	return ExecShellWithEnvStream(ctx, command, env, nil)
 }
 
+type streamWriter struct {
+	mu      sync.Mutex
+	buf     bytes.Buffer
+	onChunk func(string) error
+}
+
+func (w *streamWriter) Write(p []byte) (n int, err error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.buf.Write(p)
+	if w.onChunk != nil {
+		_ = w.onChunk(ConvertEncoding(string(p)))
+	}
+	return len(p), nil
+}
+
+func (w *streamWriter) String() string {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return w.buf.String()
+}
+
 // ExecShellWithEnvStream executes a command and reports stdout/stderr chunks
 // as they arrive. onChunk is serialized across the two pipes.
 func ExecShellWithEnvStream(ctx context.Context, command string, env []string, onChunk func(string) error) (string, error) {
@@ -84,11 +106,19 @@ func ExecShellWithEnvStream(ctx context.Context, command string, env []string, o
 	_ = batFile.Close()
 
 	// 使用 cmd.exe 执行批处理文件
-	cmd := exec.Command("cmd")
+	cmd := exec.CommandContext(ctx, "cmd")
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		HideWindow: true,
 		CmdLine:    `cmd /c "` + batFile.Name() + `"`,
 	}
+	cmd.Cancel = func() error {
+		if cmd.Process != nil && cmd.Process.Pid > 0 {
+			_ = exec.Command("taskkill", "/F", "/T", "/PID", strconv.Itoa(cmd.Process.Pid)).Run()
+		}
+		return nil
+	}
+	cmd.WaitDelay = 2 * time.Second
+
 	// 注入额外环境变量(机密等),在父进程环境基础上追加,仅本次执行可见
 	if len(env) > 0 {
 		cmd.Env = append(os.Environ(), env...)
@@ -100,107 +130,18 @@ func ExecShellWithEnvStream(ctx context.Context, command string, env []string, o
 		cmd.Dir = os.TempDir()
 	}
 
-	// 使用管道实时捕获输出
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return "", err
-	}
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		return "", err
-	}
+	writer := &streamWriter{onChunk: onChunk}
+	cmd.Stdout = writer
+	cmd.Stderr = writer
 
-	// 用于收集输出
-	var outputBuffer bytes.Buffer
-	var wg sync.WaitGroup
+	runErr := cmd.Run()
+	output := writer.String()
 
-	// 启动命令
-	if err := cmd.Start(); err != nil {
-		return "", err
-	}
-
-	// 实时读取 stdout 和 stderr
-	var mu sync.Mutex
-	wg.Add(2)
-	go func() {
-		defer wg.Done()
-		buf := make([]byte, 1024)
-		for {
-			n, err := stdout.Read(buf)
-			if n > 0 {
-				mu.Lock()
-				outputBuffer.Write(buf[:n])
-				if onChunk != nil {
-					_ = onChunk(ConvertEncoding(string(buf[:n])))
-				}
-				mu.Unlock()
-			}
-			if err != nil {
-				break
-			}
-		}
-	}()
-	go func() {
-		defer wg.Done()
-		buf := make([]byte, 1024)
-		for {
-			n, err := stderr.Read(buf)
-			if n > 0 {
-				mu.Lock()
-				outputBuffer.Write(buf[:n])
-				if onChunk != nil {
-					_ = onChunk(ConvertEncoding(string(buf[:n])))
-				}
-				mu.Unlock()
-			}
-			if err != nil {
-				break
-			}
-		}
-	}()
-
-	// 等待命令完成或超时
-	done := make(chan error, 1)
-	go func() {
-		done <- cmd.Wait()
-	}()
-
-	select {
-	case <-ctx.Done():
-		// 超时或被取消，尝试终止进程
-		if cmd.Process != nil && cmd.Process.Pid > 0 {
-			// Windows 下先尝试正常终止
-			cmd.Process.Kill()
-
-			// 等待 2 秒，看进程是否退出
-			timer := time.NewTimer(2 * time.Second)
-			select {
-			case <-done:
-				timer.Stop()
-			case <-timer.C:
-				// 强制杀死进程树
-				exec.Command("taskkill", "/F", "/T", "/PID", strconv.Itoa(cmd.Process.Pid)).Run()
-				<-done
-			}
-		}
-
-		// 等待 IO 读取完成
-		wg.Wait()
-
-		// 返回已捕获的输出（转换编码）和错误信息
-		mu.Lock()
-		output := outputBuffer.String()
-		mu.Unlock()
+	if ctx.Err() != nil {
 		return ConvertEncoding(output), errors.New("timeout killed")
-
-	case err := <-done:
-		// 命令正常完成
-		wg.Wait()
-		mu.Lock()
-		output := outputBuffer.String()
-		mu.Unlock()
-		return ConvertEncoding(output), err
 	}
+
+	return ConvertEncoding(output), runErr
 }
 
 func ConvertEncoding(outputGBK string) string {

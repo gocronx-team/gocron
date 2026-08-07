@@ -45,6 +45,28 @@ func ExecShellWithEnv(ctx context.Context, command string, env []string) (string
 	return ExecShellWithEnvStream(ctx, command, env, nil)
 }
 
+type streamWriter struct {
+	mu      sync.Mutex
+	buf     bytes.Buffer
+	onChunk func(string) error
+}
+
+func (w *streamWriter) Write(p []byte) (n int, err error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.buf.Write(p)
+	if w.onChunk != nil {
+		_ = w.onChunk(string(p))
+	}
+	return len(p), nil
+}
+
+func (w *streamWriter) String() string {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return w.buf.String()
+}
+
 // ExecShellWithEnvStream executes a command and reports stdout/stderr chunks
 // as they arrive. onChunk is serialized across the two pipes.
 func ExecShellWithEnvStream(ctx context.Context, command string, env []string, onChunk func(string) error) (string, error) {
@@ -89,10 +111,25 @@ func ExecShellWithEnvStream(ctx context.Context, command string, env []string, o
 	// 根据当前系统环境检测 bash 路径，执行脚本文件
 	scriptPath := tmpFile.Name()
 	bashPath := detectBashPath()
-	cmd := exec.Command(bashPath, scriptPath)
+	cmd := exec.CommandContext(ctx, bashPath, scriptPath)
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Setpgid: true,
 	}
+	cmd.Cancel = func() error {
+		if cmd.Process != nil && cmd.Process.Pid > 0 {
+			// 先发送 SIGTERM 给进程组
+			_ = syscall.Kill(-cmd.Process.Pid, syscall.SIGTERM)
+			// 延迟发送 SIGKILL 确保子进程完全退出
+			go func(pid int) {
+				time.Sleep(300 * time.Millisecond)
+				_ = syscall.Kill(-pid, syscall.SIGKILL)
+			}(cmd.Process.Pid)
+		}
+		return nil
+	}
+	// 避免子进程未释放标准流描述符时一直阻塞
+	cmd.WaitDelay = 2 * time.Second
+
 	// 注入额外环境变量(机密等),在父进程环境基础上追加,仅本次执行可见
 	if len(env) > 0 {
 		cmd.Env = append(os.Environ(), env...)
@@ -104,105 +141,16 @@ func ExecShellWithEnvStream(ctx context.Context, command string, env []string, o
 		cmd.Dir = tmpDir
 	}
 
-	// 使用管道实时捕获输出
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return "", err
-	}
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		return "", err
-	}
+	writer := &streamWriter{onChunk: onChunk}
+	cmd.Stdout = writer
+	cmd.Stderr = writer
 
-	// 用于收集输出
-	var outputBuffer bytes.Buffer
-	var mu sync.Mutex
-	var wg sync.WaitGroup
+	runErr := cmd.Run()
+	output := writer.String()
 
-	// 启动命令
-	if err := cmd.Start(); err != nil {
-		return "", err
-	}
-
-	// 实时读取 stdout 和 stderr
-	wg.Add(2)
-	go func() {
-		defer wg.Done()
-		buf := make([]byte, 1024)
-		for {
-			n, err := stdout.Read(buf)
-			if n > 0 {
-				mu.Lock()
-				outputBuffer.Write(buf[:n])
-				if onChunk != nil {
-					_ = onChunk(string(buf[:n]))
-				}
-				mu.Unlock()
-			}
-			if err != nil {
-				break
-			}
-		}
-	}()
-	go func() {
-		defer wg.Done()
-		buf := make([]byte, 1024)
-		for {
-			n, err := stderr.Read(buf)
-			if n > 0 {
-				mu.Lock()
-				outputBuffer.Write(buf[:n])
-				if onChunk != nil {
-					_ = onChunk(string(buf[:n]))
-				}
-				mu.Unlock()
-			}
-			if err != nil {
-				break
-			}
-		}
-	}()
-
-	// 等待命令完成或超时
-	done := make(chan error, 1)
-	go func() {
-		done <- cmd.Wait()
-	}()
-
-	select {
-	case <-ctx.Done():
-		// 超时或被取消，尝试优雅终止
-		if cmd.Process != nil && cmd.Process.Pid > 0 {
-			// 先发送 SIGTERM，给进程清理的机会
-			_ = syscall.Kill(-cmd.Process.Pid, syscall.SIGTERM)
-
-			// 等待 2 秒，看进程是否自行退出
-			timer := time.NewTimer(2 * time.Second)
-			select {
-			case <-done:
-				timer.Stop()
-			case <-timer.C:
-				// 进程仍未退出，强制杀死
-				_ = syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
-				<-done // 等待 Wait() 返回
-			}
-		}
-
-		// 等待 IO 读取完成
-		wg.Wait()
-
-		// 返回已捕获的输出和错误信息
-		mu.Lock()
-		output := outputBuffer.String()
-		mu.Unlock()
+	if ctx.Err() != nil {
 		return output, errors.New("timeout killed")
-
-	case err := <-done:
-		// 命令正常完成
-		wg.Wait()
-		mu.Lock()
-		output := outputBuffer.String()
-		mu.Unlock()
-		return output, err
 	}
+
+	return output, runErr
 }
