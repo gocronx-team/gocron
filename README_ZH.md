@@ -10,6 +10,10 @@
   <p><a href="README.md">English</a> · 简体中文</p>
 </div>
 
+<p align="center">
+  <img src="assets/screenshot/scheduler.png" alt="gocron 任务调度界面" width="100%">
+</p>
+
 ## 📖 文档
 
 访问完整文档请跳转：[文档](https://gocron-docs.pages.dev/zh/)
@@ -36,6 +40,24 @@
 - **任务实时输出**：Shell（RPC）任务运行期间可在 Execution Output 弹窗实时查看 stdout/stderr，支持断线续传和节点确认的停止操作
 - **日志管理**：完整的任务执行日志，支持自动清理；实时输出经过脱敏、大小限制，并针对 MySQL / PostgreSQL / SQLite 高效持久化
 - **消息通知**：支持邮件、Slack、Webhook 等多种通知方式
+
+## 📸 界面截图
+
+<table>
+  <tr>
+    <td width="50%" align="center"><b>Agent自动注册</b></td>
+    <td width="50%" align="center"><b>任务管理</b></td>
+  </tr>
+  <tr>
+    <td><img src="assets/screenshot/agent.png" alt="Agent自动注册" width="100%"></td>
+    <td><img src="assets/screenshot/task.png" alt="任务管理" width="100%"></td>
+  </tr>
+</table>
+
+<p align="center">
+  <b>AI 失败诊断</b><br>
+  <img src="assets/screenshot/ai_diagnose.png" alt="AI 失败诊断" width="100%">
+</p>
 
 ## 🚀 快速开始
 
@@ -68,29 +90,6 @@ docker compose up -d
 ```
 
 详细部署步骤、K8s 配置和环境变量覆盖请参考 [高可用部署指南](https://gocron-docs.pages.dev/zh/guide/high-availability)。
-
-## 📸 界面截图
-
-<p align="center">
-  <b>任务调度</b><br>
-  <img src="assets/screenshot/scheduler.png" alt="任务调度" width="100%">
-</p>
-
-<table>
-  <tr>
-    <td width="50%" align="center"><b>Agent自动注册</b></td>
-    <td width="50%" align="center"><b>任务管理</b></td>
-  </tr>
-  <tr>
-    <td><img src="assets/screenshot/agent.png" alt="Agent自动注册" width="100%"></td>
-    <td><img src="assets/screenshot/task.png" alt="任务管理" width="100%"></td>
-  </tr>
-</table>
-
-<p align="center">
-  <b>AI 失败诊断</b><br>
-  <img src="assets/screenshot/ai_diagnose.png" alt="AI 失败诊断" width="100%">
-</p>
 
 ## 🤝 贡献
 

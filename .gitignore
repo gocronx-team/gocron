@@ -44,6 +44,7 @@ tmp/
 build-errors.log
 .gocache
 .gstack/
+.workbuddy/
 .design-review/
 /.claude/*
 !/.claude/commands/
