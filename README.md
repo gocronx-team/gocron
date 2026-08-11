@@ -14,6 +14,22 @@
   <img src="assets/screenshot/scheduler_en.png" alt="gocron Scheduled Tasks interface" width="100%">
 </p>
 
+<table>
+  <tr>
+    <td width="50%" align="center"><b>Agent Auto-Registration</b></td>
+    <td width="50%" align="center"><b>Task Management</b></td>
+  </tr>
+  <tr>
+    <td><img src="assets/screenshot/agent_en.png" alt="Agent Auto-Registration" width="100%"></td>
+    <td><img src="assets/screenshot/task_en.png" alt="Task Management" width="100%"></td>
+  </tr>
+</table>
+
+<p align="center">
+  <b>AI Failure Diagnosis</b><br>
+  <img src="assets/screenshot/ai_diagnose_en.png" alt="AI Failure Diagnosis" width="100%">
+</p>
+
 ## 📖 Documentation
 
 Full documentation is available at: **[document](https://gocron-docs.pages.dev/en/)**
@@ -40,24 +56,6 @@ Full documentation is available at: **[document](https://gocron-docs.pages.dev/e
 - **Real-Time Task Output**: Stream Shell (RPC) stdout/stderr in the Execution Output dialog while a job is running, with reconnect catch-up and acknowledged cancellation
 - **Log Management**: Complete execution logs with auto-cleanup; live output is redacted, size-limited, and persisted efficiently across MySQL / PostgreSQL / SQLite
 - **Notifications**: Email, Slack, Webhook support
-
-## 📸 Screenshots
-
-<table>
-  <tr>
-    <td width="50%" align="center"><b>Agent Auto-Registration</b></td>
-    <td width="50%" align="center"><b>Task Management</b></td>
-  </tr>
-  <tr>
-    <td><img src="assets/screenshot/agent_en.png" alt="Agent Auto-Registration" width="100%"></td>
-    <td><img src="assets/screenshot/task_en.png" alt="Task Management" width="100%"></td>
-  </tr>
-</table>
-
-<p align="center">
-  <b>AI Failure Diagnosis</b><br>
-  <img src="assets/screenshot/ai_diagnose_en.png" alt="AI Failure Diagnosis" width="100%">
-</p>
 
 ## 🚀 Quick Start
 
