@@ -77,8 +77,11 @@ web/gocronx-admin/   - Vue 3 + TypeScript frontend (art-design-pro based)
   `versionId` + `upgradeForNNN` to the `Upgrade` chain; (3) the id tracks
   `AppVersion` (e.g. v1.7.0 → 170); (4) add a migration test. Never reuse ids.
 - **Versioning:** `AppVersion` lives in `cmd/gocron/gocron.go`. Features bump
-  minor (1.6.x → 1.7.0), fixes bump patch. Do NOT tag a release until `/verify`
-  is fully green — see the `release` skill for the flow.
+  minor (1.6.x → 1.7.0), fixes bump patch. Every application version bump must
+  also update `helm/gocron/Chart.yaml` `appVersion`; increment the Chart
+  `version` whenever the packaged Chart changes so the Helm release workflow
+  publishes it. Do NOT tag a release until `/verify` is fully green — see the
+  `release` skill for the flow.
 - Do not develop directly on `master`; work on a branch and merge.
 
 ## Compatibility policy (MANDATORY)
@@ -165,4 +168,3 @@ Material performance risk requires evidence, not intuition.
 ### 3. Self-Healing & Clean Commit Rules
 - **Fix Order**: Format (`gofmt`) -> Lint (`golangci-lint` / `pnpm lint`) -> Type Check (`vue-tsc`) -> Tests (`go test -race`).
 - **Hygiene**: Remove temporary scratch scripts, debug `fmt.Println`s, and clean git untracked artifacts before requesting review or committing.
-

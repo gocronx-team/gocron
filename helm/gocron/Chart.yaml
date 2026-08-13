@@ -2,8 +2,8 @@ apiVersion: v2
 name: gocron
 description: A Helm chart for gocron - cron job management system
 type: application
-version: 0.1.1
-appVersion: "1.5.9"
+version: 0.1.2
+appVersion: "1.10.0"
 keywords:
   - cron
   - scheduler

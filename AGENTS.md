@@ -35,7 +35,10 @@ cd web/gocronx-admin && pnpm build-only && pnpm exec vue-tsc --noEmit && pnpm li
 - Conventional Commits (`feat:` `fix:` `chore:` `refactor:` `style:` `test:`).
   No `Co-Authored-By` lines. commit-msg (commitlint) rejects subjects > 100 chars.
 - **Versioning:** `AppVersion` in `cmd/gocron/gocron.go`; features → minor
-  (1.6.x → 1.7.0), fixes → patch. Don't tag until CI is green.
+  (1.6.x → 1.7.0), fixes → patch. Every application version bump must also
+  update `helm/gocron/Chart.yaml` `appVersion`; increment the Chart `version`
+  whenever the packaged Chart changes so the Helm release workflow publishes it.
+  Don't tag until CI is green.
 - **Migrations** (`internal/models/migration.go`): add the model to the `Install`
   tables slice + a new `versionId`/`upgradeForNNN` (id tracks AppVersion, e.g.
   v1.7.0 → 170) + a migration test. Never reuse version ids.
@@ -126,4 +129,3 @@ More project detail lives in `CLAUDE.md`.
 ### 3. Self-Healing & Clean Commit Rules
 - **Fix Order**: Format (`gofmt`) -> Lint (`golangci-lint` / `pnpm lint`) -> Type Check (`vue-tsc`) -> Tests (`go test -race`).
 - **Hygiene**: Remove temporary scratch scripts, debug `fmt.Println`s, and clean git untracked artifacts before requesting review or committing.
-

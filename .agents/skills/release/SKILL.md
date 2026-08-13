@@ -50,6 +50,9 @@ rollback limits, and recovery.
 ## 2. Update version and migrations
 
 - Update `AppVersion` in `cmd/gocron/gocron.go`.
+- Update `helm/gocron/Chart.yaml` `appVersion` to the same application version.
+  Increment the Chart `version` whenever the packaged Chart changes; the chart
+  release workflow skips versions that have already been published.
 - If the release changes the schema, add the model to the `Install` tables
   slice where applicable, append a unique migration version id and matching
   `upgradeForNNN` function in `internal/models/migration.go`, add it to the
@@ -66,8 +69,8 @@ Invoke `$verify` and require every backend, frontend, lint, test, and Docker
 check to pass. Do not commit, merge, push, or tag while any check is failed,
 skipped, or unavailable.
 
-Review the final diff and confirm `AppVersion`, migration id, tests, and
-user-facing release notes agree.
+Review the final diff and confirm `AppVersion`, Helm `appVersion` and Chart
+`version`, migration id, tests, and user-facing release notes agree.
 
 ## 4. Publish only when requested
 
