@@ -23,6 +23,9 @@ FROM golang:1.26-alpine AS builder
 RUN apk add --no-cache git
 
 WORKDIR /app
+ARG VERSION=dev
+ARG GIT_COMMIT=unknown
+ARG BUILD_DATE=unknown
 COPY go.mod go.sum ./
 # Cache the Go module cache across builds
 RUN --mount=type=cache,target=/go/pkg/mod \
@@ -38,7 +41,9 @@ COPY . .
 # Cache module + build caches so incremental rebuilds are fast.
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
-    CGO_ENABLED=0 go build -ldflags="-s -w" -trimpath -o gocron ./cmd/gocron
+    CGO_ENABLED=0 go build \
+      -ldflags="-s -w -X 'main.AppVersion=${VERSION}' -X 'main.GitCommit=${GIT_COMMIT}' -X 'main.BuildDate=${BUILD_DATE}'" \
+      -trimpath -o gocron ./cmd/gocron
 
 FROM alpine:latest
 

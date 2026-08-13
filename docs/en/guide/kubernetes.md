@@ -42,7 +42,7 @@ helm install gocron gocron/gocron -f my-values.yaml
 ### Upgrade
 
 ```bash
-helm upgrade gocron gocron/gocron --set image.tag=1.5.9
+helm upgrade gocron gocron/gocron --set image.tag=1.10.1
 ```
 
 ### Uninstall
@@ -57,7 +57,7 @@ helm uninstall gocron
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `image.repository` | Image repository | `gocronx/gocron` |
+| `image.repository` | Image repository | `ghcr.io/gocronx-team/gocron` |
 | `image.tag` | Image tag | Chart appVersion |
 | `image.pullPolicy` | Pull policy | `IfNotPresent` |
 

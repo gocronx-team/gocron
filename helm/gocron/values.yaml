@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: gocronx/gocron
+  repository: ghcr.io/gocronx-team/gocron
   tag: "" # defaults to Chart appVersion
   pullPolicy: IfNotPresent
 
