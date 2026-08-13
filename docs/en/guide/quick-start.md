@@ -145,10 +145,10 @@ docker compose up -d
 
 Deploy to Kubernetes clusters with a single command using Helm Chart.
 
-::: warning Image version note
-The Helm Chart defaults to the Docker Hub image `gocronx/gocron`, with the tag defaulting to the Chart's appVersion.
-Image publishing may currently lag behind GitHub Releases, so verify the target tag exists before installing —
-set it explicitly with `--set image.tag=<existing-tag>` if needed, or build and push your own image.
+::: tip Container image
+The Helm Chart defaults to the public image `ghcr.io/gocronx-team/gocron`, with
+the tag defaulting to the Chart's appVersion. Release tags publish matching
+multi-architecture images for Linux AMD64 and ARM64.
 :::
 
 ### Add Helm Repository

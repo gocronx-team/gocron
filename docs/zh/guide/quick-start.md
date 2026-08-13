@@ -145,10 +145,9 @@ docker compose up -d
 
 使用 Helm Chart 一键部署到 Kubernetes 集群。
 
-::: warning 镜像版本提示
-Helm Chart 默认使用 Docker Hub 镜像 `gocronx/gocron`，tag 默认取 Chart 的 appVersion。
-该镜像的发布目前可能滞后于 GitHub Releases，安装前请先确认目标 tag 是否存在，
-必要时通过 `--set image.tag=<已存在的 tag>` 显式指定，或自行构建并推送镜像。
+::: tip 容器镜像
+Helm Chart 默认使用公开镜像 `ghcr.io/gocronx-team/gocron`，tag 默认取 Chart 的
+appVersion。发布版本标签时会同步生成 Linux AMD64 和 ARM64 多架构镜像。
 :::
 
 ### 添加 Helm 仓库
