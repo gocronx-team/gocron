@@ -122,11 +122,3 @@ jobs:
             BUILD_DATE=${{ steps.build.outputs.date }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      - name: Make container package public
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: >-
-          gh api --method PATCH
-          "/orgs/${{ github.repository_owner }}/packages/container/${{ github.event.repository.name }}"
-          -f visibility=public
