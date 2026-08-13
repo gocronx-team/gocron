@@ -1,6 +1,7 @@
 # pnpm 10.34+/11 不再读取 package.json 的 "pnpm.overrides"，配置统一迁到这里。
 # 这些是安全相关的最低版本约束（pin 掉有漏洞的传递依赖）。
 overrides:
+  nanoid: '>=3.3.17'
   yaml: '>=2.8.3'
   tar: '>=7.5.11'
   tmp: '>=0.2.6'

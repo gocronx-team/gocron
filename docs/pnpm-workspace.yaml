@@ -10,6 +10,7 @@ allowBuilds:
 # vite/esbuild 的修复仅在 vite 6.4.3+ / esbuild 0.25.0+ 提供（5.x 无 backport），
 # 实测 vitepress 1.6.3 可正常基于 vite 6 构建静态文档，故强升以清除 Dependabot 告警。
 overrides:
+  nanoid: '>=3.3.17'
   rollup: '>=4.59.0'
   picomatch: '>=2.3.2'
   immutable: '>=5.1.5'
