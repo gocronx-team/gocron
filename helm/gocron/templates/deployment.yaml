@@ -25,6 +25,24 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "gocron.serviceAccountName" . }}
+      initContainers:
+        - name: initialize-config
+          image: "{{ .Values.image.repository }}:{{ include "gocron.imageTag" . }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              mkdir -p /data/conf
+              if [ ! -s /data/conf/app.ini ]; then
+                cp /config-seed/app.ini /data/conf/app.ini
+              fi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: config
+              mountPath: /config-seed
+              readOnly: true
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ include "gocron.imageTag" . }}"
@@ -51,9 +69,6 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /.gocron
-            - name: config
-              mountPath: /.gocron/conf/app.ini
-              subPath: app.ini
           {{- with .Values.resources }}
           resources:
             {{- toYaml . | nindent 12 }}

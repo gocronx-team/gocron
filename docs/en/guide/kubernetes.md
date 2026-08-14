@@ -211,6 +211,11 @@ persistence:
 ## Notes
 
 1. **SQLite mode**: Deployment strategy is automatically set to `Recreate` (instead of `RollingUpdate`) to prevent multiple Pods from accessing the SQLite file simultaneously
-2. **Config changes**: Pods automatically restart when ConfigMap changes (via checksum annotation)
-3. **Data persistence**: Always enable PVC in SQLite mode, otherwise data is lost when Pods restart
+2. **Configuration persistence**: The ConfigMap seeds `app.ini` only when the
+   file is missing or empty. The writable file, installation lock, and generated
+   authentication secret then live on the data volume so the web installer can
+   finish and Pod restarts preserve the installation.
+3. **Data persistence**: Keep PVC enabled when using the web installer or SQLite;
+   otherwise configuration, the installation lock, and SQLite data are lost when
+   the Pod is recreated.
 4. **Health checks**: Liveness and readiness probes are configured by default, checking HTTP on port 5920
