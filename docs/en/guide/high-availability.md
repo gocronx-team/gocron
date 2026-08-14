@@ -37,6 +37,7 @@ scp -r .gocron/conf/ user@node2:/path/to/gocron/.gocron/conf/
 ```
 
 The directory contains:
+
 - `app.ini` — database and application settings
 - `install.lock` — marks the installation as complete
 - `.version` — current application version
@@ -96,7 +97,10 @@ helm install gocron gocron/gocron \
   --set db.port=5432 \
   --set db.user=gocron \
   --set db.password=replace-me \
-  --set db.database=gocron
+  --set db.database=gocron \
+  --set managed.authSecret=replace-with-at-least-32-random-characters \
+  --set managed.encryptionKey=replace-with-another-32-random-characters \
+  --set managed.admin.password=replace-with-a-strong-admin-password
 ```
 
 See [Kubernetes Deployment](./kubernetes) for existing Secret, scaling, HPA,

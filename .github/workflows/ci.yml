@@ -90,6 +90,9 @@ jobs:
           helm lint helm/gocron
           --set db.host=postgresql.default.svc
           --set db.password=ci-password
+          --set managed.authSecret=ci-auth-secret-with-at-least-32-characters
+          --set managed.encryptionKey=ci-encryption-key-with-at-least-32-characters
+          --set managed.admin.password=ci-admin-password
 
       - name: Verify application version alignment
         run: |

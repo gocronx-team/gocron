@@ -72,9 +72,19 @@ Image tag
 {{- if not .Values.db.host -}}
 {{- fail "db.host is required" -}}
 {{- end -}}
-{{- $currentSecret := lookup "v1" "Secret" .Release.Namespace (include "gocron.fullname" .) -}}
-{{- if and (not .Values.managed.existingSecret) (not .Values.db.password) (not $currentSecret) -}}
+{{- if not .Values.managed.existingSecret -}}
+{{- if not .Values.db.password -}}
 {{- fail "db.password or managed.existingSecret is required" -}}
+{{- end -}}
+{{- if lt (len .Values.managed.authSecret) 32 -}}
+{{- fail "managed.authSecret must contain at least 32 characters when managed.existingSecret is empty" -}}
+{{- end -}}
+{{- if lt (len .Values.managed.encryptionKey) 32 -}}
+{{- fail "managed.encryptionKey must contain at least 32 characters when managed.existingSecret is empty" -}}
+{{- end -}}
+{{- if lt (len .Values.managed.admin.password) 6 -}}
+{{- fail "managed.admin.password must contain at least 6 characters when managed.existingSecret is empty" -}}
+{{- end -}}
 {{- end -}}
 {{- if lt (int .Values.replicaCount) 1 -}}
 {{- fail "replicaCount must be at least 1" -}}

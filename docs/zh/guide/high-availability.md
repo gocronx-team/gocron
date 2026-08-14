@@ -37,6 +37,7 @@ scp -r .gocron/conf/ user@node2:/path/to/gocron/.gocron/conf/
 ```
 
 该目录包含：
+
 - `app.ini` — 数据库和应用配置
 - `install.lock` — 标记安装完成
 - `.version` — 当前应用版本
@@ -95,7 +96,10 @@ helm install gocron gocron/gocron \
   --set db.port=5432 \
   --set db.user=gocron \
   --set db.password=replace-me \
-  --set db.database=gocron
+  --set db.database=gocron \
+  --set managed.authSecret=replace-with-at-least-32-random-characters \
+  --set managed.encryptionKey=replace-with-another-32-random-characters \
+  --set managed.admin.password=replace-with-a-strong-admin-password
 ```
 
 已有 Secret、扩容、HPA、Ingress 和管理员初始化配置请参考

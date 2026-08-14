@@ -5,7 +5,7 @@ Only the database-elected leader runs scheduled tasks.
 
 {{- if not .Values.managed.existingSecret }}
 Initial administrator: {{ .Values.managed.admin.username }}
-Retrieve the generated password with:
+Retrieve the configured password with:
   kubectl get secret {{ include "gocron.fullname" . }} -n {{ .Release.Namespace }} -o jsonpath='{.data.{{ .Values.managed.secretKeys.adminPassword }}}' | base64 -d; echo
 {{- end }}
 
