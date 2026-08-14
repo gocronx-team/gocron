@@ -28,7 +28,7 @@ import (
 )
 
 var (
-	AppVersion           = "1.10.1"
+	AppVersion           = "1.11.0"
 	BuildDate, GitCommit string
 
 	// leaderElection 全局选举实例，用于 graceful shutdown 时释放锁
@@ -148,13 +148,21 @@ func runWeb(ctx *cli.Context) error {
 }
 
 func initModule() {
-	if !app.Installed {
+	if !app.Installed && !app.Managed {
 		return
 	}
 
 	config, err := setting.Read(app.AppConfig)
 	if err != nil {
 		logger.Fatal("Failed to read application config", err)
+	}
+	if app.Managed {
+		if err := setting.ApplyEnvOverrides(config); err != nil {
+			logger.Fatal("Failed to apply managed configuration", err)
+		}
+		if err := validateManagedConfig(config); err != nil {
+			logger.Fatal("Invalid managed configuration", err)
+		}
 	}
 	app.Setting = config
 
@@ -163,9 +171,18 @@ func initModule() {
 
 	// Initialize DB
 	models.Db = models.CreateDb()
+	if app.Managed {
+		if err := bootstrapManagedDatabase(models.Db); err != nil {
+			logger.Fatal("Failed to bootstrap managed database", err)
+		}
+		setting.ClearEnvOverrides()
+		app.Installed = true
+	}
 
 	// Version upgrade
-	upgradeIfNeed()
+	if !app.Managed {
+		upgradeIfNeed()
+	}
 
 	// Auto-create missing tables
 	ensureTables()

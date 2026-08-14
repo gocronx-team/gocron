@@ -82,65 +82,25 @@ The Follower takes over **within 1 second**.
 
 The lease expires after 15 seconds. A Follower detects the expired lock and takes over automatically.
 
-## Kubernetes / Docker Deployment
+## Kubernetes Deployment
 
-For container environments, you don't need to copy config files manually. Use environment variables to override database settings:
+Use the official Helm Chart for Kubernetes. It enables managed mode, injects a
+shared authentication Secret into every Pod, coordinates schema bootstrap with
+a database advisory lock, and exposes all Ready replicas through one Service.
+No shared PVC or configuration copying is required.
 
-| Variable | Description |
-|---|---|
-| `GOCRON_DB_ENGINE` | `mysql` or `postgres` |
-| `GOCRON_DB_HOST` | Database host |
-| `GOCRON_DB_PORT` | Database port |
-| `GOCRON_DB_USER` | Database user |
-| `GOCRON_DB_PASSWORD` | Database password |
-| `GOCRON_DB_DATABASE` | Database name |
-| `GOCRON_DB_PREFIX` | Table prefix |
-| `GOCRON_AUTH_SECRET` | JWT auth secret |
-
-Example Kubernetes deployment:
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: gocron
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: gocron
-  template:
-    metadata:
-      labels:
-        app: gocron
-    spec:
-      containers:
-        - name: gocron
-          image: gocron:latest
-          ports:
-            - containerPort: 5920
-          env:
-            - name: GOCRON_DB_ENGINE
-              value: "postgres"
-            - name: GOCRON_DB_HOST
-              value: "postgres-service"
-            - name: GOCRON_DB_PORT
-              value: "5432"
-            - name: GOCRON_DB_USER
-              valueFrom:
-                secretKeyRef:
-                  name: gocron-db
-                  key: username
-            - name: GOCRON_DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: gocron-db
-                  key: password
-            - name: GOCRON_DB_DATABASE
-              value: "gocron"
+```bash
+helm install gocron gocron/gocron \
+  --set db.engine=postgres \
+  --set db.host=postgresql.database.svc \
+  --set db.port=5432 \
+  --set db.user=gocron \
+  --set db.password=replace-me \
+  --set db.database=gocron
 ```
 
-Both replicas will compete for the leader lock. Only one runs the scheduler at any time.
+See [Kubernetes Deployment](./kubernetes) for existing Secret, scaling, HPA,
+Ingress, and administrator bootstrap configuration.
 
 ## Architecture
 

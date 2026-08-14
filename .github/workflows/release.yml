@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - "v*"
+      - 'v*'
 
 permissions:
   contents: write
@@ -122,3 +122,33 @@ jobs:
             BUILD_DATE=${{ steps.build.outputs.date }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  helm:
+    name: Publish Helm Chart
+    needs: [release, container]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: azure/setup-helm@v5
+
+      - name: Verify chart matches release tag
+        run: |
+          chart_version=$(helm show chart helm/gocron | awk '/^appVersion:/ {gsub(/"/, "", $2); print $2}')
+          test "${GITHUB_REF_NAME#v}" = "$chart_version"
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - uses: helm/chart-releaser-action@v1.7.0
+        with:
+          charts_dir: helm
+          skip_existing: true
+        env:
+          CR_TOKEN: '${{ secrets.GITHUB_TOKEN }}'

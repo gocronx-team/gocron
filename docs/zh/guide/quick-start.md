@@ -13,12 +13,12 @@
 | 部署方式 | MySQL | PostgreSQL | SQLite |
 |---------|-------|------------|--------|
 | Docker 部署 | ✅ 支持 | ✅ 支持 | ✅ 支持 |
-| Kubernetes 部署 | ✅ 支持 | ✅ 支持 | ✅ 支持 |
+| Kubernetes 部署 | ✅ 支持 | ✅ 支持 | ❌ 不支持 |
 | 二进制部署 | ✅ 支持 | ✅ 支持 | ✅ 支持 |
 | 开发环境 | ✅ 支持 | ✅ 支持 | ✅ 支持 |
 
 ::: tip 提示
-- 所有部署方式均支持三种数据库，gocron 使用纯 Go SQLite 驱动，无需 CGO
+- Kubernetes 托管 Chart 要求使用 MySQL 或 PostgreSQL，确保每个 Pod 无状态并可横向扩容；其他部署方式继续支持纯 Go SQLite
 - **生产环境推荐**：使用 MySQL 或 PostgreSQL，性能更好，支持分布式部署
 :::
 
@@ -160,11 +160,8 @@ helm repo update
 ### 部署
 
 ```bash
-# 使用 SQLite（默认，最简单）
-helm install gocron gocron/gocron
-
-# 使用 MySQL
-helm install gocron gocron/gocron \
+# 使用 MySQL（数据库必须提前创建）
+helm upgrade gocron gocron/gocron --reuse-values \
   --set db.engine=mysql \
   --set db.host=mysql.default \
   --set db.port=3306 \
@@ -172,7 +169,7 @@ helm install gocron gocron/gocron \
   --set db.password=your_password \
   --set db.database=gocron
 
-# 使用 PostgreSQL
+# 使用 PostgreSQL（数据库必须提前创建）
 helm install gocron gocron/gocron \
   --set db.engine=postgres \
   --set db.host=pg.default \

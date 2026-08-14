@@ -20,6 +20,9 @@ var reservedEnvNames = map[string]bool{
 	"DYLD_INSERT_LIBRARIES": true,
 	"DYLD_LIBRARY_PATH":     true,
 	"GOCRON_SECRET_KEY":     true,
+	"GOCRON_AUTH_SECRET":    true,
+	"GOCRON_DB_PASSWORD":    true,
+	"GOCRON_ADMIN_PASSWORD": true,
 }
 
 // IsReservedEnvName 判断机密名是否为受保护的系统环境变量(大小写不敏感)。

@@ -1,4 +1,4 @@
-replicaCount: 1
+replicaCount: 2
 
 image:
   repository: ghcr.io/gocronx-team/gocron
@@ -9,25 +9,39 @@ imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
-# Database configuration
+# Kubernetes deployments are managed and horizontally scalable. The database
+# must already exist and be reachable through one stable MySQL/PostgreSQL URL.
 db:
-  # sqlite, mysql, postgres
-  engine: sqlite
+  engine: postgres
   host: ""
-  port: 0
-  user: ""
+  port: 5432
+  user: gocron
   password: ""
-  database: ./data/gocron.db
+  database: gocron
   prefix: ""
   charset: utf8
   maxIdleConns: 5
   maxOpenConns: 100
 
-# Application configuration
+managed:
+  # Use an existing Secret instead of creating one. It must contain the keys
+  # configured under secretKeys.
+  existingSecret: ""
+  secretKeys:
+    databasePassword: db-password
+    authSecret: auth-secret
+    encryptionKey: encryption-key
+    adminPassword: admin-password
+  # Empty values are generated once and retained across Helm upgrades.
+  authSecret: ""
+  encryptionKey: ""
+  admin:
+    username: admin
+    password: ""
+    email: admin@example.com
+
 app:
-  name: "gocron"
-  apiKey: ""
-  apiSecret: ""
+  name: gocron
   allowIps: ""
   concurrencyQueue: 500
   enableTls: false
@@ -49,24 +63,30 @@ ingress:
           pathType: Prefix
   tls: []
 
-persistence:
-  enabled: true
-  storageClass: ""
-  accessMode: ReadWriteOnce
-  size: 1Gi
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 75
 
-# Setting limits.memory lets gocron auto-tune Go's GOMEMLIMIT to ~90% of it
-# (read from the cgroup at startup), reducing OOM kills. No extra config needed.
-resources: {}
-  # limits:
-  #   cpu: 500m
-  #   memory: 256Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# The memory limit lets gocron auto-tune Go's GOMEMLIMIT to about 90%.
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
 
 nodeSelector: {}
 tolerations: []
+podAntiAffinity:
+  enabled: true
+  topologyKey: kubernetes.io/hostname
 affinity: {}
 
 serviceAccount:

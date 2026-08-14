@@ -3,6 +3,8 @@ package setting
 import (
 	"errors"
 	"os"
+	"strconv"
+	"strings"
 
 	"github.com/gocronx-team/gocron/internal/modules/logger"
 	"github.com/gocronx-team/gocron/internal/modules/utils"
@@ -101,6 +103,65 @@ func Read(filename string) (*Setting, error) {
 	}
 
 	return &s, nil
+}
+
+// ApplyEnvOverrides applies deployment-managed settings without changing the
+// app.ini behavior used by standalone installations. Empty variables are
+// ignored, except for values explicitly documented as boolean or numeric.
+func ApplyEnvOverrides(s *Setting) error {
+	if s == nil {
+		return errors.New("setting is nil")
+	}
+	setString := func(name string, target *string) {
+		if value, ok := os.LookupEnv(name); ok && strings.TrimSpace(value) != "" {
+			*target = strings.TrimSpace(value)
+		}
+	}
+	setInt := func(name string, target *int) error {
+		value, ok := os.LookupEnv(name)
+		if !ok || strings.TrimSpace(value) == "" {
+			return nil
+		}
+		parsed, err := strconv.Atoi(strings.TrimSpace(value))
+		if err != nil {
+			return errors.New(name + " must be an integer")
+		}
+		*target = parsed
+		return nil
+	}
+
+	setString("GOCRON_DB_ENGINE", &s.Db.Engine)
+	setString("GOCRON_DB_HOST", &s.Db.Host)
+	setString("GOCRON_DB_USER", &s.Db.User)
+	setString("GOCRON_DB_PASSWORD", &s.Db.Password)
+	setString("GOCRON_DB_DATABASE", &s.Db.Database)
+	setString("GOCRON_DB_PREFIX", &s.Db.Prefix)
+	setString("GOCRON_DB_CHARSET", &s.Db.Charset)
+	setString("GOCRON_AUTH_SECRET", &s.AuthSecret)
+	if err := setInt("GOCRON_DB_PORT", &s.Db.Port); err != nil {
+		return err
+	}
+	if err := setInt("GOCRON_DB_MAX_IDLE_CONNS", &s.Db.MaxIdleConns); err != nil {
+		return err
+	}
+	if err := setInt("GOCRON_DB_MAX_OPEN_CONNS", &s.Db.MaxOpenConns); err != nil {
+		return err
+	}
+	return nil
+}
+
+// ClearEnvOverrides removes deployment credentials after startup so commands
+// executed by the scheduler cannot inherit database or bootstrap secrets.
+func ClearEnvOverrides() {
+	for _, name := range []string{
+		"GOCRON_DB_ENGINE", "GOCRON_DB_HOST", "GOCRON_DB_PORT",
+		"GOCRON_DB_USER", "GOCRON_DB_PASSWORD", "GOCRON_DB_DATABASE",
+		"GOCRON_DB_PREFIX", "GOCRON_DB_CHARSET", "GOCRON_DB_MAX_IDLE_CONNS",
+		"GOCRON_DB_MAX_OPEN_CONNS", "GOCRON_AUTH_SECRET",
+		"GOCRON_ADMIN_USERNAME", "GOCRON_ADMIN_PASSWORD", "GOCRON_ADMIN_EMAIL",
+	} {
+		_ = os.Unsetenv(name)
+	}
 }
 
 // 写入配置

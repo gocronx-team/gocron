@@ -1,221 +1,158 @@
 # Kubernetes Deployment
 
-gocron provides a Helm Chart for one-click deployment to Kubernetes clusters.
+The gocron Helm Chart deploys gocron as a managed, horizontally scalable
+application. Kubernetes Service load-balances all Ready web/API Pods, while
+database-backed leader election ensures that only one Pod runs the scheduler.
 
-## Prerequisites
+## Requirements
 
-- Kubernetes 1.19+
-- Helm 3.0+
+- Kubernetes 1.23+
+- Helm 3
+- An existing MySQL or PostgreSQL database and one stable connection endpoint
 
-## Installation
+SQLite is intentionally not supported by the Kubernetes Chart. The standalone
+binary continues to support SQLite and the web installation wizard.
 
-### Add Helm Repository
+## Install
 
 ```bash
 helm repo add gocron https://gocronx-team.github.io/gocron
 helm repo update
 ```
 
-### Quick Install
+Use a values file so the database password is not exposed in shell history:
 
-```bash
-# Uses SQLite by default, minimal configuration
-helm install gocron gocron/gocron
+```yaml
+# values-gocron.yaml
+replicaCount: 2
+
+db:
+  engine: postgres
+  host: postgresql.database.svc.cluster.local
+  port: 5432
+  user: gocron
+  password: replace-me
+  database: gocron
 ```
 
-### Custom Configuration
-
 ```bash
-# Method 1: Command line parameters
-helm install gocron gocron/gocron \
-  --set db.engine=mysql \
-  --set db.host=mysql.default \
-  --set db.port=3306 \
-  --set db.user=gocron \
-  --set db.password=your_password \
-  --set db.database=gocron
-
-# Method 2: Values file
-helm install gocron gocron/gocron -f my-values.yaml
+helm install gocron gocron/gocron -f values-gocron.yaml
 ```
 
-### Upgrade
+The database must already exist. On first startup, the replicas coordinate
+through a database advisory lock. One Pod creates the schema and administrator;
+the others wait, then all start with the same configuration.
+
+The Kubernetes deployment does not show the web installation wizard. The
+administrator defaults to `admin`; its generated password is stored in the
+release Secret:
 
 ```bash
-helm upgrade gocron gocron/gocron --set image.tag=1.10.1
+kubectl get secret gocron -o jsonpath='{.data.admin-password}' | base64 -d; echo
 ```
 
-### Uninstall
+## Existing Secret
+
+Production deployments can provide a Secret instead of storing credentials in
+Helm values:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: gocron-runtime
+type: Opaque
+stringData:
+  db-password: replace-me
+  auth-secret: a-long-random-shared-jwt-secret
+  encryption-key: a-long-random-encryption-key
+  admin-password: replace-me
+```
+
+```yaml
+db:
+  engine: postgres
+  host: postgresql.database.svc.cluster.local
+  port: 5432
+  user: gocron
+  database: gocron
+
+managed:
+  existingSecret: gocron-runtime
+  admin:
+    username: admin
+    email: admin@example.com
+```
+
+All replicas must use the same `auth-secret` and `encryption-key`. The bootstrap
+administrator values are only used when the target database has no users.
+
+## Scaling And Load Balancing
+
+Scale manually from Helm, kubectl, or KubeVision:
+
+```bash
+kubectl scale deployment gocron --replicas=4
+```
+
+No configuration copy or shared PVC is required. Service/gocron automatically
+distributes requests across Ready Pods. All Pods use the same database; only
+the elected leader schedules tasks.
+
+Optional CPU-based autoscaling:
+
+```yaml
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 75
+```
+
+The Chart enables a PodDisruptionBudget and preferred cross-node pod
+anti-affinity by default.
+
+## Configuration
+
+| Parameter | Description | Default |
+|---|---|---|
+| `replicaCount` | Initial number of Pods | `2` |
+| `db.engine` | `mysql` or `postgres` | `postgres` |
+| `db.host` | Stable database endpoint | required |
+| `db.port` | Database port | `5432` |
+| `db.user` | Database user | `gocron` |
+| `db.password` | Database password for a Chart-managed Secret | required on first install |
+| `db.database` | Existing database name | `gocron` |
+| `managed.existingSecret` | Existing runtime Secret | `""` |
+| `managed.admin.username` | Bootstrap administrator | `admin` |
+| `managed.admin.password` | Bootstrap password; generated when empty | `""` |
+| `managed.admin.email` | Bootstrap administrator email | `admin@example.com` |
+| `autoscaling.enabled` | Create an HPA | `false` |
+| `podDisruptionBudget.enabled` | Protect availability during eviction | `true` |
+| `service.type` | Kubernetes Service type | `ClusterIP` |
+| `ingress.enabled` | Create an Ingress | `false` |
+
+## Upgrade
+
+::: warning Chart 0.2.0
+Chart 0.2.0 removes Kubernetes SQLite and the application PVC. Do not upgrade a
+0.1.x SQLite release in place. Export its data to MySQL/PostgreSQL first, then
+install or upgrade with the external database values. Back up the old PVC until
+the migrated deployment has been verified.
+:::
+
+```bash
+helm upgrade gocron gocron/gocron --reuse-values
+```
+
+Generated secrets are retained across upgrades. Config or Secret changes alter
+the Deployment checksum and trigger a rolling update. Database schema changes
+run once under the database bootstrap lock before each Pod joins the service.
+
+## Uninstall
 
 ```bash
 helm uninstall gocron
 ```
 
-## Configuration
-
-### Image
-
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `image.repository` | Image repository | `ghcr.io/gocronx-team/gocron` |
-| `image.tag` | Image tag | Chart appVersion |
-| `image.pullPolicy` | Pull policy | `IfNotPresent` |
-
-### Database
-
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `db.engine` | Database type: `sqlite`, `mysql`, `postgres` | `sqlite` |
-| `db.host` | Database host | `""` |
-| `db.port` | Database port | `0` |
-| `db.user` | Database user | `""` |
-| `db.password` | Database password | `""` |
-| `db.database` | Database name / SQLite file path | `./data/gocron.db` |
-| `db.prefix` | Table prefix | `""` |
-| `db.charset` | Character set | `utf8` |
-| `db.maxIdleConns` | Max idle connections | `5` |
-| `db.maxOpenConns` | Max open connections | `100` |
-
-### Application
-
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `app.name` | Application name | `gocron` |
-| `app.apiKey` | API Key | `""` |
-| `app.apiSecret` | API Secret | `""` |
-| `app.allowIps` | Allowed IPs | `""` |
-| `app.concurrencyQueue` | Concurrency queue size | `500` |
-| `app.enableTls` | Enable TLS | `false` |
-| `timezone` | Timezone | `Asia/Shanghai` |
-
-### Service
-
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `service.type` | Service type | `ClusterIP` |
-| `service.port` | Service port | `5920` |
-
-### Ingress
-
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `ingress.enabled` | Enable Ingress | `false` |
-| `ingress.className` | Ingress Class | `""` |
-| `ingress.annotations` | Annotations | `{}` |
-| `ingress.hosts` | Host configuration | `[{host: gocron.local, paths: [{path: /, pathType: Prefix}]}]` |
-| `ingress.tls` | TLS configuration | `[]` |
-
-### Persistence
-
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `persistence.enabled` | Enable persistence | `true` |
-| `persistence.storageClass` | Storage class | `""` |
-| `persistence.accessMode` | Access mode | `ReadWriteOnce` |
-| `persistence.size` | Storage size | `1Gi` |
-
-### Resources
-
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `resources.limits.cpu` | CPU limit | none |
-| `resources.limits.memory` | Memory limit | none |
-| `resources.requests.cpu` | CPU request | none |
-| `resources.requests.memory` | Memory request | none |
-| `replicaCount` | Number of replicas | `1` |
-
-::: warning Note
-Replica count must be 1 when using SQLite, as SQLite does not support concurrent writes from multiple processes. Use MySQL or PostgreSQL for multiple replicas.
-:::
-
-## Deployment Examples
-
-### SQLite + NodePort
-
-```yaml
-# values-sqlite.yaml
-db:
-  engine: sqlite
-
-service:
-  type: NodePort
-
-persistence:
-  enabled: true
-  size: 2Gi
-```
-
-### MySQL + Ingress
-
-```yaml
-# values-mysql.yaml
-db:
-  engine: mysql
-  host: mysql.database.svc
-  port: 3306
-  user: gocron
-  password: your_password
-  database: gocron
-
-persistence:
-  enabled: false
-
-ingress:
-  enabled: true
-  className: nginx
-  hosts:
-    - host: gocron.example.com
-      paths:
-        - path: /
-          pathType: Prefix
-  tls:
-    - secretName: gocron-tls
-      hosts:
-        - gocron.example.com
-
-resources:
-  requests:
-    cpu: 100m
-    memory: 128Mi
-  limits:
-    cpu: 500m
-    memory: 256Mi
-```
-
-::: tip Memory limit & GOMEMLIMIT
-When you set a `resources.limits.memory`, gocron automatically sets Go's
-`GOMEMLIMIT` to about 90% of that limit at startup (read from the container's
-cgroup). This makes the garbage collector reclaim memory before the pod hits its
-limit, reducing OOM kills — no extra configuration needed. Without a memory
-limit, this is a no-op.
-:::
-
-### PostgreSQL + Multiple Replicas
-
-```yaml
-# values-postgres.yaml
-replicaCount: 3
-
-db:
-  engine: postgres
-  host: pg.database.svc
-  port: 5432
-  user: gocron
-  password: your_password
-  database: gocron
-
-persistence:
-  enabled: false
-```
-
-## Notes
-
-1. **SQLite mode**: Deployment strategy is automatically set to `Recreate` (instead of `RollingUpdate`) to prevent multiple Pods from accessing the SQLite file simultaneously
-2. **Configuration persistence**: The ConfigMap seeds `app.ini` only when the
-   file is missing or empty. The writable file, installation lock, and generated
-   authentication secret then live on the data volume so the web installer can
-   finish and Pod restarts preserve the installation.
-3. **Data persistence**: Keep PVC enabled when using the web installer or SQLite;
-   otherwise configuration, the installation lock, and SQLite data are lost when
-   the Pod is recreated.
-4. **Health checks**: Liveness and readiness probes are configured by default, checking HTTP on port 5920
+The external database is not deleted by Helm.

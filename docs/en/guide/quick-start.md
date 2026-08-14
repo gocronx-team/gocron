@@ -13,12 +13,12 @@ This guide will help you quickly deploy and run gocron.
 | Deployment Method | MySQL | PostgreSQL | SQLite |
 |-------------------|-------|------------|--------|
 | Docker Deployment | ✅ Supported | ✅ Supported | ✅ Supported |
-| Kubernetes Deployment | ✅ Supported | ✅ Supported | ✅ Supported |
+| Kubernetes Deployment | ✅ Supported | ✅ Supported | ❌ Not supported |
 | Binary Deployment | ✅ Supported | ✅ Supported | ✅ Supported |
 | Development Environment | ✅ Supported | ✅ Supported | ✅ Supported |
 
 ::: tip Note
-- All deployment methods support all three databases. gocron uses a pure Go SQLite driver, no CGO required.
+- The managed Kubernetes Chart requires MySQL or PostgreSQL so every Pod can remain stateless and horizontally scalable. Other deployment methods retain pure-Go SQLite support.
 - **Production Recommendation**: Use MySQL or PostgreSQL for better performance and distributed deployment support
 :::
 
@@ -161,11 +161,8 @@ helm repo update
 ### Deploy
 
 ```bash
-# SQLite (default, simplest)
-helm install gocron gocron/gocron
-
-# MySQL
-helm install gocron gocron/gocron \
+# MySQL (the database must already exist)
+helm upgrade gocron gocron/gocron --reuse-values \
   --set db.engine=mysql \
   --set db.host=mysql.default \
   --set db.port=3306 \
@@ -173,7 +170,7 @@ helm install gocron gocron/gocron \
   --set db.password=your_password \
   --set db.database=gocron
 
-# PostgreSQL
+# PostgreSQL (the database must already exist)
 helm install gocron gocron/gocron \
   --set db.engine=postgres \
   --set db.host=pg.default \

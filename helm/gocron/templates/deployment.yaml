@@ -5,11 +5,11 @@ metadata:
   labels:
     {{- include "gocron.labels" . | nindent 4 }}
 spec:
+  {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
-  {{- if eq .Values.db.engine "sqlite" }}
-  strategy:
-    type: Recreate
   {{- end }}
+  strategy:
+    type: RollingUpdate
   selector:
     matchLabels:
       {{- include "gocron.selectorLabels" . | nindent 6 }}
@@ -17,6 +17,7 @@ spec:
     metadata:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
       labels:
         {{- include "gocron.selectorLabels" . | nindent 8 }}
     spec:
@@ -26,22 +27,17 @@ spec:
       {{- end }}
       serviceAccountName: {{ include "gocron.serviceAccountName" . }}
       initContainers:
-        - name: initialize-config
+        - name: initialize-runtime
           image: "{{ .Values.image.repository }}:{{ include "gocron.imageTag" . }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command:
-            - /bin/sh
-            - -ec
-            - |
-              mkdir -p /data/conf
-              if [ ! -s /data/conf/app.ini ]; then
-                cp /config-seed/app.ini /data/conf/app.ini
-              fi
+          command: ["/bin/sh", "-ec"]
+          args:
+            - mkdir -p /runtime/conf /runtime/log && cp /config/app.ini /runtime/conf/app.ini
           volumeMounts:
-            - name: data
-              mountPath: /data
+            - name: runtime
+              mountPath: /runtime
             - name: config
-              mountPath: /config-seed
+              mountPath: /config
               readOnly: true
       containers:
         - name: {{ .Chart.Name }}
@@ -54,12 +50,62 @@ spec:
           env:
             - name: TZ
               value: {{ .Values.timezone | quote }}
+            - name: GOCRON_MANAGED
+              value: "true"
+            - name: GOCRON_DB_ENGINE
+              value: {{ .Values.db.engine | quote }}
+            - name: GOCRON_DB_HOST
+              value: {{ .Values.db.host | quote }}
+            - name: GOCRON_DB_PORT
+              value: {{ .Values.db.port | quote }}
+            - name: GOCRON_DB_USER
+              value: {{ .Values.db.user | quote }}
+            - name: GOCRON_DB_DATABASE
+              value: {{ .Values.db.database | quote }}
+            - name: GOCRON_DB_PREFIX
+              value: {{ .Values.db.prefix | quote }}
+            - name: GOCRON_DB_CHARSET
+              value: {{ .Values.db.charset | quote }}
+            - name: GOCRON_DB_MAX_IDLE_CONNS
+              value: {{ .Values.db.maxIdleConns | quote }}
+            - name: GOCRON_DB_MAX_OPEN_CONNS
+              value: {{ .Values.db.maxOpenConns | quote }}
+            - name: GOCRON_ADMIN_USERNAME
+              value: {{ .Values.managed.admin.username | quote }}
+            - name: GOCRON_ADMIN_EMAIL
+              value: {{ .Values.managed.admin.email | quote }}
+            {{- $secretName := default (include "gocron.fullname" .) .Values.managed.existingSecret }}
+            - name: GOCRON_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretName }}
+                  key: {{ .Values.managed.secretKeys.databasePassword }}
+            - name: GOCRON_AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretName }}
+                  key: {{ .Values.managed.secretKeys.authSecret }}
+            - name: GOCRON_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretName }}
+                  key: {{ .Values.managed.secretKeys.encryptionKey }}
+            - name: GOCRON_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretName }}
+                  key: {{ .Values.managed.secretKeys.adminPassword }}
           livenessProbe:
             httpGet:
               path: /
               port: http
-            initialDelaySeconds: 10
             periodSeconds: 30
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 5
+            failureThreshold: 36
           readinessProbe:
             httpGet:
               path: /
@@ -67,23 +113,18 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 10
           volumeMounts:
-            - name: data
+            - name: runtime
               mountPath: /.gocron
           {{- with .Values.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
       volumes:
+        - name: runtime
+          emptyDir: {}
         - name: config
           configMap:
             name: {{ include "gocron.fullname" . }}
-        - name: data
-          {{- if .Values.persistence.enabled }}
-          persistentVolumeClaim:
-            claimName: {{ include "gocron.fullname" . }}
-          {{- else }}
-          emptyDir: {}
-          {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -95,4 +136,16 @@ spec:
       {{- with .Values.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
+      {{- else }}
+      {{- if .Values.podAntiAffinity.enabled }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: {{ .Values.podAntiAffinity.topologyKey }}
+                labelSelector:
+                  matchLabels:
+                    {{- include "gocron.selectorLabels" . | nindent 20 }}
+      {{- end }}
       {{- end }}

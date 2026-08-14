@@ -82,65 +82,24 @@ Follower **1 秒内**接管。
 
 租约 15 秒后过期，Follower 检测到过期锁后自动接管。
 
-## Kubernetes / Docker 部署
+## Kubernetes 部署
 
-容器环境下无需手动复制配置文件，使用环境变量覆盖数据库配置：
+Kubernetes 环境使用官方 Helm Chart。Chart 会启用托管模式，将同一个认证 Secret 注入
+所有 Pod，通过数据库 advisory lock 协调表结构初始化，并使用 Service 暴露所有 Ready
+副本，不需要共享 PVC 或手动复制配置。
 
-| 环境变量 | 说明 |
-|---|---|
-| `GOCRON_DB_ENGINE` | `mysql` 或 `postgres` |
-| `GOCRON_DB_HOST` | 数据库地址 |
-| `GOCRON_DB_PORT` | 数据库端口 |
-| `GOCRON_DB_USER` | 数据库用户 |
-| `GOCRON_DB_PASSWORD` | 数据库密码 |
-| `GOCRON_DB_DATABASE` | 数据库名 |
-| `GOCRON_DB_PREFIX` | 表前缀 |
-| `GOCRON_AUTH_SECRET` | JWT 认证密钥 |
-
-Kubernetes 部署示例：
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: gocron
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: gocron
-  template:
-    metadata:
-      labels:
-        app: gocron
-    spec:
-      containers:
-        - name: gocron
-          image: gocron:latest
-          ports:
-            - containerPort: 5920
-          env:
-            - name: GOCRON_DB_ENGINE
-              value: "postgres"
-            - name: GOCRON_DB_HOST
-              value: "postgres-service"
-            - name: GOCRON_DB_PORT
-              value: "5432"
-            - name: GOCRON_DB_USER
-              valueFrom:
-                secretKeyRef:
-                  name: gocron-db
-                  key: username
-            - name: GOCRON_DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: gocron-db
-                  key: password
-            - name: GOCRON_DB_DATABASE
-              value: "gocron"
+```bash
+helm install gocron gocron/gocron \
+  --set db.engine=postgres \
+  --set db.host=postgresql.database.svc \
+  --set db.port=5432 \
+  --set db.user=gocron \
+  --set db.password=replace-me \
+  --set db.database=gocron
 ```
 
-两个副本会竞争 Leader 锁，任何时刻只有一个运行调度器。
+已有 Secret、扩容、HPA、Ingress 和管理员初始化配置请参考
+[Kubernetes 部署](./kubernetes)。
 
 ## 架构图
 
