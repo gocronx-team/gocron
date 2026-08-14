@@ -2,9 +2,9 @@ apiVersion: v2
 name: gocron
 description: Horizontally scalable gocron deployment with database-backed leader election
 type: application
-kubeVersion: ">=1.23.0-0"
-version: 0.2.0
-appVersion: "1.11.0"
+kubeVersion: '>=1.23.0-0'
+version: 0.2.1
+appVersion: '1.11.0'
 keywords:
   - cron
   - scheduler

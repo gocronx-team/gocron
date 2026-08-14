@@ -1,0 +1,39 @@
+name: Release Helm Chart
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'helm/**'
+      - '.github/workflows/helm-release.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: azure/setup-helm@v5
+
+      - name: Verify application image exists
+        run: |
+          app_version=$(helm show chart helm/gocron | awk '/^appVersion:/ {gsub(/"/, "", $2); print $2}')
+          docker manifest inspect "ghcr.io/${GITHUB_REPOSITORY}:${app_version}" >/dev/null
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - uses: helm/chart-releaser-action@v1.7.0
+        with:
+          charts_dir: helm
+          skip_existing: true
+        env:
+          CR_TOKEN: '${{ secrets.GITHUB_TOKEN }}'

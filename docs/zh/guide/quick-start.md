@@ -10,25 +10,26 @@
 
 ## 数据库支持说明
 
-| 部署方式 | MySQL | PostgreSQL | SQLite |
-|---------|-------|------------|--------|
-| Docker 部署 | ✅ 支持 | ✅ 支持 | ✅ 支持 |
-| Kubernetes 部署 | ✅ 支持 | ✅ 支持 | ❌ 不支持 |
-| 二进制部署 | ✅ 支持 | ✅ 支持 | ✅ 支持 |
-| 开发环境 | ✅ 支持 | ✅ 支持 | ✅ 支持 |
+| 部署方式        | MySQL   | PostgreSQL | SQLite    |
+| --------------- | ------- | ---------- | --------- |
+| Docker 部署     | ✅ 支持 | ✅ 支持    | ✅ 支持   |
+| Kubernetes 部署 | ✅ 支持 | ✅ 支持    | ❌ 不支持 |
+| 二进制部署      | ✅ 支持 | ✅ 支持    | ✅ 支持   |
+| 开发环境        | ✅ 支持 | ✅ 支持    | ✅ 支持   |
 
 ::: tip 提示
+
 - Kubernetes 托管 Chart 要求使用 MySQL 或 PostgreSQL，确保每个 Pod 无状态并可横向扩容；其他部署方式继续支持纯 Go SQLite
 - **生产环境推荐**：使用 MySQL 或 PostgreSQL，性能更好，支持分布式部署
-:::
+  :::
 
 ## 部署方式怎么选
 
-| 场景 | 推荐方式 |
-|------|---------|
-| 生产环境、单机/少量机器 | **二进制**（首选） |
-| 生产环境、Kubernetes 集群 | Helm Chart |
-| 本地快速体验、测试 | Docker Compose |
+| 场景                      | 推荐方式           |
+| ------------------------- | ------------------ |
+| 生产环境、单机/少量机器   | **二进制**（首选） |
+| 生产环境、Kubernetes 集群 | Helm Chart         |
+| 本地快速体验、测试        | Docker Compose     |
 
 gocron 编译为零依赖的静态单文件（纯 Go SQLite，无需 CGO），因此二进制部署最轻量、最贴合其形态，是生产单机部署的首选。
 
@@ -41,6 +42,7 @@ gocron 编译为零依赖的静态单文件（纯 Go SQLite，无需 CGO），�
 访问 [GitHub Releases](https://github.com/gocronx-team/gocron/releases) 下载最新版本的安装包。
 
 选择对应平台的包：
+
 - Linux: `gocron-linux-amd64.tar.gz` 或 `gocron-linux-arm64.tar.gz`
 - macOS: `gocron-darwin-amd64.tar.gz` 或 `gocron-darwin-arm64.tar.gz`
 - Windows: `gocron-windows-amd64.zip` 或 `gocron-windows-arm64.zip`
@@ -136,10 +138,11 @@ docker compose up -d
 - 密码：`admin123`
 
 ::: tip 提示
+
 - Docker Compose 仅部署 gocron 管理端
 - 任务节点（gocron-node）需要单独安装部署
 - 请参考 [Agent 自动注册](./agent-registration) 章节安装任务节点
-:::
+  :::
 
 ## Kubernetes 部署（Helm）
 
@@ -167,7 +170,10 @@ helm upgrade gocron gocron/gocron --reuse-values \
   --set db.port=3306 \
   --set db.user=gocron \
   --set db.password=your_password \
-  --set db.database=gocron
+  --set db.database=gocron \
+  --set managed.authSecret=replace-with-at-least-32-random-characters \
+  --set managed.encryptionKey=replace-with-another-32-random-characters \
+  --set managed.admin.password=replace-with-a-strong-admin-password
 
 # 使用 PostgreSQL（数据库必须提前创建）
 helm install gocron gocron/gocron \
@@ -176,13 +182,16 @@ helm install gocron gocron/gocron \
   --set db.port=5432 \
   --set db.user=gocron \
   --set db.password=your_password \
-  --set db.database=gocron
+  --set db.database=gocron \
+  --set managed.authSecret=replace-with-at-least-32-random-characters \
+  --set managed.encryptionKey=replace-with-another-32-random-characters \
+  --set managed.admin.password=replace-with-a-strong-admin-password
 ```
 
 ### 配置 Ingress
 
 ```bash
-helm install gocron gocron/gocron \
+helm upgrade gocron gocron/gocron --reuse-values \
   --set ingress.enabled=true \
   --set 'ingress.hosts[0].host=gocron.example.com' \
   --set 'ingress.hosts[0].paths[0].path=/' \

@@ -32,6 +32,14 @@ db:
   user: gocron
   password: replace-me
   database: gocron
+
+managed:
+  authSecret: replace-with-at-least-32-random-characters
+  encryptionKey: replace-with-another-32-random-characters
+  admin:
+    username: admin
+    password: replace-with-a-strong-admin-password
+    email: admin@example.com
 ```
 
 ```bash
@@ -41,8 +49,9 @@ helm install gocron gocron/gocron -f values-gocron.yaml
 数据库必须提前创建。首次启动时，各副本通过数据库 advisory lock 协调；一个 Pod
 创建表结构和管理员，其他 Pod 等待初始化完成，然后使用同一份配置启动。
 
-Kubernetes 部署不会显示 Web 安装向导。默认管理员为 `admin`，自动生成的密码保存在
-Release Secret 中：
+Kubernetes 部署不会显示 Web 安装向导。当 Chart 管理运行时 Secret 时，必须显式填写
+上面的四项敏感配置，使模板渲染结果稳定，并兼容 KubeVision 这类带预览确认的控制台。
+配置的管理员密码保存在 Release Secret 中：
 
 ```bash
 kubectl get secret gocron -o jsonpath='{.data.admin-password}' | base64 -d; echo
@@ -108,23 +117,25 @@ Chart 默认启用 PodDisruptionBudget，并配置优先跨节点分散 Pod 的�
 
 ## 配置项
 
-| 参数 | 说明 | 默认值 |
-|---|---|---|
-| `replicaCount` | 初始 Pod 数量 | `2` |
-| `db.engine` | `mysql` 或 `postgres` | `postgres` |
-| `db.host` | 稳定的数据库访问地址 | 必填 |
-| `db.port` | 数据库端口 | `5432` |
-| `db.user` | 数据库用户 | `gocron` |
-| `db.password` | Chart 管理 Secret 时使用的数据库密码 | 首次安装必填 |
-| `db.database` | 已存在的数据库名称 | `gocron` |
-| `managed.existingSecret` | 已存在的运行时 Secret | `""` |
-| `managed.admin.username` | 初始化管理员 | `admin` |
-| `managed.admin.password` | 初始化密码，为空时自动生成 | `""` |
-| `managed.admin.email` | 初始化管理员邮箱 | `admin@example.com` |
-| `autoscaling.enabled` | 创建 HPA | `false` |
-| `podDisruptionBudget.enabled` | 在驱逐期间保护可用性 | `true` |
-| `service.type` | Kubernetes Service 类型 | `ClusterIP` |
-| `ingress.enabled` | 创建 Ingress | `false` |
+| 参数                          | 说明                                 | 默认值                         |
+| ----------------------------- | ------------------------------------ | ------------------------------ |
+| `replicaCount`                | 初始 Pod 数量                        | `2`                            |
+| `db.engine`                   | `mysql` 或 `postgres`                | `postgres`                     |
+| `db.host`                     | 稳定的数据库访问地址                 | 必填                           |
+| `db.port`                     | 数据库端口                           | `5432`                         |
+| `db.user`                     | 数据库用户                           | `gocron`                       |
+| `db.password`                 | Chart 管理 Secret 时使用的数据库密码 | 必填                           |
+| `db.database`                 | 已存在的数据库名称                   | `gocron`                       |
+| `managed.existingSecret`      | 已存在的运行时 Secret                | `""`                           |
+| `managed.authSecret`          | 共享 JWT 密钥，至少 32 个字符        | 未配置 `existingSecret` 时必填 |
+| `managed.encryptionKey`       | 共享加密密钥，至少 32 个字符         | 未配置 `existingSecret` 时必填 |
+| `managed.admin.username`      | 初始化管理员                         | `admin`                        |
+| `managed.admin.password`      | 初始化密码，至少 6 个字符            | 未配置 `existingSecret` 时必填 |
+| `managed.admin.email`         | 初始化管理员邮箱                     | `admin@example.com`            |
+| `autoscaling.enabled`         | 创建 HPA                             | `false`                        |
+| `podDisruptionBudget.enabled` | 在驱逐期间保护可用性                 | `true`                         |
+| `service.type`                | Kubernetes Service 类型              | `ClusterIP`                    |
+| `ingress.enabled`             | 创建 Ingress                         | `false`                        |
 
 ## 升级
 
@@ -138,8 +149,9 @@ Chart 0.2.0 移除了 Kubernetes SQLite 和应用 PVC。不要直接升级使用
 helm upgrade gocron gocron/gocron --reuse-values
 ```
 
-自动生成的密钥会在升级时保留。ConfigMap 或 Secret 发生变化时，Deployment checksum
-会触发滚动更新。数据库结构升级会在数据库初始化锁内执行一次，完成后 Pod 才加入服务。
+升级时使用 `--reuse-values` 并保持运行时密钥不变。ConfigMap 或 Secret 发生变化时，
+Deployment checksum 会触发滚动更新。数据库结构升级会在数据库初始化锁内执行一次，
+完成后 Pod 才加入服务。
 
 ## 卸载
 
