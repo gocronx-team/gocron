@@ -209,6 +209,9 @@ persistence:
 ## 注意事项
 
 1. **SQLite 模式**：Deployment 策略自动设为 `Recreate`（而非 `RollingUpdate`），避免多 Pod 同时访问 SQLite 文件
-2. **配置变更**：修改 ConfigMap 后 Pod 会自动重启（通过 checksum annotation 实现）
-3. **数据持久化**：SQLite 模式下务必启用 PVC，否则 Pod 重启后数据丢失
+2. **配置持久化**：仅当 `app.ini` 不存在或为空时，ConfigMap 才会提供初始配置；之后
+   可写配置文件、安装锁和自动生成的认证密钥均保存在数据卷中，因此 Web 安装向导可以
+   正常完成，Pod 重启后也会保留安装状态。
+3. **数据持久化**：使用 Web 安装向导或 SQLite 时应保持 PVC 启用，否则 Pod 重建后会
+   丢失配置、安装锁和 SQLite 数据。
 4. **健康检查**：默认配置了 liveness 和 readiness 探针，通过 HTTP 检查 5920 端口
