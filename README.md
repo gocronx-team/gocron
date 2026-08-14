@@ -77,7 +77,7 @@ docker compose up -d
 
 ## 🔷 High Availability (Optional)
 
-Deploy multiple gocron instances pointing to the same **MySQL/PostgreSQL** database. Leader election is automatic — no extra configuration needed. SQLite runs in single-node mode.
+Deploy multiple gocron instances pointing to the same **MySQL/PostgreSQL** database. Leader election is automatic — no extra configuration needed. The Helm Chart runs in managed mode with two replicas by default: Kubernetes Service load-balances Web/API traffic, database bootstrap is coordinated once, and no shared PVC is required. SQLite remains available for standalone deployments.
 
 ```bash
 # Node 1

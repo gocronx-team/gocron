@@ -153,3 +153,38 @@ func TestWriteSetsSecureFilePermissions(t *testing.T) {
 		t.Fatalf("expected file permission 0600, got %#o", perm)
 	}
 }
+
+func TestApplyEnvOverrides(t *testing.T) {
+	t.Setenv("GOCRON_DB_ENGINE", "postgres")
+	t.Setenv("GOCRON_DB_HOST", "postgresql.default.svc")
+	t.Setenv("GOCRON_DB_PORT", "5432")
+	t.Setenv("GOCRON_DB_PASSWORD", "database-secret")
+	t.Setenv("GOCRON_AUTH_SECRET", "shared-auth-secret")
+
+	var config Setting
+	if err := ApplyEnvOverrides(&config); err != nil {
+		t.Fatalf("ApplyEnvOverrides() error = %v", err)
+	}
+	if config.Db.Engine != "postgres" || config.Db.Host != "postgresql.default.svc" || config.Db.Port != 5432 {
+		t.Fatalf("unexpected database overrides: %+v", config.Db)
+	}
+	if config.Db.Password != "database-secret" || config.AuthSecret != "shared-auth-secret" {
+		t.Fatal("managed secrets were not applied")
+	}
+}
+
+func TestApplyEnvOverridesRejectsInvalidPort(t *testing.T) {
+	t.Setenv("GOCRON_DB_PORT", "invalid")
+	if err := ApplyEnvOverrides(&Setting{}); err == nil {
+		t.Fatal("expected invalid port to be rejected")
+	}
+}
+
+func TestClearEnvOverrides(t *testing.T) {
+	t.Setenv("GOCRON_DB_PASSWORD", "database-secret")
+	t.Setenv("GOCRON_ADMIN_PASSWORD", "admin-secret")
+	ClearEnvOverrides()
+	if os.Getenv("GOCRON_DB_PASSWORD") != "" || os.Getenv("GOCRON_ADMIN_PASSWORD") != "" {
+		t.Fatal("managed credentials were not cleared")
+	}
+}

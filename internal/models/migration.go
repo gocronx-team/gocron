@@ -9,21 +9,35 @@ import (
 
 type Migration struct{}
 
+func migrationTables() []interface{} {
+	return []interface{}{
+		&User{}, &Task{}, &TaskLog{}, &TaskLogChunk{}, &Host{}, &Setting{},
+		&LoginLog{}, &TaskHost{}, &AgentToken{}, &AuditLog{},
+		&TaskScriptVersion{}, &TaskTemplate{}, &ApiToken{}, &Secret{},
+	}
+}
+
+// EnsureSchema idempotently creates or extends every current table. Managed
+// deployments call it while holding the database bootstrap lock so a failed
+// first Pod can be completed safely by the next replica.
+func (migration *Migration) EnsureSchema() error {
+	for _, table := range migrationTables() {
+		if err := Db.AutoMigrate(table); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // 首次安装, 创建数据库表
 func (migration *Migration) Install(dbName string) error {
-	setting := new(Setting)
-	tables := []interface{}{
-		&User{}, &Task{}, &TaskLog{}, &TaskLogChunk{}, &Host{}, setting, &LoginLog{}, &TaskHost{}, &AgentToken{}, &AuditLog{}, &TaskScriptVersion{}, &TaskTemplate{}, &ApiToken{}, &Secret{},
-	}
-
-	for _, table := range tables {
+	for _, table := range migrationTables() {
 		if Db.Migrator().HasTable(table) {
 			return errors.New("数据表已存在")
 		}
-		err := Db.AutoMigrate(table)
-		if err != nil {
-			return err
-		}
+	}
+	if err := migration.EnsureSchema(); err != nil {
+		return err
 	}
 
 	// SQLite特殊处理：修复task_log表的自增主键

@@ -1,23 +1,20 @@
-gocron has been deployed successfully!
+gocron has been deployed in managed, horizontally scalable mode.
 
-Get the application URL:
+All Ready pods are automatically load-balanced by Service/{{ include "gocron.fullname" . }}.
+Only the database-elected leader runs scheduled tasks.
+
+{{- if not .Values.managed.existingSecret }}
+Initial administrator: {{ .Values.managed.admin.username }}
+Retrieve the generated password with:
+  kubectl get secret {{ include "gocron.fullname" . }} -n {{ .Release.Namespace }} -o jsonpath='{.data.{{ .Values.managed.secretKeys.adminPassword }}}' | base64 -d; echo
+{{- end }}
+
+Access the application:
 {{- if .Values.ingress.enabled }}
 {{- range $host := .Values.ingress.hosts }}
   http{{ if $.Values.ingress.tls }}s{{ end }}://{{ $host.host }}
 {{- end }}
-{{- else if contains "NodePort" .Values.service.type }}
-  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "gocron.fullname" . }})
-  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
-  echo http://$NODE_IP:$NODE_PORT
-{{- else if contains "LoadBalancer" .Values.service.type }}
-  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "gocron.fullname" . }} --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
-  echo http://$SERVICE_IP:{{ .Values.service.port }}
 {{- else }}
-  kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "gocron.fullname" . }} {{ .Values.service.port }}:{{ .Values.service.port }}
-  echo http://127.0.0.1:{{ .Values.service.port }}
-{{- end }}
-
-Database: {{ .Values.db.engine }}
-{{- if eq .Values.db.engine "sqlite" }}
-  Note: SQLite mode supports single replica only. Data is stored in PVC.
+  kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "gocron.fullname" . }} {{ .Values.service.port }}:{{ .Values.service.port }}
+  http://127.0.0.1:{{ .Values.service.port }}
 {{- end }}

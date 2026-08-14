@@ -63,3 +63,26 @@ Image tag
 {{- define "gocron.imageTag" -}}
 {{- .Values.image.tag | default .Chart.AppVersion }}
 {{- end }}
+
+{{/* Validate requirements for the managed Kubernetes deployment. */}}
+{{- define "gocron.validateValues" -}}
+{{- if not (has .Values.db.engine (list "mysql" "postgres")) -}}
+{{- fail "db.engine must be mysql or postgres; SQLite is not supported by the Kubernetes chart" -}}
+{{- end -}}
+{{- if not .Values.db.host -}}
+{{- fail "db.host is required" -}}
+{{- end -}}
+{{- $currentSecret := lookup "v1" "Secret" .Release.Namespace (include "gocron.fullname" .) -}}
+{{- if and (not .Values.managed.existingSecret) (not .Values.db.password) (not $currentSecret) -}}
+{{- fail "db.password or managed.existingSecret is required" -}}
+{{- end -}}
+{{- if lt (int .Values.replicaCount) 1 -}}
+{{- fail "replicaCount must be at least 1" -}}
+{{- end -}}
+{{- if lt (int .Values.db.maxOpenConns) 2 -}}
+{{- fail "db.maxOpenConns must be at least 2 for managed bootstrap locking" -}}
+{{- end -}}
+{{- if and .Values.autoscaling.enabled (gt (int .Values.autoscaling.minReplicas) (int .Values.autoscaling.maxReplicas)) -}}
+{{- fail "autoscaling.minReplicas cannot exceed autoscaling.maxReplicas" -}}
+{{- end -}}
+{{- end }}

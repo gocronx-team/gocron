@@ -25,6 +25,9 @@ var (
 	AppConfig string // 应用配置文件
 	// Installed 应用是否已安装
 	Installed bool // 应用是否安装过
+	// Managed indicates that deployment configuration is controlled by an
+	// external orchestrator instead of the local installation files.
+	Managed bool
 	// Setting 应用配置
 	Setting *setting.Setting // 应用配置
 	// VersionId 版本号
@@ -69,6 +72,7 @@ func InitEnv(versionString string) {
 	fmt.Printf("ConfDir: %s, LogDir: %s\n", ConfDir, LogDir)
 	createDirIfNotExists(AppDir, ConfDir, LogDir)
 	Installed = IsInstalled()
+	Managed = strings.EqualFold(strings.TrimSpace(os.Getenv("GOCRON_MANAGED")), "true")
 	VersionId = ToNumberVersion(versionString)
 	AppVersion = versionString
 

@@ -1,217 +1,150 @@
 # Kubernetes 部署
 
-gocron 提供 Helm Chart，支持一键部署到 Kubernetes 集群。
+gocron Helm Chart 会将 gocron 部署为托管的、可横向扩容的应用。Kubernetes
+Service 自动在所有 Ready 的 Web/API Pod 之间分发流量；基于数据库的 Leader
+选举保证任何时刻只有一个 Pod 运行调度器。
 
 ## 前置要求
 
-- Kubernetes 1.19+
-- Helm 3.0+
+- Kubernetes 1.23+
+- Helm 3
+- 已创建的 MySQL 或 PostgreSQL 数据库，以及一个稳定的数据库访问地址
+
+Kubernetes Chart 不支持 SQLite。独立二进制仍然支持 SQLite 和 Web 安装向导。
 
 ## 安装
-
-### 添加 Helm 仓库
 
 ```bash
 helm repo add gocron https://gocronx-team.github.io/gocron
 helm repo update
 ```
 
-### 快速安装
+建议使用 values 文件，避免数据库密码出现在 Shell 历史记录中：
 
-```bash
-# 默认使用 SQLite，最简配置
-helm install gocron gocron/gocron
+```yaml
+# values-gocron.yaml
+replicaCount: 2
+
+db:
+  engine: postgres
+  host: postgresql.database.svc.cluster.local
+  port: 5432
+  user: gocron
+  password: replace-me
+  database: gocron
 ```
 
-### 使用自定义配置
-
 ```bash
-# 方式一：命令行参数
-helm install gocron gocron/gocron \
-  --set db.engine=mysql \
-  --set db.host=mysql.default \
-  --set db.port=3306 \
-  --set db.user=gocron \
-  --set db.password=your_password \
-  --set db.database=gocron
-
-# 方式二：values 文件
-helm install gocron gocron/gocron -f my-values.yaml
+helm install gocron gocron/gocron -f values-gocron.yaml
 ```
 
-### 升级
+数据库必须提前创建。首次启动时，各副本通过数据库 advisory lock 协调；一个 Pod
+创建表结构和管理员，其他 Pod 等待初始化完成，然后使用同一份配置启动。
+
+Kubernetes 部署不会显示 Web 安装向导。默认管理员为 `admin`，自动生成的密码保存在
+Release Secret 中：
 
 ```bash
-helm upgrade gocron gocron/gocron --set image.tag=1.10.1
+kubectl get secret gocron -o jsonpath='{.data.admin-password}' | base64 -d; echo
 ```
 
-### 卸载
+## 使用已有 Secret
+
+生产环境可以预先创建 Secret，避免把凭据写入 Helm values：
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: gocron-runtime
+type: Opaque
+stringData:
+  db-password: replace-me
+  auth-secret: a-long-random-shared-jwt-secret
+  encryption-key: a-long-random-encryption-key
+  admin-password: replace-me
+```
+
+```yaml
+db:
+  engine: postgres
+  host: postgresql.database.svc.cluster.local
+  port: 5432
+  user: gocron
+  database: gocron
+
+managed:
+  existingSecret: gocron-runtime
+  admin:
+    username: admin
+    email: admin@example.com
+```
+
+所有副本必须使用相同的 `auth-secret` 和 `encryption-key`。只有目标数据库中不存在用户
+时，启动过程才会使用管理员初始化配置。
+
+## 扩容与负载均衡
+
+可以通过 Helm、kubectl 或 KubeVision 扩容：
+
+```bash
+kubectl scale deployment gocron --replicas=4
+```
+
+扩容不需要复制配置，也不需要共享 PVC。Service/gocron 会自动将请求分发给 Ready
+Pod；所有 Pod 使用同一个数据库，只有选举出的 Leader 负责调度任务。
+
+可以启用基于 CPU 的自动扩容：
+
+```yaml
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 75
+```
+
+Chart 默认启用 PodDisruptionBudget，并配置优先跨节点分散 Pod 的反亲和性。
+
+## 配置项
+
+| 参数 | 说明 | 默认值 |
+|---|---|---|
+| `replicaCount` | 初始 Pod 数量 | `2` |
+| `db.engine` | `mysql` 或 `postgres` | `postgres` |
+| `db.host` | 稳定的数据库访问地址 | 必填 |
+| `db.port` | 数据库端口 | `5432` |
+| `db.user` | 数据库用户 | `gocron` |
+| `db.password` | Chart 管理 Secret 时使用的数据库密码 | 首次安装必填 |
+| `db.database` | 已存在的数据库名称 | `gocron` |
+| `managed.existingSecret` | 已存在的运行时 Secret | `""` |
+| `managed.admin.username` | 初始化管理员 | `admin` |
+| `managed.admin.password` | 初始化密码，为空时自动生成 | `""` |
+| `managed.admin.email` | 初始化管理员邮箱 | `admin@example.com` |
+| `autoscaling.enabled` | 创建 HPA | `false` |
+| `podDisruptionBudget.enabled` | 在驱逐期间保护可用性 | `true` |
+| `service.type` | Kubernetes Service 类型 | `ClusterIP` |
+| `ingress.enabled` | 创建 Ingress | `false` |
+
+## 升级
+
+::: warning Chart 0.2.0
+Chart 0.2.0 移除了 Kubernetes SQLite 和应用 PVC。不要直接升级使用 SQLite 的
+0.1.x Release；应先将数据导入 MySQL/PostgreSQL，再使用外部数据库参数安装或升级。
+在新部署验证完成前保留旧 PVC 备份。
+:::
+
+```bash
+helm upgrade gocron gocron/gocron --reuse-values
+```
+
+自动生成的密钥会在升级时保留。ConfigMap 或 Secret 发生变化时，Deployment checksum
+会触发滚动更新。数据库结构升级会在数据库初始化锁内执行一次，完成后 Pod 才加入服务。
+
+## 卸载
 
 ```bash
 helm uninstall gocron
 ```
 
-## 配置项
-
-### 镜像
-
-| 参数 | 说明 | 默认值 |
-|------|------|--------|
-| `image.repository` | 镜像地址 | `ghcr.io/gocronx-team/gocron` |
-| `image.tag` | 镜像标签 | Chart appVersion |
-| `image.pullPolicy` | 拉取策略 | `IfNotPresent` |
-
-### 数据库
-
-| 参数 | 说明 | 默认值 |
-|------|------|--------|
-| `db.engine` | 数据库类型：`sqlite`、`mysql`、`postgres` | `sqlite` |
-| `db.host` | 数据库地址 | `""` |
-| `db.port` | 数据库端口 | `0` |
-| `db.user` | 数据库用户 | `""` |
-| `db.password` | 数据库密码 | `""` |
-| `db.database` | 数据库名称/SQLite 文件路径 | `./data/gocron.db` |
-| `db.prefix` | 表前缀 | `""` |
-| `db.charset` | 字符集 | `utf8` |
-| `db.maxIdleConns` | 最大空闲连接数 | `5` |
-| `db.maxOpenConns` | 最大连接数 | `100` |
-
-### 应用
-
-| 参数 | 说明 | 默认值 |
-|------|------|--------|
-| `app.name` | 应用名称 | `gocron` |
-| `app.apiKey` | API Key | `""` |
-| `app.apiSecret` | API Secret | `""` |
-| `app.allowIps` | 允许访问的 IP | `""` |
-| `app.concurrencyQueue` | 并发队列大小 | `500` |
-| `app.enableTls` | 启用 TLS | `false` |
-| `timezone` | 时区 | `Asia/Shanghai` |
-
-### 服务
-
-| 参数 | 说明 | 默认值 |
-|------|------|--------|
-| `service.type` | 服务类型 | `ClusterIP` |
-| `service.port` | 服务端口 | `5920` |
-
-### Ingress
-
-| 参数 | 说明 | 默认值 |
-|------|------|--------|
-| `ingress.enabled` | 启用 Ingress | `false` |
-| `ingress.className` | Ingress Class | `""` |
-| `ingress.annotations` | 注解 | `{}` |
-| `ingress.hosts` | 主机配置 | `[{host: gocron.local, paths: [{path: /, pathType: Prefix}]}]` |
-| `ingress.tls` | TLS 配置 | `[]` |
-
-### 持久化
-
-| 参数 | 说明 | 默认值 |
-|------|------|--------|
-| `persistence.enabled` | 启用持久化 | `true` |
-| `persistence.storageClass` | 存储类 | `""` |
-| `persistence.accessMode` | 访问模式 | `ReadWriteOnce` |
-| `persistence.size` | 存储大小 | `1Gi` |
-
-### 资源
-
-| 参数 | 说明 | 默认值 |
-|------|------|--------|
-| `resources.limits.cpu` | CPU 限制 | 不限制 |
-| `resources.limits.memory` | 内存限制 | 不限制 |
-| `resources.requests.cpu` | CPU 请求 | 不限制 |
-| `resources.requests.memory` | 内存请求 | 不限制 |
-| `replicaCount` | 副本数 | `1` |
-
-::: warning 注意
-使用 SQLite 时副本数必须为 1，因为 SQLite 不支持多进程并发写入。使用 MySQL 或 PostgreSQL 可设置多副本。
-:::
-
-## 部署示例
-
-### SQLite + NodePort
-
-```yaml
-# values-sqlite.yaml
-db:
-  engine: sqlite
-
-service:
-  type: NodePort
-
-persistence:
-  enabled: true
-  size: 2Gi
-```
-
-### MySQL + Ingress
-
-```yaml
-# values-mysql.yaml
-db:
-  engine: mysql
-  host: mysql.database.svc
-  port: 3306
-  user: gocron
-  password: your_password
-  database: gocron
-
-persistence:
-  enabled: false
-
-ingress:
-  enabled: true
-  className: nginx
-  hosts:
-    - host: gocron.example.com
-      paths:
-        - path: /
-          pathType: Prefix
-  tls:
-    - secretName: gocron-tls
-      hosts:
-        - gocron.example.com
-
-resources:
-  requests:
-    cpu: 100m
-    memory: 128Mi
-  limits:
-    cpu: 500m
-    memory: 256Mi
-```
-
-::: tip 内存限额与 GOMEMLIMIT
-当你设置了 `resources.limits.memory`，gocron 启动时会自动把 Go 的 `GOMEMLIMIT`
-设为该上限的约 90%（从容器 cgroup 读取）。这样垃圾回收会在 Pod 触顶前主动回收内存，
-减少被 OOM kill，无需额外配置。未设内存限额时该行为为空操作（no-op）。
-:::
-
-### PostgreSQL + 多副本
-
-```yaml
-# values-postgres.yaml
-replicaCount: 3
-
-db:
-  engine: postgres
-  host: pg.database.svc
-  port: 5432
-  user: gocron
-  password: your_password
-  database: gocron
-
-persistence:
-  enabled: false
-```
-
-## 注意事项
-
-1. **SQLite 模式**：Deployment 策略自动设为 `Recreate`（而非 `RollingUpdate`），避免多 Pod 同时访问 SQLite 文件
-2. **配置持久化**：仅当 `app.ini` 不存在或为空时，ConfigMap 才会提供初始配置；之后
-   可写配置文件、安装锁和自动生成的认证密钥均保存在数据卷中，因此 Web 安装向导可以
-   正常完成，Pod 重启后也会保留安装状态。
-3. **数据持久化**：使用 Web 安装向导或 SQLite 时应保持 PVC 启用，否则 Pod 重建后会
-   丢失配置、安装锁和 SQLite 数据。
-4. **健康检查**：默认配置了 liveness 和 readiness 探针，通过 HTTP 检查 5920 端口
+Helm 不会删除外部数据库。

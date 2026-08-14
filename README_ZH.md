@@ -77,7 +77,7 @@ docker compose up -d
 
 ## 🔷 高可用部署（可选）
 
-多个 gocron 实例连接同一个 **MySQL/PostgreSQL** 数据库即可实现高可用，Leader 选举自动完成，无需额外配置。SQLite 以单节点模式运行。
+多个 gocron 实例连接同一个 **MySQL/PostgreSQL** 数据库即可实现高可用，Leader 选举自动完成，无需额外配置。Helm Chart 默认以两个副本运行托管模式：Kubernetes Service 自动分发 Web/API 流量，数据库只初始化一次，并且不需要共享 PVC。SQLite 继续用于独立部署。
 
 ```bash
 # 节点 1

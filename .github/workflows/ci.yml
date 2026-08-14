@@ -77,6 +77,33 @@ jobs:
         working-directory: web/gocronx-admin
         run: pnpm lint
 
+  helm-lint:
+    name: Helm Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: azure/setup-helm@v5
+
+      - name: Lint managed deployment
+        run: >-
+          helm lint helm/gocron
+          --set db.host=postgresql.default.svc
+          --set db.password=ci-password
+
+      - name: Verify application version alignment
+        run: |
+          source_version=$(sed -n 's/.*AppVersion[[:space:]]*= "\([^"]*\)".*/\1/p' cmd/gocron/gocron.go)
+          chart_version=$(helm show chart helm/gocron | awk '/^appVersion:/ {gsub(/"/, "", $2); print $2}')
+          test "$source_version" = "$chart_version"
+
+      - name: Reject SQLite
+        run: >-
+          ! helm template gocron helm/gocron
+          --set db.engine=sqlite
+          --set db.host=unused
+          --set db.password=unused
+
   docker-build:
     name: Docker Build
     runs-on: ubuntu-latest
