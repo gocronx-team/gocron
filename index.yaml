@@ -2,6 +2,28 @@ apiVersion: v1
 entries:
   gocron:
   - apiVersion: v2
+    appVersion: 1.11.0
+    created: "2026-08-14T05:19:08.157824834Z"
+    description: Horizontally scalable gocron deployment with database-backed leader
+      election
+    digest: 6b25e041b1dd7b77bb0fc322880598de3151b390c80111b9dd14dfc41d140e49
+    home: https://github.com/gocronx-team/gocron
+    icon: https://raw.githubusercontent.com/gocronx-team/gocron/master/web/gocronx-admin/public/favicon.ico
+    keywords:
+    - cron
+    - scheduler
+    - task
+    kubeVersion: '>=1.23.0-0'
+    maintainers:
+    - name: gocronx-team
+    name: gocron
+    sources:
+    - https://github.com/gocronx-team/gocron
+    type: application
+    urls:
+    - https://github.com/gocronx-team/gocron/releases/download/gocron-0.2.0/gocron-0.2.0.tgz
+    version: 0.2.0
+  - apiVersion: v2
     appVersion: 1.10.1
     created: "2026-08-14T02:37:39.438963767Z"
     description: A Helm chart for gocron - cron job management system
@@ -101,4 +123,4 @@ entries:
     urls:
     - https://github.com/gocronx-team/gocron/releases/download/gocron-0.1.0/gocron-0.1.0.tgz
     version: 0.1.0
-generated: "2026-08-14T02:37:39.438988313Z"
+generated: "2026-08-14T05:19:08.157853077Z"
