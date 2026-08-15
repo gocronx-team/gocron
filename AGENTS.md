@@ -7,6 +7,8 @@ Claude Code has the full version in `CLAUDE.md`; this mirrors the essentials.
 (Gin, GORM for MySQL/PostgreSQL/SQLite, gRPC). Frontend: Vue 3 + Element Plus +
 Vite under `web/gocronx-admin`.
 
+Keep communication concise, direct, and free of unnecessary commentary.
+
 ## Commands
 
 ```bash
