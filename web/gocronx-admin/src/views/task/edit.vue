@@ -85,7 +85,7 @@
             <ElCol :span="16" v-if="form.level === 1">
               <ElFormItem :label="t('task.spec')" prop="spec">
                 <ElInput
-                  v-model.trim="form.spec"
+                  v-model="form.spec"
                   :placeholder="t('template.cronPlaceholder')"
                   clearable
                   style="font-family: monospace"
@@ -227,14 +227,14 @@
             </ElCol>
           </ElRow>
 
-          <!-- child task: dependency fields -->
-          <template v-if="form.level === 2">
+          <!-- A master task owns the IDs of child tasks it triggers. -->
+          <template v-if="form.level === 1">
             <ElRow :gutter="24">
               <ElCol :span="8">
                 <ElFormItem :label="t('task.dependencyTasks')">
                   <ElInput
                     v-model.trim="form.dependency_task_id"
-                    placeholder="e.g. 1,2,3"
+                    :placeholder="t('task.dependencyTasksPlaceholder')"
                     clearable
                   />
                 </ElFormItem>

@@ -80,6 +80,26 @@ func TestClearByTaskId_InvalidId(t *testing.T) {
 	}
 }
 
+func TestParseQueryParamsIncludesHostAndInclusiveDateRange(t *testing.T) {
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodGet,
+		"/api/task/log?host_id=7&start_date=2026-08-01&end_date=2026-08-07", nil)
+
+	params := parseQueryParams(c)
+	if got := params["HostId"]; got != 7 {
+		t.Fatalf("HostId = %#v, want 7", got)
+	}
+	start, ok := params["StartTime"].(time.Time)
+	if !ok || start.Format(time.DateOnly) != "2026-08-01" {
+		t.Fatalf("StartTime = %#v, want 2026-08-01", params["StartTime"])
+	}
+	end, ok := params["EndTime"].(time.Time)
+	if !ok || end.Format(time.DateOnly) != "2026-08-08" {
+		t.Fatalf("EndTime = %#v, want exclusive bound 2026-08-08", params["EndTime"])
+	}
+}
+
 func TestClearByTaskId_ValidId(t *testing.T) {
 	setupTestDb(t)
 

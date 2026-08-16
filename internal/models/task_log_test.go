@@ -8,13 +8,13 @@ import (
 	"gorm.io/gorm"
 )
 
-func setupTaskLogTestDb(t *testing.T) func() {
+func setupTaskLogTestDb(t testing.TB) func() {
 	t.Helper()
 	db, err := gorm.Open(gormlite.Open(":memory:"), &gorm.Config{})
 	if err != nil {
 		t.Fatalf("failed to open in-memory sqlite: %v", err)
 	}
-	err = db.AutoMigrate(&TaskLog{})
+	err = db.AutoMigrate(&TaskLog{}, &TaskHost{})
 	if err != nil {
 		t.Fatalf("failed to migrate: %v", err)
 	}
@@ -22,6 +22,73 @@ func setupTaskLogTestDb(t *testing.T) func() {
 	Db = db
 	return func() {
 		Db = originalDb
+	}
+}
+
+func BenchmarkList_HostFilter(b *testing.B) {
+	cleanup := setupTaskLogTestDb(b)
+	defer cleanup()
+
+	const taskCount = 1000
+	logs := make([]TaskLog, 10_000)
+	for i := range logs {
+		logs[i] = TaskLog{
+			TaskId:  i%taskCount + 1,
+			Name:    "benchmark",
+			Spec:    "*",
+			Command: "true",
+		}
+	}
+	if err := Db.CreateInBatches(&logs, 500).Error; err != nil {
+		b.Fatalf("create logs: %v", err)
+	}
+	taskHosts := make([]TaskHost, taskCount)
+	for i := range taskHosts {
+		taskHosts[i] = TaskHost{TaskId: i + 1, HostId: i%10 + 1}
+	}
+	if err := Db.CreateInBatches(&taskHosts, 500).Error; err != nil {
+		b.Fatalf("create task hosts: %v", err)
+	}
+
+	params := CommonMap{"HostId": 7, "Page": 1, "PageSize": 20}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if _, err := new(TaskLog).List(params); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func TestList_HostAndTimeRangeFilter(t *testing.T) {
+	cleanup := setupTaskLogTestDb(t)
+	defer cleanup()
+
+	base := time.Date(2026, 8, 7, 12, 0, 0, 0, time.Local)
+	logs := []TaskLog{
+		{TaskId: 1, Name: "host-7-in-range", Spec: "*", Command: "echo 1", StartTime: LocalTime(base)},
+		{TaskId: 1, Name: "host-7-too-old", Spec: "*", Command: "echo 2", StartTime: LocalTime(base.AddDate(0, 0, -10))},
+		{TaskId: 2, Name: "host-8-in-range", Spec: "*", Command: "echo 3", StartTime: LocalTime(base)},
+	}
+	for i := range logs {
+		if _, err := logs[i].Create(); err != nil {
+			t.Fatalf("create log: %v", err)
+		}
+	}
+	if err := Db.Create(&[]TaskHost{{TaskId: 1, HostId: 7}, {TaskId: 2, HostId: 8}}).Error; err != nil {
+		t.Fatalf("create task hosts: %v", err)
+	}
+
+	got, err := new(TaskLog).List(CommonMap{
+		"HostId":    7,
+		"StartTime": base.AddDate(0, 0, -6),
+		"EndTime":   base.AddDate(0, 0, 1),
+	})
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	if len(got) != 1 || got[0].TaskId != 1 || got[0].Name != "host-7-in-range" {
+		t.Fatalf("combined host/date filter returned %+v", got)
 	}
 }
 

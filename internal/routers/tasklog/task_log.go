@@ -241,12 +241,22 @@ func ClearByTaskId(c *gin.Context) {
 func parseQueryParams(c *gin.Context) models.CommonMap {
 	var params models.CommonMap = models.CommonMap{}
 	taskId, _ := strconv.Atoi(c.Query("task_id"))
+	hostId, _ := strconv.Atoi(c.Query("host_id"))
 	protocol, _ := strconv.Atoi(c.Query("protocol"))
 	params["TaskId"] = taskId
+	params["HostId"] = hostId
 	params["Protocol"] = protocol
 	params["Keyword"] = strings.TrimSpace(c.Query("keyword"))
 	// 前端直接传状态枚举值(失败=0/运行中=1/成功=2/取消=3),空值表示不过滤。
 	params["Status"] = base.ParseStatusFilter(c.Query("status"))
+	if startTime, err := time.ParseInLocation(time.DateOnly, c.Query("start_date"), time.Local); err == nil {
+		params["StartTime"] = startTime
+	}
+	if endTime, err := time.ParseInLocation(time.DateOnly, c.Query("end_date"), time.Local); err == nil {
+		// The date picker selects whole calendar days. Use an exclusive upper
+		// bound so the selected end date is included across all databases.
+		params["EndTime"] = endTime.AddDate(0, 0, 1)
+	}
 	base.ParsePageAndPageSize(c, params)
 
 	return params
