@@ -22,16 +22,30 @@ jobs:
       - uses: azure/setup-helm@v5
 
       - name: Verify application image exists
+        id: image
         run: |
+          set -euo pipefail
           app_version=$(helm show chart helm/gocron | awk '/^appVersion:/ {gsub(/"/, "", $2); print $2}')
-          docker manifest inspect "ghcr.io/${GITHUB_REPOSITORY}:${app_version}" >/dev/null
+          error_file=$(mktemp)
+          trap 'rm -f "$error_file"' EXIT
+          if docker manifest inspect "ghcr.io/${GITHUB_REPOSITORY}:${app_version}" >/dev/null 2>"$error_file"; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          elif grep -Eq 'manifest unknown|no such manifest' "$error_file"; then
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Image ${app_version} is not published yet; Helm chart release will be deferred to the tagged release workflow."
+          else
+            cat "$error_file" >&2
+            exit 1
+          fi
 
       - name: Configure Git
+        if: steps.image.outputs.exists == 'true'
         run: |
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
 
       - uses: helm/chart-releaser-action@v1.7.0
+        if: steps.image.outputs.exists == 'true'
         with:
           charts_dir: helm
           skip_existing: true
