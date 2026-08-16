@@ -105,9 +105,20 @@ This feature prevents duplicate task execution, especially suitable for long-run
 
 ## Task Dependencies
 
-gocron supports setting dependencies between tasks. When task A depends on task B:
-- Task A will only start executing after task B executes successfully
-- If task B fails, task A will not execute
+gocron models an execution chain with master and child tasks:
+
+1. Create each downstream task with its type set to **Child Task**. Child tasks are not scheduled independently by a Cron expression.
+2. Create or edit the **Master Task** and enter the child task IDs in **Child Task IDs**. Separate multiple IDs with commas, for example `12,15`.
+3. After the master finishes, gocron triggers the child tasks that still exist concurrently.
+
+The dependency mode controls what happens when the master fails:
+
+- **Strong**: trigger child tasks only after the master succeeds.
+- **Weak**: trigger child tasks after the master finishes, whether it succeeds or fails.
+
+::: warning Note
+The dependency relationship is stored on the master task. Do not enter the master task ID on a child task.
+:::
 
 ## Related Documentation
 

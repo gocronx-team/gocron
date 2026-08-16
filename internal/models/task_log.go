@@ -226,6 +226,11 @@ func (taskLog *TaskLog) parseWhere(query *gorm.DB, params CommonMap) {
 	if ok && taskId.(int) > 0 {
 		query.Where("task_id = ?", taskId)
 	}
+	hostId, ok := params["HostId"]
+	if ok && hostId.(int) > 0 {
+		taskIds := Db.Model(&TaskHost{}).Select("task_id").Where("host_id = ?", hostId)
+		query.Where("task_id IN (?)", taskIds)
+	}
 	protocol, ok := params["Protocol"]
 	if ok && protocol.(int) > 0 {
 		query.Where("protocol = ?", protocol)
