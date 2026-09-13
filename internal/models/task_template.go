@@ -53,7 +53,7 @@ func (t *TaskTemplate) UpdateBean(id int) (int64, error) {
 			"http_method", "http_body", "http_headers", "success_pattern",
 			"tag", "spec", "timeout", "multi", "retry_times", "retry_interval",
 			"timezone", "notify_status", "notify_type", "notify_keyword", "notify_keyword_regex",
-			"notify_keyword_exclude", "log_retention_days").
+			"notify_keyword_exclude", "notify_diagnosis", "log_retention_days").
 		UpdateColumns(map[string]interface{}{
 			"name":                   t.Name,
 			"description":            t.Description,
