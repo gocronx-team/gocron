@@ -37,6 +37,7 @@ type HeatmapCell struct {
 type CronPreviewResult struct {
 	Valid        bool          `json:"valid"`
 	Error        string        `json:"error,omitempty"`
+	Startup      bool          `json:"startup,omitempty"` // @reboot：调度器启动时执行一次，无时间表
 	Timezone     string        `json:"timezone"`
 	NowUnix      int64         `json:"now_unix"`
 	NextRuns     []CronRun     `json:"next_runs"`
@@ -93,6 +94,13 @@ func previewCronAt(spec, timezone string, count int, now time.Time) *CronPreview
 	}
 
 	result.Valid = true
+
+	// @reboot 在调度器启动时执行一次，没有可预览的时间表。用裸 spec 判断以兼容
+	// 时区前缀（CRON_TZ=... @reboot 会被解析库包装成 TZSchedule）。
+	if bare, _ := stripTimezonePrefix(finalSpec); bare == "@reboot" {
+		result.Startup = true
+		return result
+	}
 
 	// 4. 接下来 N 次
 	t := now

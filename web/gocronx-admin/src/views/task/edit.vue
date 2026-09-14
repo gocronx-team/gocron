@@ -202,6 +202,10 @@
                     <ElIcon><WarningFilled /></ElIcon>
                     <span>{{ previewError }}</span>
                   </div>
+                  <div v-else-if="previewStartup" class="preview-state muted">
+                    <ElIcon><Clock /></ElIcon>
+                    <span>{{ t('template.previewStartup') }}</span>
+                  </div>
                   <div v-else-if="nextRuns.length === 0" class="preview-state muted">
                     <ElIcon><InfoFilled /></ElIcon>
                     <span>{{ t('template.previewNoRuns') }}</span>
@@ -782,6 +786,7 @@
   const nextRuns = ref<CronRun[]>([])
   const previewError = ref('')
   const previewTz = ref('')
+  const previewStartup = ref(false)
   let cronDebounce: ReturnType<typeof setTimeout> | null = null
 
   // ── Computed ──────────────────────────────────────────────────────────────────
@@ -1024,6 +1029,7 @@
       nextRuns.value = []
       previewError.value = ''
       previewTz.value = ''
+      previewStartup.value = false
       return
     }
     try {
@@ -1031,14 +1037,17 @@
       if (!res || res.valid === false) {
         previewError.value = res?.error || t('template.previewInvalid')
         nextRuns.value = []
+        previewStartup.value = false
         return
       }
       previewError.value = ''
       previewTz.value = res.timezone || ''
+      previewStartup.value = res.startup === true
       nextRuns.value = Array.isArray(res.next_runs) ? res.next_runs : []
     } catch {
       previewError.value = t('template.previewInvalid')
       nextRuns.value = []
+      previewStartup.value = false
     }
   }
 

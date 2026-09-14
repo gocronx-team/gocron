@@ -182,6 +182,8 @@ export interface CronRun {
 export interface CronPreviewResult {
   valid: boolean
   error?: string
+  /** true for @reboot: runs once when the scheduler starts, no time-based runs */
+  startup?: boolean
   timezone?: string
   now_unix?: number
   next_runs?: CronRun[]
