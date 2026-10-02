@@ -12,17 +12,16 @@ type Setting struct {
 	Value string `gorm:"type:varchar(4096);not null;default:''"`
 }
 
-const slackTemplate = `Task ID: {{.TaskId}}
+// DefaultNotificationTemplate is shared by email and Slack. Keep .Status in
+// storage so previous-version instances can render it during rolling upgrades.
+const DefaultNotificationTemplate = `Task ID: {{.TaskId}}
 Task Name: {{.TaskName}}
 Status: {{.Status}}
 Result: {{.Result}}
 Remark: {{.Remark}}`
 
-const emailTemplate = `Task ID: {{.TaskId}}
-Task Name: {{.TaskName}}
-Status: {{.Status}}
-Result: {{.Result}}
-Remark: {{.Remark}}`
+const slackTemplate = DefaultNotificationTemplate
+const emailTemplate = DefaultNotificationTemplate
 const webhookTemplate = `
 {
   "task_id": "{{.TaskId}}",

@@ -4,7 +4,10 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"strings"
 	"time"
+
+	"github.com/gocronx-team/gocron/internal/models"
 
 	"github.com/gocronx-team/gocron/internal/modules/logger"
 )
@@ -63,16 +66,30 @@ func parseNotifyTemplate(notifyTemplate string, msg Message) string {
 	if err != nil {
 		return fmt.Sprintf("解析通知模板失败: %s", err)
 	}
+	statusText := msg["status_text"]
+	if statusText == nil {
+		statusText = msg["status"]
+	}
 	var buf bytes.Buffer
 	if err := tmpl.Execute(&buf, map[string]interface{}{
-		"TaskId":   msg["task_id"],
-		"TaskName": msg["name"],
-		"Status":   msg["status"],
-		"Result":   msg["output"],
-		"Remark":   msg["remark"],
+		"TaskId":     msg["task_id"],
+		"TaskName":   msg["name"],
+		"Status":     msg["status"],
+		"StatusText": statusText,
+		"Result":     msg["output"],
+		"Remark":     msg["remark"],
 	}); err != nil {
 		return fmt.Sprintf("执行模板失败: %s", err)
 	}
 
 	return buf.String()
+}
+
+// Only the built-in email/Slack default opts into display text automatically.
+// User templates and Webhook .Status remain machine-readable and unchanged.
+func parseDisplayNotifyTemplate(tmpl string, msg Message) string {
+	if tmpl == models.DefaultNotificationTemplate {
+		tmpl = strings.Replace(tmpl, "{{.Status}}", "{{.StatusText}}", 1)
+	}
+	return parseNotifyTemplate(tmpl, msg)
 }

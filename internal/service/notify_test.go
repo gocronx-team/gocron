@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/gocronx-team/gocron/internal/models"
@@ -215,5 +216,79 @@ func TestSendNotificationRequiresReceiver(t *testing.T) {
 	SendNotification(task, TaskResult{Err: errors.New("x")})
 	if sent {
 		t.Error("should not send when receiver is missing for non-webhook channel")
+	}
+}
+
+func TestMatchNotifyKeywordByLine(t *testing.T) {
+	output := "[FAIL] TestPayment (ignored)\r\n[FAIL] TestRefund"
+	cases := []struct {
+		name     string
+		keyword  string
+		exclude  string
+		regex    int8
+		lineMode int8
+		output   string
+		want     bool
+	}{
+		{"legacy whole output suppressed", "FAIL", "ignored", 0, 0, output, false},
+		{"line mode keeps real failure", "FAIL", "ignored", 0, 1, output, true},
+		{"only excluded", "FAIL", "ignored", 0, 1, "[FAIL] TestPayment (ignored)", false},
+		{"no matching line", "FAIL", "ignored", 0, 1, "OK\nignored", false},
+		{"regex anchors per line", "^\\[FAIL\\]", "ignored", 1, 1, output, true},
+		{"regex no cross-line", "(?s)Payment.*Refund", "", 1, 1, output, false},
+		{"invalid keyword", "[", "", 1, 1, output, false},
+		{"invalid exclusion fails open", "FAIL", "[", 1, 1, output, true},
+		{"empty keyword", "", "", 0, 1, "", false},
+		{"trailing empty line", "^$", "", 1, 1, "one\n", true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			task := models.Task{NotifyKeyword: tc.keyword, NotifyKeywordExclude: tc.exclude, NotifyKeywordRegex: tc.regex, NotifyKeywordLineMode: tc.lineMode}
+			if got := matchNotifyKeyword(task, tc.output); got != tc.want {
+				t.Fatalf("got %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestSendNotificationKeepsStatusAndAddsDisplayText(t *testing.T) {
+	old := notifyPushFunc
+	defer func() { notifyPushFunc = old }()
+	var got notify.Message
+	notifyPushFunc = func(msg notify.Message) { got = msg }
+	task := models.Task{NotifyStatus: 3, NotifyType: 2, NotifySuccessText: "成功", NotifyFailureText: "失败"}
+	for _, tc := range []struct {
+		err     error
+		machine string
+		display string
+	}{{nil, "Success", "成功"}, {errors.New("fail"), "Failed", "失败"}} {
+		got = nil
+		SendNotification(task, TaskResult{Err: tc.err})
+		if got["status"] != tc.machine || got["status_text"] != tc.display {
+			t.Fatalf("notification: %v", got)
+		}
+	}
+	task.NotifySuccessText = ""
+	SendNotification(task, TaskResult{})
+	if got["status_text"] != "Success" {
+		t.Fatalf("default status text: %v", got)
+	}
+}
+
+// Representative truncated task output (~1 MiB), with one valid match near the end.
+func BenchmarkMatchNotifyKeywordLargeOutput(b *testing.B) {
+	output := strings.Repeat("[OK] background work\n", 49000) + "[FAIL] known ignored\n[FAIL] real"
+	for _, tc := range []struct {
+		name string
+		line int8
+	}{{"whole-output", 0}, {"line-mode", 1}} {
+		b.Run(tc.name, func(b *testing.B) {
+			task := models.Task{NotifyKeyword: "FAIL", NotifyKeywordExclude: "ignored", NotifyKeywordLineMode: tc.line}
+			b.SetBytes(int64(len(output)))
+			b.ReportAllocs()
+			for i := 0; i < b.N; i++ {
+				_ = matchNotifyKeyword(task, output)
+			}
+		})
 	}
 }

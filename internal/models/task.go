@@ -95,7 +95,10 @@ type Task struct {
 	NotifyKeywordRegex int8 `json:"notify_keyword_regex" gorm:"not null;default:0"`
 	// NotifyKeywordExclude 排除关键字:输出命中 NotifyKeyword 后再命中该模式则不通知,
 	// 与 NotifyKeyword 共用 NotifyKeywordRegex 的匹配模式;空串表示不排除。
-	NotifyKeywordExclude string `json:"notify_keyword_exclude" gorm:"type:varchar(128);not null;default:''"`
+	NotifyKeywordExclude  string `json:"notify_keyword_exclude" gorm:"type:varchar(128);not null;default:''"`
+	NotifyKeywordLineMode int8   `json:"notify_keyword_line_mode" gorm:"not null;default:0"`
+	NotifySuccessText     string `json:"notify_success_text" gorm:"type:varchar(128);not null;default:''"`
+	NotifyFailureText     string `json:"notify_failure_text" gorm:"type:varchar(128);not null;default:''"`
 	// NotifyDiagnosis 失败通知是否附带 AI 根因诊断:0=否,1=是(需配置 LLM)
 	NotifyDiagnosis  int8       `json:"notify_diagnosis" gorm:"not null;default:0"`
 	Tag              string     `json:"tag" gorm:"type:varchar(255);not null;default:''"`
@@ -119,6 +122,7 @@ func (task *Task) Create() (insertId int, err error) {
 		"http_headers", "success_pattern", "secret_names", "timeout", "multi",
 		"retry_times", "retry_interval", "notify_status", "notify_type",
 		"notify_receiver_id", "notify_keyword", "notify_keyword_regex", "notify_keyword_exclude",
+		"notify_keyword_line_mode", "notify_success_text", "notify_failure_text",
 		"tag", "log_retention_days", "remark", "status",
 	).Create(task)
 	if result.Error == nil {
@@ -135,33 +139,36 @@ func (task *Task) UpdateBean(id int) (int64, error) {
 			"notify_type", "notify_receiver_id", "dependency_task_id",
 			"dependency_status", "tag", "http_method", "http_body",
 			"http_headers", "success_pattern", "secret_names", "notify_keyword", "notify_keyword_regex",
-			"notify_keyword_exclude", "log_retention_days").
+			"notify_keyword_exclude", "notify_keyword_line_mode", "notify_success_text", "notify_failure_text", "log_retention_days").
 		UpdateColumns(map[string]interface{}{
-			"name":                   task.Name,
-			"spec":                   task.Spec,
-			"protocol":               task.Protocol,
-			"command":                task.Command,
-			"timeout":                task.Timeout,
-			"multi":                  task.Multi,
-			"retry_times":            task.RetryTimes,
-			"retry_interval":         task.RetryInterval,
-			"remark":                 task.Remark,
-			"notify_status":          task.NotifyStatus,
-			"notify_type":            task.NotifyType,
-			"notify_receiver_id":     task.NotifyReceiverId,
-			"dependency_task_id":     task.DependencyTaskId,
-			"dependency_status":      task.DependencyStatus,
-			"tag":                    task.Tag,
-			"http_method":            task.HttpMethod,
-			"http_body":              task.HttpBody,
-			"http_headers":           task.HttpHeaders,
-			"success_pattern":        task.SuccessPattern,
-			"secret_names":           task.SecretNames,
-			"notify_keyword":         task.NotifyKeyword,
-			"notify_keyword_regex":   task.NotifyKeywordRegex,
-			"notify_keyword_exclude": task.NotifyKeywordExclude,
-			"notify_diagnosis":       task.NotifyDiagnosis,
-			"log_retention_days":     task.LogRetentionDays,
+			"name":                     task.Name,
+			"spec":                     task.Spec,
+			"protocol":                 task.Protocol,
+			"command":                  task.Command,
+			"timeout":                  task.Timeout,
+			"multi":                    task.Multi,
+			"retry_times":              task.RetryTimes,
+			"retry_interval":           task.RetryInterval,
+			"remark":                   task.Remark,
+			"notify_status":            task.NotifyStatus,
+			"notify_type":              task.NotifyType,
+			"notify_receiver_id":       task.NotifyReceiverId,
+			"dependency_task_id":       task.DependencyTaskId,
+			"dependency_status":        task.DependencyStatus,
+			"tag":                      task.Tag,
+			"http_method":              task.HttpMethod,
+			"http_body":                task.HttpBody,
+			"http_headers":             task.HttpHeaders,
+			"success_pattern":          task.SuccessPattern,
+			"secret_names":             task.SecretNames,
+			"notify_keyword":           task.NotifyKeyword,
+			"notify_keyword_regex":     task.NotifyKeywordRegex,
+			"notify_keyword_exclude":   task.NotifyKeywordExclude,
+			"notify_keyword_line_mode": task.NotifyKeywordLineMode,
+			"notify_success_text":      task.NotifySuccessText,
+			"notify_failure_text":      task.NotifyFailureText,
+			"notify_diagnosis":         task.NotifyDiagnosis,
+			"log_retention_days":       task.LogRetentionDays,
 		})
 	return result.RowsAffected, result.Error
 }

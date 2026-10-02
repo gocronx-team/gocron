@@ -97,7 +97,7 @@ func TestUpgradeFor170RemapRunsOnLegacyDb(t *testing.T) {
 }
 
 func TestUpgradeStartIndex(t *testing.T) {
-	versionIds := []int{110, 122, 130, 140, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 1510, 160, 163, 170, 180, 190, 1100}
+	versionIds := []int{110, 122, 130, 140, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 1510, 160, 163, 170, 180, 190, 1100, 1120}
 
 	tests := []struct {
 		name string
@@ -112,7 +112,9 @@ func TestUpgradeStartIndex(t *testing.T) {
 		{"from 159 continues at 1510", 159, 14},
 		{"from 190 runs 1100", 190, 20},
 		{"from unlisted 191 runs 1100", 191, 20},
-		{"latest version nothing to run", 1100, -1},
+		{"from 1100 runs 1120", 1100, 21},
+		{"from 1111 patch runs only 1120", 1111, 21},
+		{"latest version nothing to run", 1120, -1},
 		// 未收录的版本号(发过无迁移的补丁版)退回「第一个大于旧版本」扫描
 		{"unlisted 161 falls back before 1510 era ends", 161, 14},
 		{"unlisted 111 falls back to 122", 111, 1},

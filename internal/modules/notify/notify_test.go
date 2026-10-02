@@ -1,7 +1,10 @@
 package notify
 
 import (
+	"encoding/json"
 	"testing"
+
+	"github.com/gocronx-team/gocron/internal/models"
 )
 
 // TestNotifyDispatch 测试通知分发逻辑
@@ -250,4 +253,43 @@ func containsHelper(s, substr string) bool {
 		}
 	}
 	return false
+}
+
+func TestStatusTextTemplateKeepsMachineStatus(t *testing.T) {
+	msg := Message{"status": "Failed", "status_text": "失败"}
+	if got := parseNotifyTemplate(`{{.Status}} / {{.StatusText}}`, msg); got != "Failed / 失败" {
+		t.Fatal(got)
+	}
+	delete(msg, "status_text")
+	if got := parseNotifyTemplate(`{{.StatusText}}`, msg); got != "Failed" {
+		t.Fatal(got)
+	}
+}
+
+func TestDefaultDisplayTemplateAndCustomTemplate(t *testing.T) {
+	msg := Message{"status": "Failed", "status_text": "失败"}
+	if got := parseDisplayNotifyTemplate(models.DefaultNotificationTemplate, msg); !contains(got, "Status: 失败") {
+		t.Fatal(got)
+	}
+	if got := parseDisplayNotifyTemplate(`custom: {{.Status}}`, msg); got != "custom: Failed" {
+		t.Fatal(got)
+	}
+}
+
+func TestWebhookStatusTextJSONEscaping(t *testing.T) {
+	msg := Message{
+		"task_id": 1, "name": "task", "output": "done",
+		"status": "Failed", "status_text": "失败 \"原因\"\n下一行",
+	}
+	content := renderWebhookTemplate(`{"status":"{{.Status}}","status_text":"{{.StatusText}}"}`, msg)
+	var got struct {
+		Status     string `json:"status"`
+		StatusText string `json:"status_text"`
+	}
+	if err := json.Unmarshal([]byte(content), &got); err != nil {
+		t.Fatalf("invalid webhook JSON %q: %v", content, err)
+	}
+	if got.Status != "Failed" || got.StatusText != "失败 \"原因\"\n下一行" {
+		t.Fatalf("unexpected webhook payload: %+v", got)
+	}
 }
