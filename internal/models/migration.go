@@ -60,7 +60,7 @@ func (migration *Migration) Upgrade(oldVersionId int) {
 		return
 	}
 
-	versionIds := []int{110, 122, 130, 140, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 1510, 160, 163, 170, 180, 190, 1100}
+	versionIds := []int{110, 122, 130, 140, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 1510, 160, 163, 170, 180, 190, 1100, 1120}
 	upgradeFuncs := []func(*gorm.DB) error{
 		migration.upgradeFor110,
 		migration.upgradeFor122,
@@ -83,6 +83,7 @@ func (migration *Migration) Upgrade(oldVersionId int) {
 		migration.upgradeFor180,
 		migration.upgradeFor190,
 		migration.upgradeFor1100,
+		migration.upgradeFor1120,
 	}
 
 	startIndex := upgradeStartIndex(oldVersionId, versionIds)
@@ -131,6 +132,20 @@ func upgradeStartIndex(oldVersionId int, versionIds []int) int {
 		for i, value := range versionIds {
 			if value == 1100 {
 				return i
+			}
+		}
+	}
+	// Patch releases after v1.10.0 (e.g. v1.11.1=1111) must not
+	// revisit the older v1.5.10=1510 migration.
+	if oldVersionId > 1100 {
+		for i, value := range versionIds {
+			if value == 1100 {
+				for j := i + 1; j < len(versionIds); j++ {
+					if versionIds[j] > oldVersionId {
+						return j
+					}
+				}
+				return -1
 			}
 		}
 	}
@@ -881,5 +896,20 @@ func (m *Migration) upgradeFor1100(tx *gorm.DB) error {
 		}
 	}
 	logger.Info("已升级到v1.10.0")
+	return nil
+}
+
+// upgradeFor1120 adds opt-in notification display text and line-scoped matching.
+// Empty texts and line mode 0 preserve existing tasks and templates.
+func (m *Migration) upgradeFor1120(tx *gorm.DB) error {
+	for _, table := range []interface{}{&Task{}, &TaskTemplate{}} {
+		for _, field := range []string{"NotifyKeywordLineMode", "NotifySuccessText", "NotifyFailureText"} {
+			if !tx.Migrator().HasColumn(table, field) {
+				if err := tx.Migrator().AddColumn(table, field); err != nil {
+					return err
+				}
+			}
+		}
+	}
 	return nil
 }

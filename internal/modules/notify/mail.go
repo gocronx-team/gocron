@@ -41,7 +41,7 @@ func (mail *Mail) Send(msg Message) {
 		logger.Error("#mail#Password为空")
 		return
 	}
-	msg["content"] = parseNotifyTemplate(mailSetting.Template, msg)
+	msg["content"] = parseDisplayNotifyTemplate(mailSetting.Template, msg)
 	toUsers := mail.getActiveMailUsers(mailSetting, msg)
 	mail.send(mailSetting, toUsers, msg)
 }

@@ -31,15 +31,18 @@ type TaskTemplate struct {
 	NotifyKeyword      string `json:"notify_keyword" gorm:"type:varchar(128);not null;default:''"`
 	NotifyKeywordRegex int8   `json:"notify_keyword_regex" gorm:"not null;default:0"`
 	// NotifyKeywordExclude 排除关键字,语义与 Task.NotifyKeywordExclude 一致
-	NotifyKeywordExclude string    `json:"notify_keyword_exclude" gorm:"type:varchar(128);not null;default:''"`
-	NotifyDiagnosis      int8      `json:"notify_diagnosis" gorm:"not null;default:0"`
-	LogRetentionDays     int       `json:"log_retention_days" gorm:"type:smallint;not null;default:0"`
-	IsBuiltin            int8      `json:"is_builtin" gorm:"not null;default:0"`
-	UsageCount           int       `json:"usage_count" gorm:"type:int;not null;default:0"`
-	CreatedBy            string    `json:"created_by" gorm:"type:varchar(64);not null;default:''"`
-	CreatedAt            time.Time `json:"created_at" gorm:"column:created_at;autoCreateTime"`
-	UpdatedAt            time.Time `json:"updated_at" gorm:"column:updated_at;autoUpdateTime"`
-	BaseModel            `json:"-" gorm:"-"`
+	NotifyKeywordExclude  string    `json:"notify_keyword_exclude" gorm:"type:varchar(128);not null;default:''"`
+	NotifyKeywordLineMode int8      `json:"notify_keyword_line_mode" gorm:"not null;default:0"`
+	NotifySuccessText     string    `json:"notify_success_text" gorm:"type:varchar(128);not null;default:''"`
+	NotifyFailureText     string    `json:"notify_failure_text" gorm:"type:varchar(128);not null;default:''"`
+	NotifyDiagnosis       int8      `json:"notify_diagnosis" gorm:"not null;default:0"`
+	LogRetentionDays      int       `json:"log_retention_days" gorm:"type:smallint;not null;default:0"`
+	IsBuiltin             int8      `json:"is_builtin" gorm:"not null;default:0"`
+	UsageCount            int       `json:"usage_count" gorm:"type:int;not null;default:0"`
+	CreatedBy             string    `json:"created_by" gorm:"type:varchar(64);not null;default:''"`
+	CreatedAt             time.Time `json:"created_at" gorm:"column:created_at;autoCreateTime"`
+	UpdatedAt             time.Time `json:"updated_at" gorm:"column:updated_at;autoUpdateTime"`
+	BaseModel             `json:"-" gorm:"-"`
 }
 
 func (t *TaskTemplate) Create() (int, error) {
@@ -53,31 +56,34 @@ func (t *TaskTemplate) UpdateBean(id int) (int64, error) {
 			"http_method", "http_body", "http_headers", "success_pattern",
 			"tag", "spec", "timeout", "multi", "retry_times", "retry_interval",
 			"timezone", "notify_status", "notify_type", "notify_keyword", "notify_keyword_regex",
-			"notify_keyword_exclude", "log_retention_days").
+			"notify_keyword_exclude", "notify_keyword_line_mode", "notify_success_text", "notify_failure_text", "log_retention_days").
 		UpdateColumns(map[string]interface{}{
-			"name":                   t.Name,
-			"description":            t.Description,
-			"category":               t.Category,
-			"protocol":               t.Protocol,
-			"command":                t.Command,
-			"http_method":            t.HttpMethod,
-			"http_body":              t.HttpBody,
-			"http_headers":           t.HttpHeaders,
-			"success_pattern":        t.SuccessPattern,
-			"tag":                    t.Tag,
-			"spec":                   t.Spec,
-			"timeout":                t.Timeout,
-			"multi":                  t.Multi,
-			"retry_times":            t.RetryTimes,
-			"retry_interval":         t.RetryInterval,
-			"timezone":               t.Timezone,
-			"notify_status":          t.NotifyStatus,
-			"notify_type":            t.NotifyType,
-			"notify_keyword":         t.NotifyKeyword,
-			"notify_keyword_regex":   t.NotifyKeywordRegex,
-			"notify_keyword_exclude": t.NotifyKeywordExclude,
-			"notify_diagnosis":       t.NotifyDiagnosis,
-			"log_retention_days":     t.LogRetentionDays,
+			"name":                     t.Name,
+			"description":              t.Description,
+			"category":                 t.Category,
+			"protocol":                 t.Protocol,
+			"command":                  t.Command,
+			"http_method":              t.HttpMethod,
+			"http_body":                t.HttpBody,
+			"http_headers":             t.HttpHeaders,
+			"success_pattern":          t.SuccessPattern,
+			"tag":                      t.Tag,
+			"spec":                     t.Spec,
+			"timeout":                  t.Timeout,
+			"multi":                    t.Multi,
+			"retry_times":              t.RetryTimes,
+			"retry_interval":           t.RetryInterval,
+			"timezone":                 t.Timezone,
+			"notify_status":            t.NotifyStatus,
+			"notify_type":              t.NotifyType,
+			"notify_keyword":           t.NotifyKeyword,
+			"notify_keyword_regex":     t.NotifyKeywordRegex,
+			"notify_keyword_exclude":   t.NotifyKeywordExclude,
+			"notify_keyword_line_mode": t.NotifyKeywordLineMode,
+			"notify_success_text":      t.NotifySuccessText,
+			"notify_failure_text":      t.NotifyFailureText,
+			"notify_diagnosis":         t.NotifyDiagnosis,
+			"log_retention_days":       t.LogRetentionDays,
 		})
 	return result.RowsAffected, result.Error
 }

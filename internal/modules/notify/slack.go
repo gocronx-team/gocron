@@ -35,7 +35,7 @@ func (slack *Slack) Send(msg Message) {
 	logger.Debugf("%+v", slackSetting)
 	channels := slack.getActiveSlackChannels(slackSetting, msg)
 	logger.Debugf("%+v", channels)
-	msg["content"] = parseNotifyTemplate(slackSetting.Template, msg)
+	msg["content"] = parseDisplayNotifyTemplate(slackSetting.Template, msg)
 	msg["content"] = html.UnescapeString(msg["content"].(string))
 	for _, channel := range channels {
 		slack.send(msg, slackSetting.Url, channel)

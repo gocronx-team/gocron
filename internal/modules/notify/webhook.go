@@ -26,10 +26,7 @@ func (webHook *WebHook) Send(msg Message) {
 		return
 	}
 	logger.Debugf("%+v", webHookSetting)
-	msg["name"] = utils.EscapeJson(msg["name"].(string))
-	msg["output"] = utils.EscapeJson(msg["output"].(string))
-	msg["content"] = parseNotifyTemplate(webHookSetting.Template, msg)
-	msg["content"] = html.UnescapeString(msg["content"].(string))
+	msg["content"] = renderWebhookTemplate(webHookSetting.Template, msg)
 
 	// 获取任务配置的接收者ID列表
 	activeUrls := webHook.getActiveWebhookUrls(webHookSetting, msg)
@@ -67,4 +64,13 @@ func (webHook *WebHook) send(msg Message, url string) {
 			logger.Errorf("webHook#发送消息失败#%s#消息内容-%s", resp.Body, msg["content"])
 		}
 	}
+}
+
+func renderWebhookTemplate(tmpl string, msg Message) string {
+	msg["name"] = utils.EscapeJson(msg["name"].(string))
+	msg["output"] = utils.EscapeJson(msg["output"].(string))
+	if statusText, ok := msg["status_text"].(string); ok {
+		msg["status_text"] = utils.EscapeJson(statusText)
+	}
+	return html.UnescapeString(parseNotifyTemplate(tmpl, msg))
 }

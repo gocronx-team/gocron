@@ -19,34 +19,37 @@ import (
 )
 
 type TaskForm struct {
-	Id                   int                         `form:"id" json:"id"`
-	Level                models.TaskLevel            `form:"level" json:"level" binding:"required,oneof=1 2"`
-	DependencyStatus     models.TaskDependencyStatus `form:"dependency_status" json:"dependency_status" binding:"oneof=1 2"`
-	DependencyTaskId     string                      `form:"dependency_task_id" json:"dependency_task_id"`
-	Name                 string                      `form:"name" json:"name" binding:"required,max=32"`
-	Spec                 string                      `form:"spec" json:"spec"`
-	Protocol             models.TaskProtocol         `form:"protocol" json:"protocol" binding:"oneof=1 2"`
-	Command              string                      `form:"command" json:"command" binding:"required,max=65535"`
-	HttpMethod           models.TaskHTTPMethod       `form:"http_method" json:"http_method" binding:"oneof=1 2"`
-	HttpBody             string                      `form:"http_body" json:"http_body" binding:"max=65535"`
-	HttpHeaders          string                      `form:"http_headers" json:"http_headers" binding:"max=4096"`
-	SuccessPattern       string                      `form:"success_pattern" json:"success_pattern" binding:"max=512"`
-	SecretNames          string                      `form:"secret_names" json:"secret_names" binding:"max=512"`
-	Timeout              int                         `form:"timeout" json:"timeout" binding:"min=0,max=86400"`
-	Multi                int8                        `form:"multi" json:"multi" binding:"oneof=0 1"`
-	RetryTimes           int8                        `form:"retry_times" json:"retry_times"`
-	RetryInterval        int16                       `form:"retry_interval" json:"retry_interval"`
-	HostId               string                      `form:"host_id" json:"host_id"`
-	Tag                  string                      `form:"tag" json:"tag"`
-	Remark               string                      `form:"remark" json:"remark"`
-	NotifyStatus         int8                        `form:"notify_status" json:"notify_status" binding:"min=0,max=7"` // 位掩码:1=失败 2=成功 4=关键字
-	NotifyType           int8                        `form:"notify_type" json:"notify_type" binding:"oneof=0 1 2"`
-	NotifyReceiverId     string                      `form:"notify_receiver_id" json:"notify_receiver_id"`
-	NotifyKeyword        string                      `form:"notify_keyword" json:"notify_keyword"`
-	NotifyKeywordRegex   int8                        `form:"notify_keyword_regex" json:"notify_keyword_regex" binding:"oneof=0 1"`
-	NotifyKeywordExclude string                      `form:"notify_keyword_exclude" json:"notify_keyword_exclude"`
-	NotifyDiagnosis      int8                        `form:"notify_diagnosis" json:"notify_diagnosis" binding:"oneof=0 1"`
-	LogRetentionDays     int                         `form:"log_retention_days" json:"log_retention_days" binding:"min=0,max=3650"`
+	Id                    int                         `form:"id" json:"id"`
+	Level                 models.TaskLevel            `form:"level" json:"level" binding:"required,oneof=1 2"`
+	DependencyStatus      models.TaskDependencyStatus `form:"dependency_status" json:"dependency_status" binding:"oneof=1 2"`
+	DependencyTaskId      string                      `form:"dependency_task_id" json:"dependency_task_id"`
+	Name                  string                      `form:"name" json:"name" binding:"required,max=32"`
+	Spec                  string                      `form:"spec" json:"spec"`
+	Protocol              models.TaskProtocol         `form:"protocol" json:"protocol" binding:"oneof=1 2"`
+	Command               string                      `form:"command" json:"command" binding:"required,max=65535"`
+	HttpMethod            models.TaskHTTPMethod       `form:"http_method" json:"http_method" binding:"oneof=1 2"`
+	HttpBody              string                      `form:"http_body" json:"http_body" binding:"max=65535"`
+	HttpHeaders           string                      `form:"http_headers" json:"http_headers" binding:"max=4096"`
+	SuccessPattern        string                      `form:"success_pattern" json:"success_pattern" binding:"max=512"`
+	SecretNames           string                      `form:"secret_names" json:"secret_names" binding:"max=512"`
+	Timeout               int                         `form:"timeout" json:"timeout" binding:"min=0,max=86400"`
+	Multi                 int8                        `form:"multi" json:"multi" binding:"oneof=0 1"`
+	RetryTimes            int8                        `form:"retry_times" json:"retry_times"`
+	RetryInterval         int16                       `form:"retry_interval" json:"retry_interval"`
+	HostId                string                      `form:"host_id" json:"host_id"`
+	Tag                   string                      `form:"tag" json:"tag"`
+	Remark                string                      `form:"remark" json:"remark"`
+	NotifyStatus          int8                        `form:"notify_status" json:"notify_status" binding:"min=0,max=7"` // 位掩码:1=失败 2=成功 4=关键字
+	NotifyType            int8                        `form:"notify_type" json:"notify_type" binding:"oneof=0 1 2"`
+	NotifyReceiverId      string                      `form:"notify_receiver_id" json:"notify_receiver_id"`
+	NotifyKeyword         string                      `form:"notify_keyword" json:"notify_keyword"`
+	NotifyKeywordRegex    int8                        `form:"notify_keyword_regex" json:"notify_keyword_regex" binding:"oneof=0 1"`
+	NotifyKeywordExclude  string                      `form:"notify_keyword_exclude" json:"notify_keyword_exclude"`
+	NotifyKeywordLineMode int8                        `form:"notify_keyword_line_mode" json:"notify_keyword_line_mode" binding:"oneof=0 1"`
+	NotifySuccessText     string                      `form:"notify_success_text" json:"notify_success_text" binding:"max=128"`
+	NotifyFailureText     string                      `form:"notify_failure_text" json:"notify_failure_text" binding:"max=128"`
+	NotifyDiagnosis       int8                        `form:"notify_diagnosis" json:"notify_diagnosis" binding:"oneof=0 1"`
+	LogRetentionDays      int                         `form:"log_retention_days" json:"log_retention_days" binding:"min=0,max=3650"`
 }
 
 // 首页
@@ -159,6 +162,32 @@ func Store(c *gin.Context) {
 	taskModel.NotifyKeyword = form.NotifyKeyword
 	taskModel.NotifyKeywordRegex = form.NotifyKeywordRegex
 	taskModel.NotifyKeywordExclude = form.NotifyKeywordExclude
+	taskModel.NotifyKeywordLineMode = form.NotifyKeywordLineMode
+	taskModel.NotifySuccessText = form.NotifySuccessText
+	taskModel.NotifyFailureText = form.NotifyFailureText
+	// Older frontends do not submit these fields. Preserve stored values during
+	// rolling upgrades instead of silently resetting opt-in notification settings.
+	if id > 0 {
+		_, hasLineMode := c.GetPostForm("notify_keyword_line_mode")
+		_, hasSuccessText := c.GetPostForm("notify_success_text")
+		_, hasFailureText := c.GetPostForm("notify_failure_text")
+		if !hasLineMode || !hasSuccessText || !hasFailureText {
+			previous, loadErr := taskModel.Detail(id)
+			if loadErr != nil {
+				base.RespondErrorWithDefaultMsg(c, loadErr)
+				return
+			}
+			if !hasLineMode {
+				taskModel.NotifyKeywordLineMode = previous.NotifyKeywordLineMode
+			}
+			if !hasSuccessText {
+				taskModel.NotifySuccessText = previous.NotifySuccessText
+			}
+			if !hasFailureText {
+				taskModel.NotifyFailureText = previous.NotifyFailureText
+			}
+		}
+	}
 	taskModel.NotifyDiagnosis = form.NotifyDiagnosis
 	taskModel.LogRetentionDays = form.LogRetentionDays
 	taskModel.Spec = form.Spec
@@ -556,6 +585,9 @@ func buildTaskDiff(old, new models.Task) string {
 	add("notify_status", strconv.Itoa(int(old.NotifyStatus)), strconv.Itoa(int(new.NotifyStatus)))
 	add("notify_keyword", old.NotifyKeyword, new.NotifyKeyword)
 	add("notify_keyword_exclude", old.NotifyKeywordExclude, new.NotifyKeywordExclude)
+	add("notify_keyword_line_mode", strconv.Itoa(int(old.NotifyKeywordLineMode)), strconv.Itoa(int(new.NotifyKeywordLineMode)))
+	add("notify_success_text", old.NotifySuccessText, new.NotifySuccessText)
+	add("notify_failure_text", old.NotifyFailureText, new.NotifyFailureText)
 	add("log_retention_days", strconv.Itoa(old.LogRetentionDays), strconv.Itoa(new.LogRetentionDays))
 
 	if len(changes) == 0 {

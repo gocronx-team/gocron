@@ -1112,6 +1112,9 @@ func matchNotifyKeyword(taskModel models.Task, output string) bool {
 		return false
 	}
 	useRegex := taskModel.NotifyKeywordRegex == 1
+	if taskModel.NotifyKeywordLineMode == 1 {
+		return matchNotifyKeywordByLine(taskModel, output, useRegex)
+	}
 	matched, err := matchOutputPattern(kw, useRegex, output)
 	if err != nil {
 		logger.Warnf("通知关键字正则编译失败#task-%d: %v", taskModel.Id, err)
@@ -1131,6 +1134,42 @@ func matchNotifyKeyword(taskModel models.Task, output string) bool {
 		return true
 	}
 	return !excluded
+}
+
+// matchNotifyKeywordByLine scans without splitting/copying the (up to 1 MiB) output.
+// Regexes are compiled once per notification, not once per line.
+func matchNotifyKeywordByLine(task models.Task, output string, useRegex bool) bool {
+	match := func(line string) bool { return strings.Contains(line, task.NotifyKeyword) }
+	exclude := func(line string) bool { return strings.Contains(line, task.NotifyKeywordExclude) }
+	if useRegex {
+		keyword, err := regexp.Compile(task.NotifyKeyword)
+		if err != nil {
+			logger.Warnf("通知关键字正则编译失败#task-%d: %v", task.Id, err)
+			return false
+		}
+		match = keyword.MatchString
+		if task.NotifyKeywordExclude != "" {
+			excluded, err := regexp.Compile(task.NotifyKeywordExclude)
+			if err != nil {
+				// Preserve fail-open behavior of the whole-output matcher.
+				logger.Warnf("通知排除关键字正则编译失败#task-%d: %v", task.Id, err)
+				exclude = func(string) bool { return false }
+			} else {
+				exclude = excluded.MatchString
+			}
+		}
+	}
+	for {
+		line, rest, more := strings.Cut(output, "\n")
+		line = strings.TrimSuffix(line, "\r")
+		if match(line) && (task.NotifyKeywordExclude == "" || !exclude(line)) {
+			return true
+		}
+		if !more {
+			return false
+		}
+		output = rest
+	}
 }
 
 func SendNotification(taskModel models.Task, taskResult TaskResult) {
@@ -1159,6 +1198,13 @@ func SendNotification(taskModel models.Task, taskResult TaskResult) {
 		statusName = "Failed"
 	}
 
+	statusText := statusName
+	if failed && taskModel.NotifyFailureText != "" {
+		statusText = taskModel.NotifyFailureText
+	} else if !failed && taskModel.NotifySuccessText != "" {
+		statusText = taskModel.NotifySuccessText
+	}
+
 	output := taskResult.Result
 	// 失败 + 开启诊断时,尽力附带 AI 根因分析(不阻塞:本函数已在 goroutine 中调用)
 	if failed && taskModel.NotifyDiagnosis == 1 {
@@ -1174,6 +1220,7 @@ func SendNotification(taskModel models.Task, taskResult TaskResult) {
 		"name":             taskModel.Name,
 		"output":           output,
 		"status":           statusName,
+		"status_text":      statusText,
 		"task_id":          taskModel.Id,
 		"remark":           taskModel.Remark,
 	}

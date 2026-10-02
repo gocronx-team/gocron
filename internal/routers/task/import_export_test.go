@@ -144,6 +144,7 @@ func TestExportRoundTrip(t *testing.T) {
 	if _, err := (&models.Task{Name: "exp-1", Level: models.TaskLevelParent, Spec: "0 0 0 1 1 *",
 		Protocol: models.TaskHTTP, Command: "http://z", HttpMethod: models.TaskHTTPMethodGet,
 		NotifyStatus: 5, NotifyKeyword: "ERR", NotifyKeywordRegex: 1, NotifyKeywordExclude: "ERR: ignored",
+		NotifyKeywordLineMode: 1, NotifySuccessText: "成功", NotifyFailureText: "失败",
 		DependencyStatus: models.TaskDependencyStatusWeak, Status: models.Enabled}).Create(); err != nil {
 		t.Fatalf("seed: %v", err)
 	}
@@ -165,7 +166,8 @@ func TestExportRoundTrip(t *testing.T) {
 	// 关键字段(含新的 notify 位掩码 + 正则 + 排除关键字)应完整保留
 	yt := doc.Tasks[0]
 	if yt.NotifyStatus != 5 || yt.NotifyKeyword != "ERR" || yt.NotifyKeywordRegex != 1 ||
-		yt.NotifyKeywordExclude != "ERR: ignored" {
+		yt.NotifyKeywordExclude != "ERR: ignored" || yt.NotifyKeywordLineMode != 1 ||
+		yt.NotifySuccessText != "成功" || yt.NotifyFailureText != "失败" {
 		t.Errorf("notify fields not preserved: %+v", yt)
 	}
 }
@@ -185,6 +187,9 @@ tasks:
     notify_keyword: "ERROR"
     notify_keyword_regex: 1
     notify_keyword_exclude: "ERROR: ignored"
+    notify_keyword_line_mode: 1
+    notify_success_text: "成功"
+    notify_failure_text: "失败"
 `
 	req := httptest.NewRequest(http.MethodPost, "/api/task/import", strings.NewReader(body))
 	w := httptest.NewRecorder()
@@ -203,7 +208,8 @@ tasks:
 		t.Fatalf("load imported task: %v", err)
 	}
 	if loaded.NotifyStatus != 4 || loaded.NotifyKeyword != "ERROR" ||
-		loaded.NotifyKeywordRegex != 1 || loaded.NotifyKeywordExclude != "ERROR: ignored" {
+		loaded.NotifyKeywordRegex != 1 || loaded.NotifyKeywordExclude != "ERROR: ignored" ||
+		loaded.NotifyKeywordLineMode != 1 || loaded.NotifySuccessText != "成功" || loaded.NotifyFailureText != "失败" {
 		t.Errorf("imported notify fields wrong: %+v", loaded)
 	}
 }

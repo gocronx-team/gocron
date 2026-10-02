@@ -46,6 +46,9 @@ export interface TaskListItem {
   notify_keyword?: string
   notify_keyword_regex?: number
   notify_keyword_exclude?: string
+  notify_keyword_line_mode?: number
+  notify_success_text?: string
+  notify_failure_text?: string
   notify_diagnosis?: number
   notify_receiver_id?: string
   log_retention_days?: number
@@ -80,6 +83,9 @@ export interface TaskStoreParams {
   notify_keyword?: string
   notify_keyword_regex?: number
   notify_keyword_exclude?: string
+  notify_keyword_line_mode?: number
+  notify_success_text?: string
+  notify_failure_text?: string
   notify_diagnosis?: number
   notify_receiver_id?: string
   log_retention_days?: number
