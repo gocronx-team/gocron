@@ -32,6 +32,13 @@ gocron supports the following shortcut syntax:
 | `@every 30s` | Run every 30 seconds | - |
 | `@every 1m20s` | Run every 1 minute and 20 seconds | - |
 | `@every 3h5m10s` | Run every 3 hours, 5 minutes and 10 seconds | - |
+| `@reboot` | Run once when the scheduler starts | - |
+
+::: tip Startup trigger
+`@reboot` tasks run once when the scheduler starts — on the leader node when
+high availability is enabled. Any time a new leader starts the scheduler (a
+restart or a failover) the task runs again, so keep startup commands idempotent.
+:::
 
 ## Execution Methods
 

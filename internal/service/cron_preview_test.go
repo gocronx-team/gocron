@@ -165,6 +165,37 @@ func TestPreviewCron_Timezone(t *testing.T) {
 	})
 }
 
+func TestPreviewCron_Reboot(t *testing.T) {
+	t.Run("@reboot 标记为启动触发且不产生虚假执行计划", func(t *testing.T) {
+		got := previewCronAt("@reboot", "", 10, testNow)
+		if !got.Valid {
+			t.Fatalf("expected valid, got %q", got.Error)
+		}
+		if !got.Startup {
+			t.Error("expected Startup=true for @reboot")
+		}
+		if len(got.NextRuns) != 0 {
+			t.Errorf("next_runs=%d want=0 for @reboot", len(got.NextRuns))
+		}
+		if len(got.HeatmapCells) != 0 {
+			t.Errorf("heatmap_cells=%d want=0 for @reboot", len(got.HeatmapCells))
+		}
+	})
+
+	t.Run("带时区前缀的 @reboot", func(t *testing.T) {
+		got := previewCronAt("@reboot", "Asia/Tokyo", 10, testNow)
+		if !got.Valid {
+			t.Fatalf("expected valid, got %q", got.Error)
+		}
+		if !got.Startup {
+			t.Error("expected Startup=true for @reboot with timezone")
+		}
+		if len(got.NextRuns) != 0 {
+			t.Errorf("next_runs=%d want=0 for @reboot", len(got.NextRuns))
+		}
+	})
+}
+
 func TestPreviewCron_Heatmap(t *testing.T) {
 	t.Run("标准低频表达式", func(t *testing.T) {
 		// 每天 09:30 一次，一周 7 次

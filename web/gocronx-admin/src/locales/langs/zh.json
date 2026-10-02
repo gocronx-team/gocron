@@ -666,6 +666,7 @@
     "previewInvalid": "Cron 表达式无效",
     "previewNextRuns": "接下来 {count} 次执行",
     "previewNoRuns": "没有将要发生的执行",
+    "previewStartup": "@reboot：调度器启动时执行一次",
     "inSeconds": "{n} 秒后",
     "inMinutes": "{n} 分钟后",
     "inHours": "{n} 小时后",

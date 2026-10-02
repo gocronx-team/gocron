@@ -666,6 +666,7 @@
     "previewInvalid": "Invalid cron expression",
     "previewNextRuns": "Next {count} runs",
     "previewNoRuns": "No upcoming runs",
+    "previewStartup": "@reboot: runs once when the scheduler starts",
     "inSeconds": "in {n}s",
     "inMinutes": "in {n}m",
     "inHours": "in {n}h",
