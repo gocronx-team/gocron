@@ -49,3 +49,7 @@ It guides you through producing messages such as:
 - `feat(task): add task dependency configuration`
 - `fix(api): fix task status update issue`
 - `docs: update API documentation`
+
+Avoid raw `@` mentions in commit subjects and pull request titles: GitHub may
+notify an unrelated account. For cron expressions such as the reboot trigger,
+use a descriptive word in the title and put the exact syntax in the body.
