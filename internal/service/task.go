@@ -28,6 +28,7 @@ import (
 	rpcClient "github.com/gocronx-team/gocron/internal/modules/rpc/client"
 	pb "github.com/gocronx-team/gocron/internal/modules/rpc/proto"
 	"github.com/gocronx-team/gocron/internal/modules/utils"
+	"gorm.io/gorm"
 )
 
 var (
@@ -305,6 +306,12 @@ func (task Task) Add(taskModel models.Task) {
 		logger.Error("Failed to create task job#Unsupported task protocol#", taskModel.Protocol)
 		return
 	}
+	// In HA mode an API request may be handled by a follower while the
+	// scheduler is running on another node. The follower updates the shared
+	// database, but cannot remove the leader's in-memory cron entry. Re-check
+	// the persisted status at dispatch time so a task disabled through any
+	// node is skipped at the next dispatch-time check.
+	taskFunc = guardScheduledJob(taskModel.Id, taskFunc)
 
 	cronName := strconv.Itoa(taskModel.Id)
 	err := utils.PanicToError(func() {
@@ -920,6 +927,28 @@ func updateTaskLog(taskLogId int64, taskResult TaskResult) (int64, error) {
 		"result":      result,
 		"end_time":    time.Now(),
 	})
+}
+
+// guardScheduledJob prevents stale cron entries from dispatching after a task
+// is disabled on another HA node. Manual runs intentionally use createJob
+// directly and keep their existing behavior. This is not an atomic claim with
+// Disable: work that has already passed this check is not cancelled.
+func guardScheduledJob(taskID int, job cron.FuncJob) cron.FuncJob {
+	return func() {
+		var current models.Task
+		err := models.Db.Select("status").First(&current, taskID).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return
+		}
+		if err != nil {
+			logger.Warnf("Skipping scheduled task dispatch#ID-%d#failed to read status: %v", taskID, err)
+			return
+		}
+		if current.Status != models.Enabled {
+			return
+		}
+		job()
+	}
 }
 
 func createJob(taskModel models.Task) cron.FuncJob {
