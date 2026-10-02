@@ -38,6 +38,7 @@ gocron supports the following shortcut syntax:
 `@reboot` tasks run once when the scheduler starts — on the leader node when
 high availability is enabled. Any time a new leader starts the scheduler (a
 restart or a failover) the task runs again, so keep startup commands idempotent.
+The task editor shows a startup hint instead of future run times for this trigger.
 :::
 
 ## Execution Methods
