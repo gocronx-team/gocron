@@ -130,6 +130,35 @@ func TestSetting_RemoveWebhookUrl(t *testing.T) {
 }
 
 // TestSetting_Webhook 测试获取webhook配置
+func TestUpdateWebHookMissingTemplateAndErrors(t *testing.T) {
+	db := setupTestDB(t)
+	original := Db
+	Db = db
+	t.Cleanup(func() { Db = original })
+	model := new(Setting)
+	for _, template := range []string{`{"msg_type":"text","content":{"text":"{{.TaskName}}"}}`, "updated", "updated", ""} {
+		if err := model.UpdateWebHook(template); err != nil {
+			t.Fatal(err)
+		}
+		got, err := model.Webhook()
+		if err != nil || got.Template != template {
+			t.Fatalf("template not persisted: got %q, want %q, err %v", got.Template, template, err)
+		}
+	}
+	var count int64
+	db.Model(&Setting{}).Where("code = ? AND key = ?", WebhookCode, WebhookTemplateKey).Count(&count)
+	if count != 1 {
+		t.Fatalf("expected one template row, got %d", count)
+	}
+	if err := db.Migrator().DropTable(&Setting{}); err != nil {
+		t.Fatal(err)
+	}
+	if err := model.UpdateWebHook("must fail"); err == nil {
+		t.Fatal("database error was swallowed")
+	}
+}
+
+// TestSetting_Webhook 测试获取webhook配置
 func TestSetting_Webhook(t *testing.T) {
 	db := setupTestDB(t)
 	Db = db

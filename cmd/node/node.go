@@ -2,6 +2,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"os"
 	"runtime"
@@ -28,6 +29,7 @@ func main() {
 	var enableTLS bool
 	var logLevel string
 	var token string
+	var requireSecure bool
 	flag.BoolVar(&allowRoot, "allow-root", false, "./gocron-node -allow-root")
 	flag.StringVar(&serverAddr, "s", "0.0.0.0:5921", "./gocron-node -s ip:port")
 	flag.BoolVar(&version, "v", false, "./gocron-node -v")
@@ -36,6 +38,7 @@ func main() {
 	flag.StringVar(&certFile, "cert-file", "", "./gocron-node -cert-file path")
 	flag.StringVar(&keyFile, "key-file", "", "./gocron-node -key-file path")
 	flag.StringVar(&token, "token", "", "shared RPC token; when set, callers must present the same token")
+	flag.BoolVar(&requireSecure, "require-secure", false, "require mutual TLS before starting the node")
 	flag.StringVar(&logLevel, "log-level", "info", "-log-level error")
 	flag.Parse()
 
@@ -52,6 +55,15 @@ func main() {
 	if version {
 		utils.PrintAppVersion(AppVersion, GitCommit, BuildDate)
 		return
+	}
+	if err := validateSecurity(requireSecure, enableTLS); err != nil {
+		log.Fatal(err)
+	}
+	if !enableTLS {
+		log.Warn("RPC TLS is disabled: commands, output and tokens travel in plaintext; use mutual TLS or a trusted encrypted tunnel")
+		if token == "" {
+			log.Warn("RPC authentication is disabled: anyone who can reach this node can execute commands; restrict network access and configure authentication")
+		}
 	}
 
 	// 容器内存感知:把 GOMEMLIMIT 设为 cgroup 内存上限的 90%,减少节点进程被 OOM kill。
@@ -88,4 +100,11 @@ func main() {
 	}
 
 	server.Start(serverAddr, enableTLS, certificate, token)
+}
+
+func validateSecurity(requireSecure, enableTLS bool) error {
+	if requireSecure && !enableTLS {
+		return errors.New("-require-secure requires -enable-tls and valid mutual TLS certificates")
+	}
+	return nil
 }

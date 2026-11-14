@@ -109,6 +109,8 @@ func Register(r *gin.Engine) {
 		taskGroup.POST("/batch-disable", task.BatchDisable)
 		taskGroup.POST("/batch-remove", task.BatchRemove)
 		taskGroup.GET("/run/:id", task.Run)
+		taskGroup.POST("/run/:id", task.RunWithBody)
+		taskGroup.GET("/run-capabilities", task.RunCapabilities)
 		taskGroup.GET("/export", task.Export)
 		taskGroup.POST("/import", task.Import)
 	}
@@ -170,6 +172,7 @@ func Register(r *gin.Engine) {
 			webhookGroup.POST("/url/remove/:id", manage.RemoveWebhookUrl)
 		}
 		systemGroup.GET("/version", manage.Version)
+		systemGroup.GET("/metrics", manage.Metrics)
 		systemGroup.GET("/login-log", loginlog.Index)
 		systemGroup.GET("/log-retention", manage.GetLogRetentionDays)
 		systemGroup.POST("/log-retention", manage.UpdateLogRetentionDays)
@@ -562,6 +565,11 @@ func resolveModuleAction(path string, c *gin.Context) (module, action string) {
 		return "task", "enable"
 	case "/api/task/disable/:id":
 		return "task", "disable"
+	case "/api/task/run/:id":
+		if accepted, _ := c.Get("manual_run_accepted"); accepted != true {
+			return "", ""
+		}
+		return "task", "run"
 	case "/api/task/batch-enable":
 		return "task", "batch-enable"
 	case "/api/task/batch-disable":

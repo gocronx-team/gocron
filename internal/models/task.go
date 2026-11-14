@@ -123,7 +123,7 @@ func (task *Task) Create() (insertId int, err error) {
 		"retry_times", "retry_interval", "notify_status", "notify_type",
 		"notify_receiver_id", "notify_keyword", "notify_keyword_regex", "notify_keyword_exclude",
 		"notify_keyword_line_mode", "notify_success_text", "notify_failure_text",
-		"tag", "log_retention_days", "remark", "status",
+		"notify_diagnosis", "tag", "log_retention_days", "remark", "status",
 	).Create(task)
 	if result.Error == nil {
 		insertId = task.Id
@@ -139,7 +139,7 @@ func (task *Task) UpdateBean(id int) (int64, error) {
 			"notify_type", "notify_receiver_id", "dependency_task_id",
 			"dependency_status", "tag", "http_method", "http_body",
 			"http_headers", "success_pattern", "secret_names", "notify_keyword", "notify_keyword_regex",
-			"notify_keyword_exclude", "notify_keyword_line_mode", "notify_success_text", "notify_failure_text", "log_retention_days").
+			"notify_keyword_exclude", "notify_keyword_line_mode", "notify_success_text", "notify_failure_text", "notify_diagnosis", "log_retention_days").
 		UpdateColumns(map[string]interface{}{
 			"name":                     task.Name,
 			"spec":                     task.Spec,

@@ -92,6 +92,36 @@ func TestList_HostAndTimeRangeFilter(t *testing.T) {
 	}
 }
 
+func TestList_KeywordPreservesTaskAndStatusFilters(t *testing.T) {
+	cleanup := setupTaskLogTestDb(t)
+	defer cleanup()
+	logs := []TaskLog{
+		{TaskId: 1, Status: 1, Name: "needle", Result: "", Spec: "*", Command: "true"},
+		{TaskId: 1, Status: 1, Name: "other", Result: "needle", Spec: "*", Command: "true"},
+		{TaskId: 2, Status: 1, Name: "other task", Result: "needle", Spec: "*", Command: "true"},
+		{TaskId: 1, Status: 0, Name: "other status", Result: "needle", Spec: "*", Command: "true"},
+	}
+	if err := Db.Create(&logs).Error; err != nil {
+		t.Fatal(err)
+	}
+	// GORM applies the status=1 default to zero-valued struct inserts.
+	if err := Db.Model(&TaskLog{}).Where("name = ?", "other status").Update("status", 0).Error; err != nil {
+		t.Fatal(err)
+	}
+	got, err := new(TaskLog).List(CommonMap{"TaskId": 1, "Status": 1, "Keyword": "needle"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("expected two matching logs, got %+v", got)
+	}
+	for _, log := range got {
+		if log.TaskId != 1 || log.Status != 1 {
+			t.Fatalf("keyword escaped scope: %+v", log)
+		}
+	}
+}
+
 func TestList_TimeRangeFilter(t *testing.T) {
 	cleanup := setupTaskLogTestDb(t)
 	defer cleanup()

@@ -68,6 +68,8 @@
     fetchTaskEnable,
     fetchTaskDisable,
     fetchTaskRunOnce,
+    fetchTaskRunWithBody,
+    fetchRunCapabilities,
     fetchBatchEnable,
     fetchBatchDisable,
     fetchBatchRemove,
@@ -484,6 +486,37 @@
   // ── Row actions ───────────────────────────────────────────────────────────────
   async function handleRunOnce(row: TaskListItem) {
     try {
+      // Missing capability (N-1 server) keeps the original run flow. Never retry
+      // a failed POST as GET: its execution may already have been accepted.
+      const capabilities =
+        row.protocol === 1 && row.http_method === 2
+          ? await fetchRunCapabilities().catch(() => null)
+          : null
+      if (capabilities?.http_post_body_override) {
+        const { value } = await ElMessageBox.prompt(
+          t('task.runBodyHint'),
+          t('task.confirmRunOnce', { name: row.name }),
+          {
+            inputType: 'textarea',
+            inputValue: '',
+            confirmButtonText: t('task.confirm'),
+            cancelButtonText: t('task.cancel'),
+            inputValidator: (value: string) => {
+              if (!value.trim()) return true
+              try {
+                JSON.parse(value)
+                return new TextEncoder().encode(value).length <= 65535 || t('task.runBodyInvalid')
+              } catch {
+                return t('task.runBodyInvalid')
+              }
+            }
+          }
+        )
+        if (value.trim()) await fetchTaskRunWithBody(row.id, value)
+        else await fetchTaskRunOnce(row.id)
+        ElMessage.success(t('task.runOnceSuccess'))
+        return
+      }
       await ElMessageBox.confirm(
         t('task.confirmRunOnce', { name: row.name }),
         t('task.confirmTitle'),

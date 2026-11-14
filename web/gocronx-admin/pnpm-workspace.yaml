@@ -11,10 +11,12 @@ overrides:
   lodash: '>=4.17.23'
   lodash-es: '>=4.17.23'
   picomatch: '>=4.0.4'
-  minimatch: '>=9.0.7'
+  minimatch: '^11.0.2'
   immutable: '>=5.1.5'
   flatted: '>=3.4.2'
-  fast-uri: '>=4.1.5'
+  fast-uri: '>=4.2.3'
+  follow-redirects: '>=1.16.2'
+  source-map-js: '>=1.2.2'
   brace-expansion: '>=5.0.12'
   defu: '>=6.1.5'
   # Security fixes for transitive frontend build/lint dependencies.
@@ -22,7 +24,8 @@ overrides:
   browserslist: '>=4.28.7'
   '@humanfs/node': 0.16.8
   colord: '>=2.9.4'
-  'postcss-selector-parser@>=6.1.0 <6.1.3': 6.1.3
+  'postcss-selector-parser@>=6.0.0 <6.1.5': 6.1.5
+  'postcss-selector-parser@>=7.0.0 <7.1.6': 7.1.6
   # esbuild <0.28.1：两条 advisory（dev server 任意文件读取 / 二进制完整性校验缺失）
   esbuild: '>=0.28.1'
   # ajv ReDoS（仅 $data 选项触发，工具链未用）：只定向升 commitlint 的 ajv8，

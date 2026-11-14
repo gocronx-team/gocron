@@ -170,6 +170,20 @@ export function fetchTaskRunOnce(id: number) {
   })
 }
 
+export function fetchRunCapabilities() {
+  return request.get<{ http_post_body_override?: boolean }>({
+    url: '/api/task/run-capabilities',
+    showErrorMessage: false
+  })
+}
+
+export function fetchTaskRunWithBody(id: number, httpBody: string) {
+  return request.post<null>({
+    url: `/api/task/run/${id}`,
+    data: { http_body: httpBody }
+  })
+}
+
 /**
  * GET /api/task/tags  →  string[]
  */
