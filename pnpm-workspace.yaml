@@ -3,10 +3,14 @@
 overrides:
   # 1.x 已无安全补丁；统一升级并通过提交工具链检查验证兼容性。
   brace-expansion@<5.0.12: '>=5.0.12'
-  fast-uri: '>=4.1.5'
+  # Commitizen uses only glob.sync; modern glob retains this API.
+  'commitizen>glob': '^14.0.2'
+  fast-uri: '>=4.2.3'
   flatted: '>=3.4.2'
   js-yaml: '>=5.4.1'
   lodash: '>=4.18.0'
+  minimatch: '^11.0.2'
   postcss: '>=8.5.23'
   tmp: '>=0.2.6'
-
+patchedDependencies:
+  commitizen@4.3.2: patches/commitizen@4.3.2.patch

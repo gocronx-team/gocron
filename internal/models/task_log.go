@@ -244,7 +244,7 @@ func (taskLog *TaskLog) parseWhere(query *gorm.DB, params CommonMap) {
 	keyword, ok := params["Keyword"]
 	if ok && keyword.(string) != "" {
 		like := "%" + keyword.(string) + "%"
-		query.Where("name LIKE ? OR result LIKE ?", like, like)
+		query.Where("(name LIKE ? OR result LIKE ?)", like, like)
 	}
 	// 按开始时间范围过滤（值为 time.Time，与统计查询一致，跨库稳妥）
 	if startTime, ok := params["StartTime"]; ok {

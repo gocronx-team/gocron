@@ -2,7 +2,9 @@
 # Frontend build stage
 FROM node:24-alpine AS frontend
 
-RUN corepack enable && corepack prepare pnpm@10 --activate
+# Node's fetch must explicitly opt into HTTP(S)_PROXY for Corepack downloads.
+# With no proxy configured this keeps the normal direct connection behavior.
+RUN corepack enable && NODE_USE_ENV_PROXY=1 corepack prepare pnpm@10 --activate
 
 WORKDIR /app/web/gocronx-admin
 # pnpm-workspace.yaml carries the dependency overrides (pnpm 10.34+ no longer reads
@@ -10,7 +12,7 @@ WORKDIR /app/web/gocronx-admin
 COPY web/gocronx-admin/package.json web/gocronx-admin/pnpm-lock.yaml web/gocronx-admin/pnpm-workspace.yaml ./
 # Cache the pnpm store across builds so unchanged deps aren't re-downloaded
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile
+    NODE_USE_ENV_PROXY=1 pnpm install --frozen-lockfile
 
 COPY web/gocronx-admin ./
 # build-only skips the vue-tsc type-check (CI already runs the full type-check
@@ -18,7 +20,7 @@ COPY web/gocronx-admin ./
 RUN pnpm build-only
 
 # Backend build stage
-FROM golang:1.26.6-alpine AS builder
+FROM golang:1.26.11-alpine AS builder
 
 RUN apk add --no-cache git
 
@@ -26,6 +28,8 @@ WORKDIR /app
 ARG VERSION=dev
 ARG GIT_COMMIT=unknown
 ARG BUILD_DATE=unknown
+# Allow builders to select a reachable module mirror without changing defaults.
+ARG GOPROXY=https://proxy.golang.org,direct
 COPY go.mod go.sum ./
 # Cache the Go module cache across builds
 RUN --mount=type=cache,target=/go/pkg/mod \

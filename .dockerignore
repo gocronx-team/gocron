@@ -3,6 +3,8 @@
 .claude
 .gstack
 .design-review
+.autonomous
+.gocron
 node_modules
 web/gocronx-admin/node_modules
 web/gocronx-admin/dist

@@ -1,8 +1,15 @@
 package models
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"strconv"
+	"time"
+
+	"github.com/go-sql-driver/mysql"
+
+	"gorm.io/gorm"
 )
 
 type Setting struct {
@@ -259,8 +266,35 @@ func (setting *Setting) formatWebhook(list []Setting, webHook *WebHook) {
 }
 
 func (setting *Setting) UpdateWebHook(template string) error {
-	Db.Model(&Setting{}).Where(map[string]interface{}{"code": WebhookCode, "key": WebhookTemplateKey}).Update("value", template)
-	return nil
+	// Serializable predicate reads prevent two missing-row inserts across HA
+	// replicas. Retry only database serialization/deadlock aborts, at most 3 times.
+	for attempt := 0; ; attempt++ {
+		err := Db.Transaction(func(tx *gorm.DB) error {
+			var existing Setting
+			filter := map[string]interface{}{"code": WebhookCode, "key": WebhookTemplateKey}
+			err := tx.Where(filter).First(&existing).Error
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return tx.Create(&Setting{Code: WebhookCode, Key: WebhookTemplateKey, Value: template}).Error
+			}
+			if err != nil {
+				return err
+			}
+			return tx.Model(&Setting{}).Where(filter).Update("value", template).Error
+		}, &sql.TxOptions{Isolation: sql.LevelSerializable})
+		if err == nil || attempt == 2 || !settingSerializationFailure(err) {
+			return err
+		}
+		time.Sleep(time.Duration(attempt+1) * 10 * time.Millisecond)
+	}
+}
+
+func settingSerializationFailure(err error) bool {
+	var state interface{ SQLState() string }
+	if errors.As(err, &state) {
+		return state.SQLState() == "40001" || state.SQLState() == "40P01"
+	}
+	var myErr *mysql.MySQLError
+	return errors.As(err, &myErr) && (myErr.Number == 1213 || myErr.Number == 1205)
 }
 
 func (setting *Setting) CreateWebhookUrl(name, url string) (int64, error) {

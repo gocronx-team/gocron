@@ -5,8 +5,10 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -20,6 +22,10 @@ const tokenExpiration = 3 * time.Hour
 
 // GenerateToken 生成注册token
 func GenerateToken(c *gin.Context) {
+	if _, err := canonicalServerURL(os.Getenv("GOCRON_PUBLIC_URL")); err != nil {
+		base.RespondError(c, "Invalid server URL configuration")
+		return
+	}
 	token := generateRandomToken()
 	expiresAt := time.Now().Add(tokenExpiration)
 
@@ -35,7 +41,7 @@ func GenerateToken(c *gin.Context) {
 	}
 
 	serverURL := getServerURL(c)
-	installCmdLinux := fmt.Sprintf("curl -fsSL '%s/api/agent/install.sh?token=%s' | bash", serverURL, token)
+	installCmdLinux := fmt.Sprintf("curl -fsSL %s | bash", shellQuote(serverURL+"/api/agent/install.sh?token="+token))
 
 	base.RespondSuccess(c, i18n.T(c, "operation_success"), map[string]interface{}{
 		"token":       token,
@@ -46,6 +52,10 @@ func GenerateToken(c *gin.Context) {
 
 // InstallScript 返回安装脚本
 func InstallScript(c *gin.Context) {
+	if _, err := canonicalServerURL(os.Getenv("GOCRON_PUBLIC_URL")); err != nil {
+		c.String(http.StatusServiceUnavailable, "Invalid server URL configuration")
+		return
+	}
 	// 验证token
 	token := c.Query("token")
 	if token == "" {
@@ -65,7 +75,17 @@ func InstallScript(c *gin.Context) {
 		return
 	}
 
-	script := `#!/bin/bash
+	script := renderInstallScript(token, getServerURL(c))
+	c.Data(http.StatusOK, "text/plain; charset=utf-8", []byte(script))
+}
+
+// shellQuote emits one literal POSIX shell word, including for untrusted headers.
+func shellQuote(value string) string {
+	return "'" + strings.ReplaceAll(value, "'", "'\"'\"'") + "'"
+}
+
+func renderInstallScript(token, serverURL string) string {
+	return `#!/bin/bash
 set -e
 
 # 安全检查：禁止使用 root 用户运行
@@ -77,13 +97,13 @@ if [ "$(id -u)" = "0" ]; then
 fi
 
 # Token is embedded in the script URL, extract it here
-TOKEN="` + token + `"
+TOKEN=` + shellQuote(token) + `
 if [ -z "$TOKEN" ]; then
     echo "Error: Token is required"
     exit 1
 fi
 
-GOCRON_SERVER="` + getServerURL(c) + `"
+GOCRON_SERVER=` + shellQuote(serverURL) + `
 INSTALL_DIR="/opt/gocron-node"
 SERVICE_NAME="gocron-node"
 
@@ -97,8 +117,7 @@ esac
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 if [ "$OS" != "linux" ] && [ "$OS" != "darwin" ]; then
     echo "This script is for Linux/macOS. For Windows, use PowerShell script."
-    echo "PowerShell command:"
-    echo "  iwr -useb ` + getServerURL(c) + `/api/agent/install.ps1 | iex"
+    echo "Please download the Windows node package from the official release page."
     exit 1
 fi
 
@@ -112,6 +131,7 @@ echo "Checking local server for installation package..."
 HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$LOCAL_DOWNLOAD_URL")
 
 TMP_DIR=$(mktemp -d)
+trap 'rm -rf "$TMP_DIR"' EXIT
 cd "$TMP_DIR"
 
 if [ "$HTTP_CODE" = "200" ]; then
@@ -140,11 +160,36 @@ else
 fi
 
 echo "Downloading from: $DOWNLOAD_URL"
+# Optionally pin a digest obtained independently from a trusted release source.
+# This value comes from the installing user's environment, not the HTTP server.
+verify_package() {
+    if [ -z "${GOCRON_NODE_SHA256:-}" ]; then
+        echo "WARNING: No independently trusted GOCRON_NODE_SHA256 supplied; package integrity is not pinned." >&2
+        return
+    fi
+    case "$GOCRON_NODE_SHA256" in
+        *[!a-fA-F0-9]*|'') echo "Invalid GOCRON_NODE_SHA256" >&2; exit 1 ;;
+    esac
+    if [ "${#GOCRON_NODE_SHA256}" -ne 64 ]; then
+        echo "Invalid GOCRON_NODE_SHA256 length" >&2; exit 1
+    fi
+    if command -v sha256sum >/dev/null 2>&1; then
+        ACTUAL_SHA256=$(sha256sum "$1" | awk '{print $1}')
+    else
+        ACTUAL_SHA256=$(shasum -a 256 "$1" | awk '{print $1}')
+    fi
+    EXPECTED_SHA256=$(printf '%s' "$GOCRON_NODE_SHA256" | tr '[:upper:]' '[:lower:]')
+    if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
+        echo "Package SHA-256 mismatch; refusing installation" >&2; exit 1
+    fi
+}
 if [ "$OS" = "windows" ]; then
     curl -fsSL "$DOWNLOAD_URL" -o gocron-node.zip
+    verify_package gocron-node.zip
     unzip -q gocron-node.zip
 else
     curl -fsSL "$DOWNLOAD_URL" -o gocron-node.tar.gz
+    verify_package gocron-node.tar.gz
     tar -xzf gocron-node.tar.gz
 fi
 
@@ -244,8 +289,6 @@ echo ""
 echo "Installation directory: ${INSTALL_DIR}"
 echo "========================================"
 `
-
-	c.Data(http.StatusOK, "text/plain; charset=utf-8", []byte(script))
 }
 
 // Register agent注册
@@ -414,9 +457,25 @@ func generateRandomToken() string {
 }
 
 func getServerURL(c *gin.Context) string {
+	// A configured canonical origin avoids trusting Host behind reverse proxies.
+	// Keep legacy discovery when unset for existing private deployments.
+	if origin, err := canonicalServerURL(os.Getenv("GOCRON_PUBLIC_URL")); err == nil && origin != "" {
+		return origin
+	}
 	scheme := "http"
 	if c.Request.TLS != nil {
 		scheme = "https"
 	}
 	return fmt.Sprintf("%s://%s", scheme, c.Request.Host)
+}
+
+func canonicalServerURL(value string) (string, error) {
+	if value == "" {
+		return "", nil
+	}
+	u, err := url.Parse(value)
+	if err != nil || u == nil || (u.Scheme != "https" && u.Scheme != "http") || u.Hostname() == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" || (u.Path != "" && u.Path != "/") {
+		return "", fmt.Errorf("GOCRON_PUBLIC_URL must be an HTTP(S) origin without credentials, path, query or fragment")
+	}
+	return strings.TrimSuffix(u.String(), "/"), nil
 }

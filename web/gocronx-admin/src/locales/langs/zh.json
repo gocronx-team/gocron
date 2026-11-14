@@ -458,6 +458,8 @@
     "tagPlaceholder": "输入标签",
     "confirmDelete": "确定要删除任务 \"{name}\" 吗？",
     "confirmRunOnce": "立即执行任务 \"{name}\"？",
+    "runBodyHint": "可填写仅本次生效的 JSON 请求体（最多 65535 字节）；留空使用已保存配置，不影响定时执行。",
+    "runBodyInvalid": "请输入不超过 65535 字节的有效 JSON。",
     "pleaseSelect": "请至少选择一个任务",
     "confirmBatchEnable": "确定启用选中的 {count} 个任务？",
     "confirmBatchDisable": "确定禁用选中的 {count} 个任务？",

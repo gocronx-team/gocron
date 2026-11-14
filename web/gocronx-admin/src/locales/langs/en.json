@@ -458,6 +458,8 @@
     "tagPlaceholder": "Enter tag",
     "confirmDelete": "Are you sure you want to delete task \"{name}\"?",
     "confirmRunOnce": "Run task \"{name}\" immediately?",
+    "runBodyHint": "Optional JSON body for this run only (max 65535 bytes). Leave blank to use the saved configuration. Scheduled runs are unchanged.",
+    "runBodyInvalid": "Enter valid JSON no larger than 65535 bytes.",
     "pleaseSelect": "Please select at least one task",
     "confirmBatchEnable": "Enable {count} selected task(s)?",
     "confirmBatchDisable": "Disable {count} selected task(s)?",

@@ -54,6 +54,7 @@ export default defineConfig({
               items: [
                 { text: 'Two-Factor Authentication (2FA)', link: '/en/guide/security-2fa' },
                 { text: 'TLS Mutual Authentication', link: '/en/guide/security-tls' },
+                { text: 'Security hardening', link: '/en/guide/security-hardening' },
                 { text: 'Password Reset (CLI)', link: '/en/guide/password-reset' },
               ]
             },
@@ -126,6 +127,7 @@ export default defineConfig({
               items: [
                 { text: '双因素认证 (2FA)', link: '/zh/guide/security-2fa' },
                 { text: 'TLS 双向认证', link: '/zh/guide/security-tls' },
+                { text: '安全加固', link: '/zh/guide/security-hardening' },
                 { text: '密码重置 (CLI)', link: '/zh/guide/password-reset' },
               ]
             },
