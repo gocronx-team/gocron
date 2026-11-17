@@ -1005,7 +1005,7 @@ func beforeExecJob(taskModel models.Task) (taskLogId int64) {
 	if taskModel.Multi == 0 {
 		if !runInstance.tryAdd(taskModel.Id) {
 			logger.Infof("Task already running, canceling this execution#ID-%d", taskModel.Id)
-			taskLogId, _ = createTaskLog(taskModel, models.Cancel)
+			_, _ = createTaskLog(taskModel, models.Cancel)
 			return
 		}
 	}

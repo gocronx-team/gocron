@@ -1,11 +1,19 @@
 package service
 
 import (
+	"net/http"
+	"net/http/httptest"
+	"path/filepath"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/gocronx-team/gocron/internal/models"
+	"github.com/ncruces/go-sqlite3/gormlite"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+	"gorm.io/gorm/schema"
 )
 
 // TestSingleInstanceControl 测试单实例运行控制
@@ -291,4 +299,53 @@ func TestSingleInstanceRealScenario(t *testing.T) {
 			t.Errorf("期望执行1次，实际执行%d次", count)
 		}
 	})
+}
+
+func TestCreateJobSkipsRunWhileInstanceRunning(t *testing.T) {
+	originalDB, originalPrefix := models.Db, models.TablePrefix
+	t.Cleanup(func() { models.Db, models.TablePrefix = originalDB, originalPrefix })
+	db, err := gorm.Open(gormlite.Open(filepath.Join(t.TempDir(), "single.db")), &gorm.Config{
+		NamingStrategy: schema.NamingStrategy{SingularTable: true},
+		Logger:         logger.Default.LogMode(logger.Silent),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	models.Db, models.TablePrefix = db, ""
+	if err := new(models.Migration).Install("single"); err != nil {
+		t.Fatal(err)
+	}
+	var hits atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { hits.Add(1) }))
+	defer srv.Close()
+	task := models.Task{Name: "single", Level: models.TaskLevelParent, Spec: "* * * * * *",
+		Protocol: models.TaskHTTP, Command: srv.URL, HttpMethod: models.TaskHTTPMethodGet,
+		DependencyStatus: models.TaskDependencyStatusWeak, Status: models.Enabled, Multi: 0, Timeout: 10}
+	if err := db.Create(&task).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	originalQueue := concurrencyQueue
+	concurrencyQueue = ConcurrencyQueue{queue: make(chan struct{}, 1)}
+	t.Cleanup(func() { concurrencyQueue = originalQueue })
+
+	// An earlier run of the task is still going
+	runInstance.add(task.Id)
+	defer runInstance.done(task.Id)
+
+	createJob(task)()
+
+	if got := hits.Load(); got != 0 {
+		t.Fatalf("command ran %d times while the task was running, want 0", got)
+	}
+	if !runInstance.has(task.Id) {
+		t.Fatal("running mark of the earlier run was cleared")
+	}
+	var log models.TaskLog
+	if err := db.First(&log).Error; err != nil {
+		t.Fatal(err)
+	}
+	if log.Status != models.Cancel {
+		t.Fatalf("log status = %d, want Cancel", log.Status)
+	}
 }
