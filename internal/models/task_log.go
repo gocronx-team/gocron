@@ -241,6 +241,8 @@ func (taskLog *TaskLog) parseWhere(query *gorm.DB, params CommonMap) {
 	}
 	// 关键字模糊搜索：匹配任务名或执行输出
 	// 参数化查询，% 通配在值侧拼接，无 SQL 注入风险
+	// OR 条件必须加括号，否则与 task_id/status 等过滤条件组合时，
+	// 会因 AND 优先级高于 OR 导致跨任务泄漏日志
 	keyword, ok := params["Keyword"]
 	if ok && keyword.(string) != "" {
 		like := "%" + keyword.(string) + "%"
