@@ -213,3 +213,59 @@ tasks:
 		t.Errorf("imported notify fields wrong: %+v", loaded)
 	}
 }
+
+func TestExportImportKeepsDisabledAndSecretNames(t *testing.T) {
+	r, cleanup := setupImportExportRouter(t)
+	defer cleanup()
+
+	if _, err := (&models.Task{Name: "paused", Level: models.TaskLevelParent, Spec: "0 0 3 * * *",
+		Protocol: models.TaskHTTP, Command: "http://z", HttpMethod: models.TaskHTTPMethodGet,
+		SecretNames: "S3_KEY", DependencyStatus: models.TaskDependencyStatusWeak, Status: models.Disabled}).Create(); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/api/task/export", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	exported := w.Body.String()
+
+	if err := models.Db.Where("name = ?", "paused").Delete(&models.Task{}).Error; err != nil {
+		t.Fatalf("delete: %v", err)
+	}
+	req = httptest.NewRequest(http.MethodPost, "/api/task/import", strings.NewReader(exported))
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	var loaded models.Task
+	if err := models.Db.Where("name = ?", "paused").First(&loaded).Error; err != nil {
+		t.Fatalf("load imported task: %v (export: %s, import: %s)", err, exported, w.Body.String())
+	}
+	if loaded.Status != models.Disabled || loaded.SecretNames != "S3_KEY" {
+		t.Errorf("status=%d secret_names=%q, want disabled and S3_KEY", loaded.Status, loaded.SecretNames)
+	}
+}
+
+func TestImportWithoutDisabledIsEnabled(t *testing.T) {
+	r, cleanup := setupImportExportRouter(t)
+	defer cleanup()
+
+	body := `version: 1
+tasks:
+  - name: old-file
+    level: 1
+    spec: "0 0 0 1 1 *"
+    protocol: 1
+    command: "http://x"
+`
+	req := httptest.NewRequest(http.MethodPost, "/api/task/import", strings.NewReader(body))
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	var loaded models.Task
+	if err := models.Db.Where("name = ?", "old-file").First(&loaded).Error; err != nil {
+		t.Fatalf("load imported task: %v", err)
+	}
+	if loaded.Status != models.Enabled {
+		t.Errorf("status=%d, want enabled", loaded.Status)
+	}
+}

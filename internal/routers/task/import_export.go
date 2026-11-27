@@ -44,7 +44,9 @@ type yamlTask struct {
 	NotifySuccessText     string   `yaml:"notify_success_text,omitempty"`
 	NotifyFailureText     string   `yaml:"notify_failure_text,omitempty"`
 	LogRetentionDays      int      `yaml:"log_retention_days,omitempty"`
-	Hosts                 []string `yaml:"hosts,omitempty"` // RPC 任务的执行节点(host name)
+	SecretNames           string   `yaml:"secret_names,omitempty"`
+	Disabled              bool     `yaml:"disabled,omitempty"` // 旧文件没有此字段,按启用导入
+	Hosts                 []string `yaml:"hosts,omitempty"`    // RPC 任务的执行节点(host name)
 }
 
 type yamlDoc struct {
@@ -95,6 +97,8 @@ func Export(c *gin.Context) {
 			NotifySuccessText:     t.NotifySuccessText,
 			NotifyFailureText:     t.NotifyFailureText,
 			LogRetentionDays:      t.LogRetentionDays,
+			SecretNames:           t.SecretNames,
+			Disabled:              t.Status == models.Disabled,
 		}
 		for _, h := range t.Hosts {
 			yt.Hosts = append(yt.Hosts, h.Name)
@@ -176,6 +180,13 @@ func Import(c *gin.Context) {
 			spec = ""
 		}
 
+		secretNames, ok := normalizeSecretNames(yt.SecretNames)
+		if !ok {
+			res.Skipped++
+			res.Messages = append(res.Messages, fmt.Sprintf("%s: invalid secret_names", yt.Name))
+			continue
+		}
+
 		t := models.Task{
 			Name:                  yt.Name,
 			Level:                 models.TaskLevel(yt.Level),
@@ -201,8 +212,12 @@ func Import(c *gin.Context) {
 			NotifySuccessText:     yt.NotifySuccessText,
 			NotifyFailureText:     yt.NotifyFailureText,
 			LogRetentionDays:      yt.LogRetentionDays,
+			SecretNames:           secretNames,
 			DependencyStatus:      models.TaskDependencyStatusWeak, // 不导入依赖关系
 			Status:                models.Enabled,
+		}
+		if yt.Disabled {
+			t.Status = models.Disabled
 		}
 
 		id, cerr := t.Create()
@@ -231,7 +246,7 @@ func Import(c *gin.Context) {
 		}
 
 		// 启用的父任务加入调度
-		if t.Level == models.TaskLevelParent {
+		if t.Level == models.TaskLevelParent && t.Status == models.Enabled {
 			addTaskToTimer(id)
 		}
 	}
